@@ -6,7 +6,7 @@ Date: 2015-10-07
 Authors@R: person("Alan","Hubbard",role = c("aut", "cre"), email = "hubbard@berkeley.edu")
 Author: Alan Hubbard [aut, cre]
 Maintainer: "Alan Hubbard" <hubbard@berkeley.edu>
-Description: Automated Data processing and variable importance using data-
+Description: Automated data processing and variable importance using data-
     adaptive target parameter methods combined with TMLE. Results in ordered
     variable list of importance.
 License: GPL (>= 2)
