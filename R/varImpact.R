@@ -1,6 +1,6 @@
 #' Variable Impact Estimation
 #' \code{varImpact} returns variable importance statistics ordered
-#' by stattistical significance
+#' by statistical significance
 #'
 #' Returns ordered estimates of variable importance measures using
 #' a combination of data-adaptive target parameter estimation, and
@@ -10,8 +10,8 @@
 #'  \enumerate{
 #'  \item Drops variables missing > miss.cut of time (tuneable).
 #'  \item Separate out covariates into factors and continuous (ordered).
-#'  \item Drops variables for which there distribution is uneven  - e.g., all 1 value (tuneable)
-#'  separately by for factors and numeric variables (ADD MORE DETAIL HERE)
+#'  \item Drops variables for which their distribution is uneven  - e.g., all 1 value (tuneable)
+#'  separately for factors and numeric variables (ADD MORE DETAIL HERE)
 #'  \item Changes all factors to remove spaces (used for naming dummies later)
 #'  \item Changes variable names to remove spaces
 #'  \item Makes dummy variable basis for factors, including naming dummies
@@ -38,8 +38,7 @@
 #' }
 #'  \item Things to do include making options to avoid errors include putting
 #' minimum cell size on validation sample of A vs. Y
-#' and implementing CV-TMLE (minCell), adding Imports statement
-#' in the DESCRIPTION file, making examples, putting authors
+#' and implementing CV-TMLE (minCell), making examples, putting authors
 #' and references and see also's.  Allow reporting of results that
 #' randomly do not have estimates for some of validation samples.
 #' }
@@ -50,7 +49,7 @@
 #' @param Q.library library used by SuperLearner for model of outcome
 #' versus predictors
 #' @param g.library library used by SuperLearner for model of
-#' precitor variable of interest versus other predictors
+#' predictor variable of interest versus other predictors
 #' @param fam family ('binomial' or 'gaussian')
 #' @param minYs mininum # of obs with event  - if it is < minYs, skip VIM
 #' @param minCell is the cut-off for including a category of
@@ -66,55 +65,75 @@
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
 
-varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet",
-                                                "SL.mean", "SL.inter2"), g.library = c("SL.stepAIC"), fam = "binomial",
+varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean", "SL.inter2"),
+                     g.library = c("SL.stepAIC"), fam = "binomial",
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8, dirout = NULL,
                      outname = NULL, miss.cut = 0.5) {
 
 
-  ################################### OUTSTANDING PRGRAMMING ISSUES
-  ##### 1) How to add 'null' columns to data frame?
+  ###################################
+  # OUTSTANDING PROGRAMMING ISSUES (CK: possibly old)
+  # 1) How to add 'null' columns to data frame?
 
-  ### Get missingness for each column Function for getting total number
-  ### missing values for vector
+  ###
+  # Get missingness for each column
+  # Function for getting total number missing values for vector
   sum.na = function(x) {
     sum(is.na(x))
   }
-  ######## Applied to Explanatory (X) data frame
+
+  ########
+  # Applied to Explanatory (X) data frame
   sna = apply(data1, 2, sum.na)
+
   ####### n = # of row
   n = dim(data1)[1]
-  ####### missing proportion by variable
-  mis.prop = sna/n
-  ####### cut-off for eliminating variable for proportion of obs missing
+
+  #######
+  # Missing proportion by variable.
+  mis.prop = sna / n
+
+  #######
+  # Cut-off for eliminating variable for proportion of obs missing.
   data1 = data1[, mis.prop < miss.cut]
+
   ###### Identify numeric variables (ordered)
   ind.num = sapply(data1, is.numeric)
+
   ## Identify factor variables
   # isit.factor = sapply(data1,is.factor)
   isit.factor = !ind.num
+
+  # Number of columns in the reduced dataframe.
   ndata1 = dim(data1)[2]
-  ### Function that counts # of unique values
+
+  ###
+  # Function that counts # of unique values
   num.val = function(x) {
     length(unique(x))
   }
   ### num.values is vector of number of unique values by variable
   num.values = apply(data1, 2, num.val)
+
   ### Function that returns logical T if no variability by variable
   qq.range = function(x, rr) {
     qq = quantile(unclass(x), probs = rr, na.rm = T)
     (qq[2] - qq[1]) == 0
   }
+
   qq.range.num = function(x, rr) {
     qq = quantile(x, probs = rr, na.rm = T)
     (qq[2] - qq[1]) == 0
   }
+
   if (sum(isit.factor) == 0) {
     n.fac = 0
   }
+
   #### data.fac is data frame of variables that are factors
   if (sum(isit.factor) > 0) {
     data.fac = data1[, isit.factor, drop = F]
+
     ## Replace blanks with NA's
     nc = dim(data.fac)[2]
     for (i in 1:nc) {
@@ -123,20 +142,28 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet",
       data.fac[, i] = xx
     }
 
+    # List of column indices to remove.
     dropind = NULL
     for (i in 1:nc) {
       dropind = c(dropind, qq.range(data.fac[, i], rr = c(0.1, 0.9)))
     }
 
     data.fac = data.fac[, dropind == F, drop = F]
+
+    # TODO: remove this function, as it duplicates num.val() defined above.
     ln.unique = function(x) {
       length(unique(x))
     }
     num.cat = apply(data.fac, 2, ln.unique)
     sna = apply(data.fac, 2, sum.na)
+
     n = dim(data.fac)[1]
-    mis.prop = sna/n
+    mis.prop = sna / n
+
+    # POSSIBLE BUG: shouldn't this be using mis.cut rather than 0.5?
     data.fac = data.fac[, mis.prop < 0.5, drop = F]
+
+    # Save how many factors we have in this dataframe.
     n.fac = dim(data.fac)[2]
   }
 
@@ -150,8 +177,7 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet",
     nc = dim(data.num)[2]
     for (i in 1:nc) {
       cat(" i = ", i, "\n")
-      dropind = c(dropind, qq.range.num(data.num[, i], rr = c(0.1,
-                                                              0.9)))
+      dropind = c(dropind, qq.range.num(data.num[, i], rr = c(0.1, 0.9)))
     }
     data.num = data.num[, dropind == F, drop = F]
     n.num = dim(data.num)[2]
@@ -163,6 +189,7 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet",
   ################################################
 
   if (n.num > 0 & n.fac == 0) {
+    # TODO: remove this, already have num.val() above.
     ln.unique = function(x) {
       length(unique(x))
     }
@@ -177,8 +204,7 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet",
     Xnew = NULL
     for (k in 1:xc) {
       Xt = X[, k]
-      tst = as.numeric(discretize(Xt, method = "frequency", categories = 10,
-                                  ordered = T))
+      tst = as.numeric(discretize(Xt, method = "frequency", categories = 10, ordered = T))
       Xnew = cbind(Xnew, tst)
     }
     colnames(Xnew) = varn
