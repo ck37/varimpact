@@ -74,6 +74,9 @@ varImpact = function(Y, data, V,
                      dirout = NULL, outname = NULL,
                      miss.cut = 0.5, verbose=F) {
 
+  # Time the full function execution
+  time = system.time({
+
   # TODO: remove this line and replace all "fam" referneces with "family".
   fam = family
   # TODO: remove this line and replace all "data1" references with "data".
@@ -1112,9 +1115,11 @@ varImpact = function(Y, data, V,
       (cor(na.omit(cbind(x, y)))[1, 2])^2
     }
     folds = CC.CV(V, Y)
+
     # detach('package:cvTools', unload=TRUE) detach('package:lattice',
     # unload=TRUE) library(doParallel) cl <- makeCluster(20)
     # registerDoParallel(cl)
+
     names.cont = colnames(data.cont.dist)
     xc = dim(data.cont.dist)[2]
     n.cont = dim(data.cont.dist)[1]
@@ -1974,6 +1979,16 @@ varImpact = function(Y, data, V,
                                                                                 outname, "ConsistReslts.tex", sep = ""), caption.placement = "top",
           include.rownames = T)
   }
+
+  }) # End timing the full execution.
+
+  # Return results.
+  results = list(results_consistent = outres.cons,
+                 results_all = outres.all,
+                 V=V,
+                 family=family,
+                 time = time)
+  invisible(results)
 }
 
 
