@@ -67,7 +67,7 @@
 #' of missing obs > cut.off
 
 varImpact = function(Y, data, V,
-                     Q.library = c("SL.gam", "SL.glmnet", "SL.mean", "SL.inter2"),
+                     Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
                      dirout = NULL, outname = NULL,
@@ -204,10 +204,14 @@ varImpact = function(Y, data, V,
     X = data.num
     xc = dim(X)[2]
     qt = apply(na.omit(X), 2, quantile, probs = seq(0.1, 0.9, 0.1))
+
     newX = NULL
     coln = NULL
+
     varn = colnames(X)
+
     num.cat = apply(X, 2, ln.unique)
+
     ### Processing continuous variables
     Xnew = NULL
     for (k in 1:xc) {
@@ -226,8 +230,10 @@ varImpact = function(Y, data, V,
     }
     sna = apply(data.cont.dist, 2, sum.na)
     nmesX = colnames(data.cont.dist)
+
     miss.cont = NULL
     nmesm = NULL
+
     for (k in 1:xp) {
       if (sna[k] > 0) {
         ix = as.numeric(is.na(data.cont.dist[, k]) == F)
@@ -236,7 +242,9 @@ varImpact = function(Y, data, V,
       }
     }
     colnames(miss.cont) = nmesm
+
     numcat.cont = apply(data.cont.dist, 2, ln.unique)
+
     xc = length(numcat.cont)
     cats.cont <- lapply(1:xc, function(i) {
       sort(unique(data.cont.dist[, i]))
