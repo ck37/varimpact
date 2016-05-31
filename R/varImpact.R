@@ -65,13 +65,14 @@
 #' @param   outname prefix name for files
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
+#' @param verbose Boolean - if TRUE the method will display more detailed output.
 
 varImpact = function(Y, data, V,
                      Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
                      dirout = NULL, outname = NULL,
-                     miss.cut = 0.5) {
+                     miss.cut = 0.5, verbose=F) {
 
   # TODO: remove this line and replace all "fam" referneces with "family".
   fam = family
