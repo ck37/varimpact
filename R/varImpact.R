@@ -185,7 +185,7 @@ varImpact = function(Y, data, V,
     dropind = NULL
     nc = dim(data.num)[2]
     for (i in 1:nc) {
-      cat(" i = ", i, "\n")
+      # cat(" i = ", i, "\n")
       dropind = c(dropind, qq.range.num(data.num[, i], rr = c(0.1, 0.9)))
     }
     data.num = data.num[, dropind == F, drop = F]
@@ -307,6 +307,7 @@ varImpact = function(Y, data, V,
     }
 
     ###############################################################################
+    # NOTE: this will generate a warning if sd = 0.
     cor.two = function(x, y) {
       (cor(na.omit(cbind(x, y)))[1, 2])^2
     }
@@ -327,6 +328,7 @@ varImpact = function(Y, data, V,
     ###########################################################################
 
     # Loop over each column in X to conduct the VIM analysis.
+    # TODO: parallelize this!
     out.put <- lapply(1:xc, function(i) {
       nameA = names.cont[i]
       thetaV = NULL
@@ -355,6 +357,7 @@ varImpact = function(Y, data, V,
         AY1 = At[Yt == 1 & is.na(At) == F]
 
         # Create a histogram with automatic bin selection.
+        # TODO: plot=F to suppress plot generation.
         hh = histogram::histogram(AY1, verbose = F, type = "irregular")$breaks
 
         # Ensure that the min and max breaks bound the distribution of At.
@@ -560,7 +563,7 @@ varImpact = function(Y, data, V,
         }
       }
       # print(list(EY1V,EY0V,thetaV,varICV,labV,nV))
-      list(EY1V, EY0V, thetaV, varICV, labV, nV)
+      list(ey1v=EY1V, ey0v=EY0V, thetaV=thetaV, varICV=varICV, lablV=labV, nV=nV)
     })
 
     vars.cont = colnames(data.cont.dist)
@@ -572,22 +575,38 @@ varImpact = function(Y, data, V,
     factr = rep("ordered", nc)
     vars = vars.cont
     names(out.put) = vars
+
+    # Count the length of each variable's result list.
     lngth = sapply(out.put, function(x) length(x))
+
+    # Restrict to variables with 6 return elements
+    # TODO: shouldn't this be all variables? Or do some not set all elements, eg if an error occurs?
     out.put = out.put[lngth == 6]
     vars = vars[lngth == 6]
     factr = factr[lngth == 6]
+
+    # @1 is EY1V
     lngth2 = sapply(out.put, function(x) length(na.omit(x[[1]])))
+
     out.put = out.put[lngth2 == V]
     vars = vars[lngth2 == V]
     factr = factr[lngth2 == V]
 
+    # @3 is thetaV
     tst = lapply(out.put, function(x) x[[3]])
     tst = do.call(rbind, tst)
+
     tot.na = function(x) {
       sum(is.na(x))
     }
+
+    # CK 5/31 - generating an error
     xx = apply(tst, 1, tot.na)
+    # Restrict to variables that had no missing values. Is this needed?
     out.sht = out.put[xx == 0]
+    # CK: Give an error if we have zero rows in out.sht
+    stopifnot(nrow(out.sht) > 0)
+
     vars = vars[xx == 0]
     factr = factr[xx == 0]
 
@@ -661,7 +680,7 @@ varImpact = function(Y, data, V,
     consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
     procs <- c("Holm", "BH")
     if (n > 1) {
-      res <- mt.rawp2adjp(pvalue, procs)
+      res <- multtest::mt.rawp2adjp(pvalue, procs)
       oo <- res$index
       outres = data.frame(factor = factr[oo], theta[oo, ], psi[oo],
                           CI95[oo], res$adj, lbs[oo, ], consist[oo])
@@ -1448,7 +1467,7 @@ varImpact = function(Y, data, V,
           V
         procs <- c("Holm", "BH")
         if (n > 1) {
-          res <- mt.rawp2adjp(pvalue, procs)
+          res <- multtest::mt.rawp2adjp(pvalue, procs)
           oo <- res$index
           outres = data.frame(factor = factr[oo], theta[oo, ],
                               psi[oo], CI95[oo], res$adj, lbs[oo, ], consist[oo])
@@ -1587,12 +1606,14 @@ varImpact = function(Y, data, V,
       out = rep(NA, nn)
       for (i in 1:nys) {
         n = as.numeric(tt[i])
-        xx = cvFolds(n, K = V, R = 1, type = "random")$which
+        xx = cvTools::cvFolds(n, K = V, R = 1, type = "random")$which
         out[Y == Ys[i]] = xx
       }
       return(out)
     }
+
     folds = CC.CV(V, Y)
+
     max.2 = function(x) {
       max(x^2, na.rm = T)
     }
@@ -1915,7 +1936,7 @@ varImpact = function(Y, data, V,
     consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
 
     procs <- c("Holm", "BH")
-    res <- mt.rawp2adjp(pvalue, procs)
+    res <- multtest::mt.rawp2adjp(pvalue, procs)
     oo <- res$index
     outres = data.frame(factor = factr[oo], theta[oo, ], psi[oo], CI95[oo],
                         res$adj, lbs[oo, ], consist[oo])
