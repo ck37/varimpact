@@ -179,6 +179,7 @@ varImpact = function(Y, data, V,
   if ((dim(data.num)[2]) == 0) {
     n.num = 0
   }
+
   if ((dim(data.num)[2]) > 0) {
     dropind = NULL
     nc = dim(data.num)[2]
@@ -211,7 +212,7 @@ varImpact = function(Y, data, V,
     Xnew = NULL
     for (k in 1:xc) {
       Xt = X[, k]
-      tst = as.numeric(discretize(Xt, method = "frequency", categories = 10, ordered = T))
+      tst = as.numeric(arules::discretize(Xt, method = "frequency", categories = 10, ordered = T))
       Xnew = cbind(Xnew, tst)
     }
     colnames(Xnew) = varn
@@ -265,12 +266,13 @@ varImpact = function(Y, data, V,
       W = W[inc, , drop = F]
       delta = delta[inc]
 
-      tmle.1 = tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
+      tmle.1 = tmle::tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
                     Q.SL.library = Q.lib, family = fam, verbose = FALSE)
       g1 = tmle.1$g$g1W
       Qst = tmle.1$Qstar[, 2]
       theta = mean(Qst)
       IC = (A/g1) * (Y - Qst) + Qst - theta
+      # TODO: return other aspects of the TMLE results, e.g. g1 or Qstar?
       return(list(theta = theta, IC = IC))
     }
 
@@ -283,7 +285,7 @@ varImpact = function(Y, data, V,
       out = rep(NA, nn)
       for (i in 1:nys) {
         n = as.numeric(tt[i])
-        xx = cvFolds(n, K = V, R = 1, type = "random")$which
+        xx = cvTools::cvFolds(n, K = V, R = 1, type = "random")$which
         out[Y == Ys[i]] = xx
       }
       return(out)
@@ -299,16 +301,23 @@ varImpact = function(Y, data, V,
     cor.two = function(x, y) {
       (cor(na.omit(cbind(x, y)))[1, 2])^2
     }
+
+    # TODO: delete this line? We already made the folds 10 lines up.
     folds = CC.CV(V, Y)
+
     # detach('package:cvTools', unload=TRUE)
     # detach('package:lattice', unload=TRUE)
     # library(doParallel)
     # cl <- makeCluster(20)
     # registerDoParallel(cl)
+
     names.cont = colnames(data.cont.dist)
     xc = dim(data.cont.dist)[2]
     n.cont = dim(data.cont.dist)[1]
+
     ###########################################################################
+
+    # Loop over each column in X to conduct the VIM analysis.
     out.put <- lapply(1:xc, function(i) {
       nameA = names.cont[i]
       thetaV = NULL
@@ -317,24 +326,41 @@ varImpact = function(Y, data, V,
       EY0V = NULL
       EY1V = NULL
       nV = NULL
+
+      # Loop over cross-validation folds.
       for (kk in 1:V) {
         # cat(' i = ',i,' V = ',kk,'\n')
+
+        # A in the training set.
         At = data.cont.dist[folds != kk, i]
+
+        # A in the validation set.
         Av = data.cont.dist[folds == kk, i]
+
+        # Y in the training set.
         Yt = Y[folds != kk]
+
+        # Y in the validation set.
         Yv = Y[folds == kk]
+
         AY1 = At[Yt == 1 & is.na(At) == F]
+
+        # Create a histogram with automatic bin selection.
         hh = histogram::histogram(AY1, verbose = F, type = "irregular")$breaks
+
+        # Ensure that the min and max breaks bound the distribution of At.
         if (hh[length(hh)] < max(At, na.rm = T)) {
           hh[length(hh)] = max(At, na.rm = T) + 0.1
         }
         if (hh[1] > min(At[At > 0], na.rm = T)) {
           hh[1] = min(At[At > 0], na.rm = T) - 0.1
         }
+
+        # Discretize A using the histogram breaks.
         Atnew = cut(At, breaks = hh)
         Avnew = cut(Av, breaks = hh)
-        if (length(na.omit(unique(Atnew))) <= 1 | length(na.omit(unique(Avnew))) <=
-            1) {
+
+        if (length(na.omit(unique(Atnew))) <= 1 | length(na.omit(unique(Avnew))) <= 1) {
           thetaV = c(thetaV, NA)
           varICV = c(varICV, NA)
           labV = rbind(labV, c(NA, NA))
@@ -342,8 +368,7 @@ varImpact = function(Y, data, V,
           EY1V = c(EY1V, NA)
           nV = c(nV, NA)
         }
-        if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) >
-            1) {
+        if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) > 1) {
           labs = names(table(Atnew))
           Atnew = as.numeric(Atnew) - 1
           Avnew = as.numeric(Avnew) - 1
@@ -356,30 +381,38 @@ varImpact = function(Y, data, V,
           if (is.null(miss.cont)) {
             miss.cont = matrix(0, n.cont, 1)
           }
-          Wt = data.frame(data.numW[folds != kk, -i], miss.cont[folds !=
-                                                                  kk, ])
+
+          # W restricted to the training set.
+          Wt = data.frame(data.numW[folds != kk, -i], miss.cont[folds != kk, ])
           nmesW = names(Wt)
+
+          # TODO: convert to paste0
           mtch = match(nmesW, paste("Imiss_", nameA, sep = ""))
+
           Wt = Wt[, is.na(mtch)]
-          Wv = data.frame(data.numW[folds == kk, -i], miss.cont[folds ==
-                                                                  kk, ])
+          Wv = data.frame(data.numW[folds == kk, -i], miss.cont[folds == kk, ])
           Wv = Wv[, is.na(mtch)]
-          ### Pull out any variables that are overly correlated with At (corr coef
-          ### < corthes)
+
+          ###
+          # Pull out any variables that are overly correlated with At (corr coef < corthes)
           corAt = apply(Wt, 2, cor.two, y = At)
           # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
           incc = corAt < corthres & is.na(corAt) == F
+
           Wv = Wv[, incc]
           Wt = Wt[, incc]
 
           # ERROR: what is nw referring to? data.numW?
+          # CK 5/31: let's guess at what nw should be.
+          nw = ncol(Wt)
+
+          # TODO: this should be a user-configurable parameter.
           if (nw <= 10) {
             Wtsht = Wt
             Wvsht = Wv
           }
           if (nw > 10) {
-            mydist <- as.matrix(distancematrix(t(Wt), d = "cosangle",
-                                               na.rm = T))
+            mydist <- as.matrix(distancematrix(t(Wt), d = "cosangle", na.rm = T))
             hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "mean",
                                    verbose = FALSE), silent = TRUE)
             if (class(hopach.1) == "try-error") {
@@ -413,10 +446,10 @@ varImpact = function(Y, data, V,
               Wvsht = Wv[, incc]
             }
           }
-          deltat = as.numeric(is.na(Yt) == F & is.na(Atnew) ==
-                                F)
-          deltav = as.numeric(is.na(Yv) == F & is.na(Avnew) ==
-                                F)
+
+          deltat = as.numeric(is.na(Yt) == F & is.na(Atnew) == F)
+          deltav = as.numeric(is.na(Yv) == F & is.na(Avnew) == F)
+
           if (sum(deltat == 0) < 10) {
             Yt = Yt[deltat == 1]
             Wtsht = Wtsht[deltat == 1, ]
@@ -433,8 +466,7 @@ varImpact = function(Y, data, V,
           ICmax = NULL
           Atnew[is.na(Atnew)] = -1
           Avnew[is.na(Avnew)] = -1
-          if (min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <=
-              minCell) {
+          if (min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell) {
             thetaV = c(thetaV, NA)
             varICV = c(varICV, NA)
             labV = rbind(labV, c(NA, NA))
