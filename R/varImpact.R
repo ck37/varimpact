@@ -240,9 +240,10 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"
     data.numW[is.na(data.num)] = 0
     n = length(Y)
     get.tmle.est = function(Y, A, W, delta = NULL, Q.lib, g.lib) {
-      ## Because of quirk of program, delete observations with delta=0 if #>0
-      ## & < 10
+      # Because of quirk of program, delete obs with delta=0 if #>0  & < 10
       n = length(Y)
+
+      # Vector of whether or not to include an obseration.
       inc = rep(TRUE, n)
       if (is.null(delta) == F) {
         ss = sum(delta == 0)
@@ -250,10 +251,13 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"
           inc[delta == 0] = FALSE
         }
       }
+
+      # Subset to our desired rows.
       Y = Y[inc]
       A = A[inc]
       W = W[inc, , drop = F]
       delta = delta[inc]
+
       tmle.1 = tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
                     Q.SL.library = Q.lib, family = fam, verbose = FALSE)
       g1 = tmle.1$g$g1W
@@ -287,8 +291,10 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"
       (cor(na.omit(cbind(x, y)))[1, 2])^2
     }
     folds = CC.CV(V, Y)
-    # detach('package:cvTools', unload=TRUE) detach('package:lattice',
-    # unload=TRUE) library(doParallel) cl <- makeCluster(20)
+    # detach('package:cvTools', unload=TRUE)
+    # detach('package:lattice', unload=TRUE)
+    # library(doParallel)
+    # cl <- makeCluster(20)
     # registerDoParallel(cl)
     names.cont = colnames(data.cont.dist)
     xc = dim(data.cont.dist)[2]
@@ -738,7 +744,7 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"
     }
     colnames(miss.fac) = nmesm
 
-    #### Start Estimator First using All Data Start with continuos variables
+    #### Start Estimator First using All Data Start with continuous variables
 
     numcat.cont = apply(data.cont.dist, 2, ln.unique)
     xc = length(numcat.cont)
@@ -1802,6 +1808,7 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"
     nV = do.call(rbind, tst)
     n = sum(nV[1, ])
     SEV = sqrt(varIC/nV)
+
     ##### Get labels for each of the training sample
     labs.get = function(x, fold) {
       lbel = rep(1:fold, 2)
@@ -1823,10 +1830,13 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"
     lower = psi - 1.96 * SE
     upper = psi + 1.96 * SE
     signdig = 3
-    CI95 = paste("(", signif(lower, signdig), " - ", signif(upper,
-                                                            signdig), ")", sep = "")
+
+    # TODO: convert to paste0?
+    CI95 = paste("(", signif(lower, signdig), " - ", signif(upper, signdig), ")", sep = "")
+
     # 1-sided p-value
     pvalue = 1 - pnorm(psi/SE)
+
     #####
     # FOR THETA (generalize to chi-square test?)
     # TT = (theta[,1]-theta[,2])/sqrt(SEV[,1]^2+SEV[,2]^2)
