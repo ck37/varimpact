@@ -44,13 +44,14 @@
 #' }
 #'
 #' @param Y outcome of interest (numeric vector)
-#' @param data1 data frame of predictor variables of interest for
-#' which function returns VIM's.
+#' @param data data frame of predictor variables of interest for
+#' which function returns VIM's. (possibly a matrix?)
+#' @param V Number of cross-validation folds.
 #' @param Q.library library used by SuperLearner for model of outcome
 #' versus predictors
 #' @param g.library library used by SuperLearner for model of
 #' predictor variable of interest versus other predictors
-#' @param fam family ('binomial' or 'gaussian')
+#' @param family family ('binomial' or 'gaussian')
 #' @param minYs mininum # of obs with event  - if it is < minYs, skip VIM
 #' @param minCell is the cut-off for including a category of
 #' A in analysis, and  presents the minumum of cells in a 2x2 table of the indicator of
@@ -65,11 +66,17 @@
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
 
-varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean", "SL.inter2"),
-                     g.library = c("SL.stepAIC"), fam = "binomial",
-                     minYs = 15, minCell = 0, ncov = 10, corthres = 0.8, dirout = NULL,
-                     outname = NULL, miss.cut = 0.5) {
+varImpact = function(Y, data, V,
+                     Q.library = c("SL.gam", "SL.glmnet", "SL.mean", "SL.inter2"),
+                     g.library = c("SL.stepAIC"), family = "binomial",
+                     minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
+                     dirout = NULL, outname = NULL,
+                     miss.cut = 0.5) {
 
+  # TODO: remove this line and replace all "fam" referneces with "family".
+  fam = family
+  # TODO: remove this line and replace all "data1" references with "data".
+  data1 = data
 
   ###################################
   # OUTSTANDING PROGRAMMING ISSUES (CK: possibly old)
@@ -281,7 +288,9 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"
       }
       return(out)
     }
+
     folds = CC.CV(V, Y)
+
     max.2 = function(x) {
       max(x^2, na.rm = T)
     }
@@ -362,6 +371,8 @@ varImpact = function(Y, data1, V, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"
           incc = corAt < corthres & is.na(corAt) == F
           Wv = Wv[, incc]
           Wt = Wt[, incc]
+
+          # ERROR: what is nw referring to? data.numW?
           if (nw <= 10) {
             Wtsht = Wt
             Wvsht = Wv
