@@ -469,16 +469,18 @@ varImpact = function(Y, data, V = 2,
           Wtsht = Wt
           Wvsht = Wv
         } else {
-          if (verbose) cat("Reducing dimensions via clustering.\n")
+          if (verbose) cat("Reducing dimensions via clustering.")
           mydist <- as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
           hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "mean",
                                  verbose = F, K = 10, kmax = 3, khigh = 3), silent = T)
           if (class(hopach.1) == "try-error") {
+            if (verbose) cat(" Attempt 1 fail.")
             hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "med",
                                    verbose = F, K = 10, kmax = 3, khigh = 3), silent = T)
           }
           if (class(hopach.1) == "try-error") {
-            warning("Dimensionality reduction failed. i=", i, "V=", kk, "A=", nameA)
+            if (verbose) cat(" Attempt 2 fail.")
+            #warning("Dimensionality reduction failed. i=", i, "V=", kk, "A=", nameA)
             Wtsht = Wt
             Wvsht = Wv
           } else {
@@ -500,6 +502,7 @@ varImpact = function(Y, data, V = 2,
             Wtsht = Wt[, incc]
             Wvsht = Wv[, incc]
           }
+          if (verbose) cat(" Updated columns:", ncol(Wtsht), "\n")
         }
         # Finished with any needed clustering for variable reduction.
 
@@ -529,6 +532,9 @@ varImpact = function(Y, data, V = 2,
         # pattern for A is such that there are few death events left in either
         # (< minYs)
         if (num.cat < 2 | min(nYt, nYv) < minYs) {
+          error_msg = paste("Skipping", nameA, "due to minCell constraint.\n")
+          if (verbose) cat(error_msg)
+
           thetaV = c(thetaV, NA)
           varICV = c(varICV, NA)
           labV = rbind(labV, c(NA, NA))
@@ -546,6 +552,7 @@ varImpact = function(Y, data, V = 2,
           ICmin = NULL
           ICmax = NULL
           errcnt = 0
+          if (verbose) cat("Estimating TMLE on training", paste0("(", num.cat, ")"))
           for (j in 1:num.cat) {
             # cat(' j = ',j,'\n')
             IA = as.numeric(At == vals[j])
@@ -554,9 +561,11 @@ varImpact = function(Y, data, V = 2,
             res = try(get.tmle.est(Yt, IA, Wtsht, deltat, Q.lib = Q.library,
                                    g.lib = g.library), silent = TRUE)
             if (class(res) == "try-error") {
+              if (verbose) cat("X")
               errcnt = errcnt + 1
             }
             if (class(res) != "try-error") {
+              if (verbose) cat(".")
               EY1 = res$theta
               if (EY1 < minEY1) {
                 minj = j
@@ -570,6 +579,7 @@ varImpact = function(Y, data, V = 2,
               }
             }
           }
+          if (verbose) cat(" done.\n")
           # cat(' time b = ',proc.time()-pp2,'\n') pp3=proc.time() Now, estimate
           # on validation sample
           if (errcnt == num.cat | minj == maxj) {
@@ -586,6 +596,7 @@ varImpact = function(Y, data, V = 2,
             res = try(get.tmle.est(Yv, IA, Wvsht, deltav, Q.lib = Q.library,
                                    g.lib = c("SL.glmnet", "SL.glm")), silent = TRUE)
             if (class(res) == "try-error") {
+              if (verbose) cat("TMLE on validation failed.\n")
               thetaV = c(thetaV, NA)
               varICV = c(varICV, NA)
               labV = rbind(labV, c(NA, NA))
@@ -753,25 +764,26 @@ varImpact = function(Y, data, V = 2,
             Wtsht = Wt
             Wvsht = Wv
           } else {
-            if (verbose) cat("Attempting to reduce dimensions via clustering.\n")
+            if (verbose) cat("Reducing dimensions via clustering.")
           #if (nw > 10) {
             mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
             hopach.1 = try(hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F),
                            silent = T)
             if (class(hopach.1) == "try-error") {
+              if (verbose) cat(" Attempt 1 fail.")
               # Retry with a different specification.
               hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "med", verbose = F),
                               silent = T)
             }
             if (class(hopach.1) == "try-error") {
+              if (verbose) cat(" Attempt 2 fail.")
               Wtsht = Wt
               Wvsht = Wv
             } else {
             #if (class(hopach.1) != "try-error") {
               nlvls = nchar(max(hopach.1$final$labels))
               no = trunc(mean(log10(hopach.1$final$labels)))
-              ### Find highest level of tree where minimum number of covariates is >
-              ### ncov
+              # Find highest level of tree where minimum number of covariates is > ncov
               lvl = 1:nlvls
               ncv = NULL
               for (ii in lvl) {
@@ -786,6 +798,7 @@ varImpact = function(Y, data, V = 2,
               Wtsht = Wt[, incc]
               Wvsht = Wv[, incc]
             }
+            if (verbose) cat(" Updated columns:", ncol(Wtsht), "\n")
           }
           deltat = as.numeric(is.na(Yt) == F & is.na(Atnew) == F)
           deltav = as.numeric(is.na(Yv) == F & is.na(Avnew) == F)
@@ -807,7 +820,9 @@ varImpact = function(Y, data, V = 2,
           Atnew[is.na(Atnew)] = -1
           Avnew[is.na(Avnew)] = -1
           if (min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell) {
-            warning("Skipping", nameA, "due to minCell constraint.\n")
+            error_msg = paste("Skipping", nameA, "due to minCell constraint.\n")
+            if (verbose) cat(error_msg)
+            warning(error_msg)
             thetaV = c(thetaV, NA)
             varICV = c(varICV, NA)
             labV = rbind(labV, c(NA, NA))
@@ -869,9 +884,11 @@ varImpact = function(Y, data, V = 2,
             if (errcnt != numcat.cont[i] & minj != maxj) {
               # Estimate with the minimum level.
               IA = as.numeric(Avnew == vals[minj])
+              if (verbose) cat("Estimate on validation with the minimum level.\n")
               res = try(get.tmle.est(Yv, IA, Wvsht, deltav, Q.lib = Q.library,
                                      g.lib = g.library), silent = T)
               if (class(res) == "try-error") {
+                if (verbose) cat("Failed :/\n")
                 thetaV = c(thetaV, NA)
                 varICV = c(varICV, NA)
                 labV = rbind(labV, c(NA, NA))
@@ -884,9 +901,11 @@ varImpact = function(Y, data, V = 2,
                 IC0 = res$IC
                 EY0 = res$theta
                 IA = as.numeric(Avnew == vals[maxj])
+                if (verbose) cat("Estimate on validation with the maximum level.\n")
                 res2 = try(get.tmle.est(Yv, IA, Wvsht, deltav,
                                         Q.lib = Q.library, g.lib = g.library), silent = TRUE)
                 if (class(res2) == "try-error") {
+                  if (verbose) cat("Failed :/\n")
                   thetaV = c(thetaV, NA)
                   varICV = c(varICV, NA)
                   labV = rbind(labV, c(NA, NA))
@@ -1112,7 +1131,14 @@ write_vim_latex = function(impact_results, outname = "", dirout = "") {
 
 print.varImpact = function(obj) {
   # Just print the consistent results.
-  print(obj$results_consistent)
+  if (nrow(obj$results_consistent) > 0) {
+    cat("Consistent results:\n")
+    print(obj$results_consistent)
+  } else {
+    cat("No consistent results.\n")
+    cat("All results:\n")
+    print(obj$results_all)
+  }
 }
 
 
