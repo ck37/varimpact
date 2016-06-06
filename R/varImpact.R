@@ -67,7 +67,7 @@
 #' of missing obs > cut.off
 #' @param verbose Boolean - if TRUE the method will display more detailed output.
 
-varImpact = function(Y, data, V,
+varImpact = function(Y, data, V = 2,
                      Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
@@ -75,15 +75,6 @@ varImpact = function(Y, data, V,
 
   # Time the full function execution
   time = system.time({
-
-  # TODO: remove this line and replace all "fam" referneces with "family".
-  fam = family
-  # TODO: remove this line and replace all "data1" references with "data".
-  data1 = data
-
-  ###################################
-  # OUTSTANDING PROGRAMMING ISSUES (CK: possibly old)
-  # 1) How to add 'null' columns to data frame?
 
   ###
   # Get missingness for each column
@@ -94,10 +85,9 @@ varImpact = function(Y, data, V,
 
   ########
   # Applied to Explanatory (X) data frame
-  sna = apply(data1, 2, sum.na)
+  sna = apply(data, 2, sum.na)
 
-  ####### n = # of row
-  n = dim(data1)[1]
+  n = nrow(data)
 
   #######
   # Missing proportion by variable.
@@ -105,25 +95,22 @@ varImpact = function(Y, data, V,
 
   #######
   # Cut-off for eliminating variable for proportion of obs missing.
-  data1 = data1[, mis.prop < miss.cut]
+  data = data[, mis.prop < miss.cut]
 
   ###### Identify numeric variables (ordered)
-  ind.num = sapply(data1, is.numeric)
+  ind.num = sapply(data, is.numeric)
 
   ## Identify factor variables
-  # isit.factor = sapply(data1,is.factor)
   isit.factor = !ind.num
-
-  # Number of columns in the reduced dataframe.
-  ndata1 = dim(data1)[2]
 
   ###
   # Function that counts # of unique values
   length_unique = function(x) {
     length(unique(x))
   }
+
   ### num.values is vector of number of unique values by variable
-  num.values = apply(data1, 2, length_unique)
+  num.values = apply(data, 2, length_unique)
 
   ### Function that returns logical T if no variability by variable
   qq.range = function(x, rr) {
@@ -142,10 +129,10 @@ varImpact = function(Y, data, V,
 
   #### data.fac is data frame of variables that are factors
   if (sum(isit.factor) > 0) {
-    data.fac = data1[, isit.factor, drop = F]
+    data.fac = data[, isit.factor, drop = F]
 
     ## Replace blanks with NA's
-    nc = dim(data.fac)[2]
+    nc = ncol(data.fac)
     for (i in 1:nc) {
       xx = as.character(data.fac[, i])
       xx = factor(xx, exclude = "")
@@ -163,7 +150,7 @@ varImpact = function(Y, data, V,
     num.cat = apply(data.fac, 2, length_unique)
     sna = apply(data.fac, 2, sum.na)
 
-    n = dim(data.fac)[1]
+    n = nrow(data.fac)
     mis.prop = sna / n
 
     # POSSIBLE BUG: shouldn't this be using mis.cut rather than 0.5?
@@ -176,7 +163,7 @@ varImpact = function(Y, data, V,
   }
 
   ## Numeric variables
-  data.num = data1[, isit.factor == F, drop = F]
+  data.num = data[, !isit.factor, drop = F]
 
   if (ncol(data.num) > 0) {
     dropind = NULL
@@ -324,8 +311,6 @@ varImpact = function(Y, data, V,
 
     cat("Finished pre-processing variables.\n")
 
-
-
     get.tmle.est = function(Y, A, W, delta = NULL, Q.lib, g.lib) {
       ## Because of quirk of program, delete observations with delta=0 if #>0
       ## & < 10
@@ -342,7 +327,7 @@ varImpact = function(Y, data, V,
       W = W[inc, , drop = F]
       delta = delta[inc]
       tmle.1 = tmle::tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
-                    Q.SL.library = Q.lib, family = fam, verbose = F)
+                    Q.SL.library = Q.lib, family = family, verbose = F)
       g1 = tmle.1$g$g1W
       Qst = tmle.1$Qstar[, 2]
       theta = mean(Qst)
@@ -1098,6 +1083,8 @@ varImpact = function(Y, data, V,
                  V=V,
                  family=family,
                  time = time)
+  # Set a custom class so that we can override print and summary.
+  class(results) = "varImpact"
   invisible(results)
 }
 
