@@ -119,11 +119,11 @@ varImpact = function(Y, data, V,
 
   ###
   # Function that counts # of unique values
-  num.val = function(x) {
+  length_unique = function(x) {
     length(unique(x))
   }
   ### num.values is vector of number of unique values by variable
-  num.values = apply(data1, 2, num.val)
+  num.values = apply(data1, 2, length_unique)
 
   ### Function that returns logical T if no variability by variable
   qq.range = function(x, rr) {
@@ -160,12 +160,7 @@ varImpact = function(Y, data, V,
 
     data.fac = data.fac[, dropind == F, drop = F]
 
-    # TODO: remove this function, as it duplicates num.val() defined above.
-    ln.unique = function(x) {
-      length(unique(x))
-    }
-
-    num.cat = apply(data.fac, 2, ln.unique)
+    num.cat = apply(data.fac, 2, length_unique)
     sna = apply(data.fac, 2, sum.na)
 
     n = dim(data.fac)[1]
@@ -202,7 +197,8 @@ varImpact = function(Y, data, V,
 
   # if (n.num > 0 & n.fac > 0) {
   {
-
+  if (num_factors > 0) {
+    if (verbose) cat("Cleaning up", num_factors, "factor variables.\n")
     ## For each factor, apply qq.range function and get rid of those where
     ## 'true' data.fac is data frame of variables that are factors
     facnames = names(data.fac)
@@ -248,12 +244,33 @@ varImpact = function(Y, data, V,
     fac.indx = substr(cumulative_names, 1, cc - 1)
     datafac.dum = newX
 
-    # Finished pre-processing factor variables.
-    ###########################################################
+    ############
+    # Missing Basis for Factors
+    xp = ncol(datafac.dum)
+    sna = apply(datafac.dum, 2, sum.na)
+    nmesX = colnames(datafac.dum)
+    miss.fac = NULL
+    nmesm = NULL
+    for (k in 1:xp) {
+      if (sna[k] > 0) {
+        # Again, we are flagging non-missing as 1 and missing as 0 here.
+        ix = as.numeric(is.na(datafac.dum[, k]) == F)
+        # Replace missing factor indicators with 0.
+        datafac.dum[is.na(datafac.dum[, k]), k] = 0
+        miss.fac = cbind(miss.fac, ix)
+        nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
+      }
+    }
+    colnames(miss.fac) = nmesm
+  }
+  # Finished pre-processing factor variables.
+  ###########################################################
 
-    ###########################################################
-    # Pre-process numeric/continuous variables.
+  ###########################################################
+  # Pre-process numeric/continuous variables.
 
+  if (num_numeric > 0) {
+    if (verbose) cat("Cleaning up", num_numeric, "numeric variables.\n")
     # Make deciles for continuous variables
     X = data.num
     xc = dim(X)[2]
@@ -262,7 +279,7 @@ varImpact = function(Y, data, V,
     coln = NULL
     varn = colnames(X)
 
-    num.cat = apply(X, 2, ln.unique)
+    num.cat = apply(X, 2, length_unique)
 
     Xnew = NULL
 
@@ -277,7 +294,7 @@ varImpact = function(Y, data, V,
     data.cont.dist = Xnew
 
     ###############
-    # Missing Basis
+    # Missing Basis for numeric variables.
     xp = ncol(data.cont.dist)
     n.cont = nrow(data.cont.dist)
 
@@ -303,48 +320,11 @@ varImpact = function(Y, data, V,
     }
     # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
     colnames(miss.cont) = nmesm
+  }
 
-    ############
-    # Missing Basis for Factors
-    xp = ncol(datafac.dum)
-    sna = apply(datafac.dum, 2, sum.na)
-    nmesX = colnames(datafac.dum)
-    miss.fac = NULL
-    nmesm = NULL
-    for (k in 1:xp) {
-      if (sna[k] > 0) {
-        # Again, we are flagging non-missing as 1 and missing as 0 here.
-        ix = as.numeric(is.na(datafac.dum[, k]) == F)
-        # Replace missing factor indicators with 0.
-        datafac.dum[is.na(datafac.dum[, k]), k] = 0
-        miss.fac = cbind(miss.fac, ix)
-        nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
-      }
-    }
-    colnames(miss.fac) = nmesm
-
-    ####
-    # Start Estimator First using All Data
-    # Start with continuous variables
-
-    numcat.cont = apply(data.cont.dist, 2, ln.unique)
-    xc = length(numcat.cont)
-
-    cats.cont = lapply(1:xc, function(i) {
-      sort(unique(data.cont.dist[, i]))
-    })
+    cat("Finished pre-processing variables.\n")
 
 
-    ## Find the level of covariate that has lowest risk
-    datafac.dumW = datafac.dum
-    # NOTE: we shouldn't need to do this line because we already imputed missing data to 0.
-    datafac.dumW[is.na(datafac.dum)] = 0
-
-    data.numW = data.num
-    # Here numeric variables are being imputed to 0. Why not use median or mean?
-    data.numW[is.na(data.num)] = 0
-
-    n = length(Y)
 
     get.tmle.est = function(Y, A, W, delta = NULL, Q.lib, g.lib) {
       ## Because of quirk of program, delete observations with delta=0 if #>0
@@ -362,7 +342,7 @@ varImpact = function(Y, data, V,
       W = W[inc, , drop = F]
       delta = delta[inc]
       tmle.1 = tmle::tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
-                    Q.SL.library = Q.lib, family = fam, verbose = FALSE)
+                    Q.SL.library = Q.lib, family = fam, verbose = F)
       g1 = tmle.1$g$g1W
       Qst = tmle.1$Qstar[, 2]
       theta = mean(Qst)
@@ -370,7 +350,8 @@ varImpact = function(Y, data, V,
       return(list(theta = theta, IC = IC))
     }
 
-    #### Stratified CV to insure balance (by one grouping variable, Y)
+    ####
+    # Stratified CV to insure balance (by one grouping variable, Y)
     CC.CV = function(V, Y) {
       nn = length(Y)
       tt = table(Y)
@@ -398,27 +379,41 @@ varImpact = function(Y, data, V,
     # cl <- makeCluster(10)
     # registerDoParallel(cl)
 
-    #############################
-    # Below is to get indexing vectors so that any basis functions related to current A
-    # that are in covariate matrix can be removed.
-    names.fac = colnames(data.fac)
-    nmes.facW = colnames(datafac.dumW)
-    nmes.mfacW = colnames(miss.fac)
-    nchar.facW = nchar(nmes.facW) + 1
-    nchar.mfacW = nchar(nmes.mfacW) + 1
-    XXm = regexpr("XX", nmes.facW)
-    XXm[XXm < 0] = nchar.facW[XXm < 0]
-    XXm2 = regexpr("XX", nmes.mfacW)
-    XXm2[XXm2 < 0] = nchar.mfacW[XXm2 < 0]
-    vars.facW = substr(nmes.facW, 1, XXm - 1)
-    vars.mfacW = substr(nmes.mfacW, 7, XXm2 - 1)
-    xc = ncol(data.fac)
-    n.fac = nrow(data.fac)
+    ####
+    # Start Estimator First using All Data
+    # Start with continuous variables
+
+    n = length(Y)
 
     ###############################################################################
     # VIM for Factors
-    if (verbose) cat("VIM for factors.\n")
-    vim_factors <- lapply(1:xc, function(i) {
+    # NOTE: we use && so that conditional will short-circuit if num_factors == 0.
+    if (num_factors > 0 && ncol(data.fac) > 0) {
+      if (verbose) cat("VIM for factors.\n")
+
+      ## Find the level of covariate that has lowest risk
+      datafac.dumW = datafac.dum
+      # NOTE: can't we skip this line because we already imputed missing data to 0?
+      datafac.dumW[is.na(datafac.dum)] = 0
+
+      #############################
+      # Below is to get indexing vectors so that any basis functions related to current A
+      # that are in covariate matrix can be removed.
+      names.fac = colnames(data.fac)
+      nmes.facW = colnames(datafac.dumW)
+      nmes.mfacW = colnames(miss.fac)
+      nchar.facW = nchar(nmes.facW) + 1
+      nchar.mfacW = nchar(nmes.mfacW) + 1
+      XXm = regexpr("XX", nmes.facW)
+      XXm[XXm < 0] = nchar.facW[XXm < 0]
+      XXm2 = regexpr("XX", nmes.mfacW)
+      XXm2[XXm2 < 0] = nchar.mfacW[XXm2 < 0]
+      vars.facW = substr(nmes.facW, 1, XXm - 1)
+      vars.mfacW = substr(nmes.mfacW, 7, XXm2 - 1)
+      xc = ncol(data.fac)
+      n.fac = nrow(data.fac)
+
+      vim_factor = lapply(1:xc, function(i) {
       # output <- lapply(1:2, function(i) { pp1=proc.time()
       nameA = names.fac[i]
 
@@ -484,8 +479,8 @@ varImpact = function(Y, data, V,
           Wtsht = Wt
           Wvsht = Wv
         } else {
-          mydist <- as.matrix(hopach::distancematrix(t(Wt), d = "cosangle",
-                                             na.rm = T))
+          if (verbose) cat("Reducing dimensions via clustering.\n")
+          mydist <- as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
           hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "mean",
                                  verbose = F, K = 10, kmax = 3, khigh = 3), silent = T)
           if (class(hopach.1) == "try-error") {
@@ -493,23 +488,22 @@ varImpact = function(Y, data, V,
                                    verbose = F, K = 10, kmax = 3, khigh = 3), silent = T)
           }
           if (class(hopach.1) == "try-error") {
+            warning("Dimensionality reduction failed. i=", i, "V=", kk, "A=", nameA)
             Wtsht = Wt
             Wvsht = Wv
           } else {
             nlvls = nchar(max(hopach.1$final$labels))
-            no <- trunc(mean(log10(hopach.1$final$labels)))
-            ### Find highest level of tree where minimum number of covariates is >
-            ### ncov
+            no = trunc(mean(log10(hopach.1$final$labels)))
+
+            # Find highest level of tree where minimum number of covariates is > ncov
             lvl = 1:nlvls
             ncv = NULL
             for (ii in lvl) {
-              ncv = c(ncv, length(unique(trunc(hopach.1$final$labels/10^(no -
-                                                                           (ii - 1))))))
+              ncv = c(ncv, length(unique(trunc(hopach.1$final$labels/10^(no - (ii - 1))))))
             }
             ncv = unique(ncv)
             lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= ncov]))
-            two.clust <- unique(trunc(hopach.1$final$labels/(10^(no -
-                                                                   (lev - 1)))))
+            two.clust <- unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
             md <- hopach.1$final$medoids
             mm = md[, 1] %in% two.clust
             incc = md[mm, 2]
@@ -644,6 +638,12 @@ varImpact = function(Y, data, V,
       list(EY1V, EY0V, thetaV, varICV, labV, nV, "factor")
       # print(data.frame(EY1V,EY0V,thetaV,varICV,labV,nV))
     })
+      colnames_factor = colnames(data.fac)
+    } else {
+      colnames_factor = NULL
+      vim_factor = NULL
+      cat("No factor variables - skip VIM estimation.\n")
+    }
 
     ###############################################################################
     # Repeat for Continuous Explanatory Variables
@@ -653,6 +653,7 @@ varImpact = function(Y, data, V,
       (cor(na.omit(cbind(x, y)))[1, 2])^2
     }
 
+    # TODO: confirm that we want to create separate folds for continus variables.
     folds = CC.CV(V, Y)
 
     # detach('package:cvTools', unload=TRUE)
@@ -661,11 +662,28 @@ varImpact = function(Y, data, V,
     # cl <- makeCluster(20)
     # registerDoParallel(cl)
 
-    names.cont = colnames(data.cont.dist)
-    xc = ncol(data.cont.dist)
-    n.cont = nrow(data.cont.dist)
+
     ######################################################
-    vim_numeric = lapply(1:xc, function(i) {
+    # We use && so that the second check will be skipped when num_numeric == 0.
+    if (num_numeric > 0 && ncol(data.cont.dist) > 0) {
+      if (verbose) cat("VIM for numeric variables.\n")
+
+      xc = ncol(data.cont.dist)
+      names.cont = colnames(data.cont.dist)
+      n.cont = nrow(data.cont.dist)
+
+      numcat.cont = apply(data.cont.dist, 2, length_unique)
+      xc = length(numcat.cont)
+
+      cats.cont = lapply(1:xc, function(i) {
+        sort(unique(data.cont.dist[, i]))
+      })
+
+      data.numW = data.num
+      # Here numeric variables are being imputed to 0. Why not use median or mean?
+      data.numW[is.na(data.num)] = 0
+
+      vim_numeric = lapply(1:xc, function(i) {
       nameA = names.cont[i]
 
       if (verbose) cat("i =", i, "Var =", nameA, "out of", xc, "numeric variables\n")
@@ -678,7 +696,8 @@ varImpact = function(Y, data, V,
       nV = NULL
 
       for (kk in 1:V) {
-        # cat(' v = ',kk,' out of V = ',V,'\n')
+        if (verbose) cat("v =", kk, "out of V =", V, "\n")
+
         At = data.cont.dist[folds != kk, i]
         Av = data.cont.dist[folds == kk, i]
         Yt = Y[folds != kk]
@@ -693,17 +712,16 @@ varImpact = function(Y, data, V,
         }
         Atnew = cut(At, breaks = hh)
         Avnew = cut(Av, breaks = hh)
-        if (length(na.omit(unique(Atnew))) <= 1 | length(na.omit(unique(Avnew))) <=
-            1) {
+        if (length(na.omit(unique(Atnew))) <= 1 | length(na.omit(unique(Avnew))) <= 1) {
+          warning("Skipping", nameA, "in this fold because there is no variation.\n")
           thetaV = c(thetaV, NA)
           varICV = c(varICV, NA)
           labV = rbind(labV, c(NA, NA))
           EY0V = c(EY0V, NA)
           EY1V = c(EY1V, NA)
           nV = c(nV, NA)
-        }
-        if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) >
-            1) {
+        } else {
+        #if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) > 1) {
           labs = names(table(Atnew))
           Atnew = as.numeric(Atnew) - 1
           Avnew = as.numeric(Avnew) - 1
@@ -713,20 +731,19 @@ varImpact = function(Y, data, V,
           cats.cont[[i]] = as.numeric(names(table(Atnew)))
           ### acit.numW is just same as data.cont.dist except with NA's replaced by
           ### 0's.
-          if (is.null(miss.cont)) {
+          if (!exists("miss.cont") || is.null(miss.cont)) {
             miss.cont = rep(NA, n.cont)
           }
-          if (is.null(miss.fac)) {
+          if (!exists("miss.fac") || is.null(miss.fac)) {
             miss.fac = rep(NA, n.cont)
           }
-          if (is.null(datafac.dumW)) {
+          if (!exists("datafac.dumW") || is.null(datafac.dumW)) {
             datafac.dumW = rep(NA, n.cont)
           }
-          if (is.null(data.numW)) {
+          if (!exists("data.numW") || is.null(data.numW)) {
             data.numW = rep(NA, n.cont)
           }
-          W = data.frame(data.numW[, -i, drop = F], miss.cont,
-                         datafac.dumW, miss.fac)
+          W = data.frame(data.numW[, -i, drop = F], miss.cont, datafac.dumW, miss.fac)
           W = W[, !apply(is.na(W), 2, all), drop = F]
           Wt = W[folds != kk, , drop = F]
           Wv = W[folds == kk, , drop = F]
@@ -743,20 +760,22 @@ varImpact = function(Y, data, V,
           Wv = Wv[, incc, drop = F]
           Wt = Wt[, incc, drop = F]
           #### Use HOPACH to reduce dimension of W to some level of tree
-          nw = dim(Wv)[2]
-          ### Skip of number covariates < 10
+          nw = ncol(Wv)
+
+          ### Skip if number covariates < 10
           if (nw <= 10) {
             Wtsht = Wt
             Wvsht = Wv
           } else {
+            if (verbose) cat("Attempting to reduce dimensions via clustering.\n")
           #if (nw > 10) {
-            mydist <- as.matrix(distancematrix(t(Wt), d = "cosangle",
-                                               na.rm = T))
-            hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "mean",
-                                   verbose = FALSE), silent = TRUE)
+            mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
+            hopach.1 = try(hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F),
+                           silent = T)
             if (class(hopach.1) == "try-error") {
-              hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "med",
-                                     verbose = FALSE), silent = TRUE)
+              # Retry with a different specification.
+              hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "med", verbose = F),
+                              silent = T)
             }
             if (class(hopach.1) == "try-error") {
               Wtsht = Wt
@@ -764,21 +783,18 @@ varImpact = function(Y, data, V,
             } else {
             #if (class(hopach.1) != "try-error") {
               nlvls = nchar(max(hopach.1$final$labels))
-              no <- trunc(mean(log10(hopach.1$final$labels)))
+              no = trunc(mean(log10(hopach.1$final$labels)))
               ### Find highest level of tree where minimum number of covariates is >
               ### ncov
               lvl = 1:nlvls
               ncv = NULL
               for (ii in lvl) {
-                ncv = c(ncv, length(unique(trunc(hopach.1$final$labels/10^(no -
-                                                                             (ii - 1))))))
+                ncv = c(ncv, length(unique(trunc(hopach.1$final$labels/10^(no - (ii - 1))))))
               }
               ncv = unique(ncv)
-              lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >=
-                                                          ncov]))
-              two.clust <- unique(trunc(hopach.1$final$labels/(10^(no -
-                                                                     (lev - 1)))))
-              md <- hopach.1$final$medoids
+              lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= ncov]))
+              two.clust <- unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
+              md = hopach.1$final$medoids
               mm = md[, 1] %in% two.clust
               incc = md[mm, 2]
               Wtsht = Wt[, incc]
@@ -805,6 +821,7 @@ varImpact = function(Y, data, V,
           Atnew[is.na(Atnew)] = -1
           Avnew[is.na(Avnew)] = -1
           if (min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell) {
+            warning("Skipping", nameA, "due to minCell constraint.\n")
             thetaV = c(thetaV, NA)
             varICV = c(varICV, NA)
             labV = rbind(labV, c(NA, NA))
@@ -812,18 +829,23 @@ varImpact = function(Y, data, V,
             EY1V = c(EY1V, NA)
             nV = c(nV, NA)
           }
+          # CK TODO: this is not exactly the opposite of the IF above. Is that intentional?
           if (min(table(Avnew, Yv)) > minCell) {
             labmin = NULL
             labmax = NULL
             errcnt = 0
+            if (verbose) cat("Estimating training TMLEs", paste0("(", numcat.cont[i], ")"))
             for (j in 1:numcat.cont[i]) {
               # cat(' i = ',i,' kk = ',kk,' j = ',j,'\n')
               IA = as.numeric(Atnew == vals[j])
               res = try(get.tmle.est(Yt, IA, Wtsht, deltat, Q.lib = Q.library,
-                                     g.lib = g.library), silent = TRUE)
+                                     g.lib = g.library), silent = T)
               if (class(res) == "try-error") {
+                # Error.
+                if (verbose) cat("X")
                 errcnt = errcnt + 1
               } else {
+                if (verbose) cat(".")
               #if (class(res) != "try-error") {
                 EY1 = res$theta
                 if (EY1 < minEY1) {
@@ -839,9 +861,18 @@ varImpact = function(Y, data, V,
                 }
               }
             }
+            if (verbose) cat("done.\n")
+
             #####
             # Now, estimate on validation sample
             if (errcnt == numcat.cont[i] | minj == maxj) {
+              if (verbose) {
+                if (minj == maxj) {
+                  cat("Skipping", nameA, "because min level = max level =", minj, "\n")
+                } else {
+                  cat("Skipping", nameA, "because no level succeeded\n")
+                }
+              }
               thetaV = c(thetaV, NA)
               varICV = c(varICV, NA)
               labV = rbind(labV, c(NA, NA))
@@ -850,9 +881,10 @@ varImpact = function(Y, data, V,
               nV = c(nV, NA)
             }
             if (errcnt != numcat.cont[i] & minj != maxj) {
+              # Estimate with the minimum level.
               IA = as.numeric(Avnew == vals[minj])
               res = try(get.tmle.est(Yv, IA, Wvsht, deltav, Q.lib = Q.library,
-                                     g.lib = g.library), silent = TRUE)
+                                     g.lib = g.library), silent = T)
               if (class(res) == "try-error") {
                 thetaV = c(thetaV, NA)
                 varICV = c(varICV, NA)
@@ -862,6 +894,7 @@ varImpact = function(Y, data, V,
                 nV = c(nV, NA)
               }
               if (class(res) != "try-error") {
+                # Estimate with the maximum level.
                 IC0 = res$IC
                 EY0 = res$theta
                 IA = as.numeric(Avnew == vals[maxj])
@@ -892,23 +925,24 @@ varImpact = function(Y, data, V,
       }
       list(EY1V, EY0V, thetaV, varICV, labV, nV, "numeric")
     })
+      colnames_numeric = colnames(data.cont.dist)
+    } else {
+      colnames_numeric = NULL
+      vim_numeric = NULL
+      cat("No numeric variables - skim VIM estimation.\n")
+    }
 
-    vars.cont = colnames(data.cont.dist)
-    stf = c("vars.cont", "out.cont")
+    if (verbose) cat("Completed VIM estimation.\n")
 
-    # allt=ls()
-    # mm=allt%in%stf
-    # allt=allt[mm==F]
-    # rm(list=allt)
+    # Combine the separate continuous and factor results.
 
-    vars = colnames(data.fac)
-    nc = length(vars.cont)
-    nf = length(vars)
+    num_numeric = length(colnames_numeric)
+    num_factor = length(colnames_factor)
 
-    factr = c(rep("ordered", nc), rep("factor", nf))
-    vars = c(vars.cont, vars)
+    factr = c(rep("ordered", num_numeric), rep("factor", num_factor))
+    vars = c(colnames_numeric, colnames_factor)
 
-    vim_combined = c(vim_numeric, vim_factors)
+    vim_combined = c(vim_numeric, vim_factor)
     names(vim_combined) = vars
 
     lngth = sapply(vim_combined, function(x) length(x))
@@ -969,11 +1003,12 @@ varImpact = function(Y, data, V,
       meanvarIC = apply(varIC, 1, mean)
       psi = apply(theta, 1, mean)
       SE = sqrt(meanvarIC/n)
+
       lower = psi - 1.96 * SE
       upper = psi + 1.96 * SE
       signdig = 3
-      CI95 = paste("(", signif(lower, signdig), " - ", signif(upper,
-                                                              signdig), ")", sep = "")
+      CI95 = paste0("(", signif(lower, signdig), " - ", signif(upper, signdig), ")")
+
       # 1-sided p-value
       pvalue = 1 - pnorm(psi/SE)
       ##### FOR THETA (generalize to chi-square test?)  TT =
@@ -1017,12 +1052,11 @@ varImpact = function(Y, data, V,
       signsum = function(x) {
         sum(sign(x))
       }
-      consist = cons == 1 & abs(apply(theta, 1, signsum)) ==
-        V
-      procs <- c("Holm", "BH")
+      consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
+      procs = c("Holm", "BH")
       if (n > 1) {
-        res <- multtest::mt.rawp2adjp(pvalue, procs)
-        oo <- res$index
+        res = multtest::mt.rawp2adjp(pvalue, procs)
+        oo = res$index
         outres = data.frame(factor = factr[oo], theta[oo, ],
                             psi[oo], CI95[oo], res$adj, lbs[oo, ], consist[oo])
       }
@@ -1067,7 +1101,7 @@ varImpact = function(Y, data, V,
   invisible(results)
 }
 
-write_latex = function(outname = "", dirout = "", impact_results) {
+write_vim_latex = function(impact_results, outname = "", dirout = "") {
   print(xtable::xtable(impact_results$results_by_fold,
                        caption = "data Variable Importance Results By Estimation Sample",
                        label = "byV", digits = 4),
