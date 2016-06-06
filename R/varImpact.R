@@ -307,6 +307,11 @@ varImpact = function(Y, data, V = 2,
     }
     # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
     colnames(miss.cont) = nmesm
+
+    # Create imputed version of the numeric dataframe.
+    data.numW = data.num
+    # Here numeric variables are being imputed to 0. Why not use median or mean?
+    data.numW[is.na(data.num)] = 0
   }
 
     cat("Finished pre-processing variables.\n")
@@ -428,16 +433,16 @@ varImpact = function(Y, data, V = 2,
         dumW = datafac.dum[, is.na(mtch1)]
         missdumW = miss.fac[, is.na(mtch2)]
 
-        if (is.null(missdumW)) {
+        if (!exists("missdumW") || is.null(missdumW)) {
           missdumW = rep(NA, n.fac)
         }
-        if (is.null(miss.cont)) {
+        if (!exists("miss.cont") || is.null(miss.cont)) {
           miss.cont = rep(NA, n.fac)
         }
-        if (is.null(dumW)) {
+        if (!exists("dumW") || is.null(dumW)) {
           dumW = rep(NA, n.fac)
         }
-        if (is.null(data.numW)) {
+        if (!exists("data.numW") || is.null(data.numW)) {
           data.numW = rep(NA, n.fac)
         }
 
@@ -663,10 +668,6 @@ varImpact = function(Y, data, V = 2,
       cats.cont = lapply(1:xc, function(i) {
         sort(unique(data.cont.dist[, i]))
       })
-
-      data.numW = data.num
-      # Here numeric variables are being imputed to 0. Why not use median or mean?
-      data.numW[is.na(data.num)] = 0
 
       vim_numeric = lapply(1:xc, function(i) {
       nameA = names.cont[i]
@@ -1107,6 +1108,11 @@ write_vim_latex = function(impact_results, outname = "", dirout = "") {
                        label = "consisRes", digits = 4),
         type = "latex", file = paste0(dirout, outname, "ConsistReslts.tex"),
         caption.placement = "top", include.rownames = T)
+}
+
+print.varImpact = function(obj) {
+  # Just print the consistent results.
+  print(obj$results_consistent)
 }
 
 
