@@ -360,7 +360,13 @@ varImpact = function(Y, data, V = 2,
     folds = CC.CV(V, Y)
 
     max.2 = function(x) {
-      max(x^2, na.rm = T)
+      # Handle missing data manually so we don't get warnings when it occurs.
+      x = na.omit(x)
+      if (length(x) == 0) {
+        -Inf
+      } else {
+        max(x^2)
+      }
     }
 
     # detach('package:cvTools', unload=TRUE)
@@ -379,7 +385,7 @@ varImpact = function(Y, data, V = 2,
     # VIM for Factors
     # NOTE: we use && so that conditional will short-circuit if num_factors == 0.
     if (num_factors > 0 && ncol(data.fac) > 0) {
-      if (verbose) cat("VIM for factors.\n")
+      if (verbose) cat("\nVIM for factors.\n")
 
       ## Find the level of covariate that has lowest risk
       datafac.dumW = datafac.dum
@@ -454,6 +460,9 @@ varImpact = function(Y, data, V = 2,
 
         ###
         # Pull out any variables that are overly correlated with At (corr coef < corthes)
+        #if (sd(Adum) == 0) {
+        #  if (verbose) cat("Warning: sd of Adum = 0.\n")
+        #}
         corAt = apply(cor(Adum, Wt, use = "complete.obs"), 2, max.2)
         corAt[corAt < -1] = 0
         # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
@@ -470,13 +479,16 @@ varImpact = function(Y, data, V = 2,
           Wvsht = Wv
         } else {
           if (verbose) cat("Reducing dimensions via clustering.")
-          mydist <- as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
-          hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "mean",
-                                 verbose = F, K = 10, kmax = 3, khigh = 3), silent = T)
+          #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
+          mydist = hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T)
+          hopach.1 = try(hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F, K = 10,
+                                kmax = 3, khigh = 3),
+                         silent = T)
           if (class(hopach.1) == "try-error") {
             if (verbose) cat(" Attempt 1 fail.")
-            hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "med",
-                                   verbose = F, K = 10, kmax = 3, khigh = 3), silent = T)
+            hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "med", verbose = F, K = 10,
+                                   kmax = 3, khigh = 3),
+                            silent = T)
           }
           if (class(hopach.1) == "try-error") {
             if (verbose) cat(" Attempt 2 fail.")
@@ -508,8 +520,8 @@ varImpact = function(Y, data, V = 2,
 
         # cat(' time a = ',proc.time()-pp1,'\n') pp2=proc.time()
 
-        deltat = as.numeric(is.na(Yt) == F & is.na(At) == F)
-        deltav = as.numeric(is.na(Yv) == F & is.na(Av) == F)
+        deltat = as.numeric(!is.na(Yt) & !is.na(At))
+        deltav = as.numeric(!is.na(Yv) & !is.na(Av))
 
         # To avoid crashing TMLE function just drop obs missing A or Y if the
         # total number of missing is < 10
@@ -524,16 +536,25 @@ varImpact = function(Y, data, V = 2,
         minc2 = apply(table(At, Yt), 1, min)
         vals = levA[pmin(minc, minc2) > minCell]
         num.cat = length(vals)
-        nYt = sum(Yt[is.na(At) == FALSE])
-        nYv = sum(Yv[is.na(Av) == FALSE])
+
+        # CK 6/6: don't assume that positive outcome is the rare outcome. (e.g. via table)
+
+        # Number of positive outcomes in training data.
+        nYt = sum(Yt[!is.na(At)])
+        # Number of positive outcomes in validation data.
+        nYv = sum(Yv[!is.na(Av)])
 
         ############################
         # Don't do if 1) no more than one category of A left or if missingness
         # pattern for A is such that there are few death events left in either
         # (< minYs)
         if (num.cat < 2 | min(nYt, nYv) < minYs) {
-          error_msg = paste("Skipping", nameA, "due to minCell constraint.\n")
-          if (verbose) cat(error_msg)
+          if (num.cat < 2) {
+            error_msg = paste("Skipping", nameA, "due to lack of variation.")
+          } else {
+            error_msg = paste("Skipping", nameA, "due to minCell constraint.", min(nYt, nYv), "<", minYs)
+          }
+          if (verbose) cat(error_msg, "\n")
 
           thetaV = c(thetaV, NA)
           varICV = c(varICV, NA)
@@ -667,7 +688,7 @@ varImpact = function(Y, data, V = 2,
     ######################################################
     # We use && so that the second check will be skipped when num_numeric == 0.
     if (num_numeric > 0 && ncol(data.cont.dist) > 0) {
-      if (verbose) cat("VIM for numeric variables.\n")
+      if (verbose) cat("\nVIM for numeric variables.\n")
 
       xc = ncol(data.cont.dist)
       names.cont = colnames(data.cont.dist)
@@ -699,18 +720,24 @@ varImpact = function(Y, data, V = 2,
         Av = data.cont.dist[folds == kk, i]
         Yt = Y[folds != kk]
         Yv = Y[folds == kk]
-        AY1 = At[Yt == 1 & is.na(At) == F]
-        hh = histogram::histogram(AY1, verbose = F, type = "irregular")$breaks
-        if (hh[length(hh)] < max(At, na.rm = T)) {
-          hh[length(hh)] = max(At, na.rm = T) + 0.1
+        AY1 = At[Yt == 1 & !is.na(At)]
+        # Check if AY1 has only a single value. If so, skip histogramming to avoid an error.
+        singleAY1 = length(unique(na.omit(AY1))) == 1
+        if (!singleAY1) {
+          hh = histogram::histogram(AY1, verbose = F, type = "irregular")$breaks
+          if (hh[length(hh)] < max(At, na.rm = T)) {
+            hh[length(hh)] = max(At, na.rm = T) + 0.1
+          }
+          if (hh[1] > min(At[At > 0], na.rm = T)) {
+            hh[1] = min(At[At > 0], na.rm = T) - 0.1
+          }
+          Atnew = cut(At, breaks = hh)
+          Avnew = cut(Av, breaks = hh)
         }
-        if (hh[1] > min(At[At > 0], na.rm = T)) {
-          hh[1] = min(At[At > 0], na.rm = T) - 0.1
-        }
-        Atnew = cut(At, breaks = hh)
-        Avnew = cut(Av, breaks = hh)
-        if (length(na.omit(unique(Atnew))) <= 1 | length(na.omit(unique(Avnew))) <= 1) {
-          warning("Skipping", nameA, "in this fold because there is no variation.\n")
+        if (singleAY1 || length(na.omit(unique(Atnew))) <= 1 || length(na.omit(unique(Avnew))) <= 1) {
+          error_msg = paste("Skipping", nameA, "in this fold because there is no variation.")
+          if (verbose) cat(error_msg, "\n")
+          warning(error_msg)
           thetaV = c(thetaV, NA)
           varICV = c(varICV, NA)
           labV = rbind(labV, c(NA, NA))
@@ -746,7 +773,7 @@ varImpact = function(Y, data, V = 2,
           Wv = W[folds == kk, , drop = F]
 
           nmesW = names(Wt)
-          mtch = match(nmesW, paste("Imiss_", nameA, sep = ""))
+          mtch = match(nmesW, paste0("Imiss_", nameA))
           Wt = Wt[, is.na(mtch), drop = F]
           Wv = Wv[, is.na(mtch), drop = F]
           ### Pull out any variables that are overly correlated with At (corr coef
@@ -766,7 +793,8 @@ varImpact = function(Y, data, V = 2,
           } else {
             if (verbose) cat("Reducing dimensions via clustering.")
           #if (nw > 10) {
-            mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
+            #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
+            mydist = hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T)
             hopach.1 = try(hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F),
                            silent = T)
             if (class(hopach.1) == "try-error") {
