@@ -571,7 +571,6 @@ varImpact = function(Y, data, V = 2,
           errcnt = 0
           if (verbose) cat("Estimating TMLE on training", paste0("(", num.cat, ")"))
           for (j in 1:num.cat) {
-            # cat(' j = ',j,'\n')
             IA = as.numeric(At == vals[j])
             IA[is.na(IA)] = 0
             # if(min(table(IA,Yt))>=)
@@ -720,7 +719,7 @@ varImpact = function(Y, data, V = 2,
         # Check if AY1 has only a single value. If so, skip histogramming to avoid an error.
         singleAY1 = length(unique(na.omit(AY1))) == 1
         if (!singleAY1) {
-          hh = histogram::histogram(AY1, verbose = F, type = "irregular")$breaks
+          hh = histogram::histogram(AY1, verbose = F, type = "irregular", plot = F)$breaks
           if (hh[length(hh)] < max(At, na.rm = T)) {
             hh[length(hh)] = max(At, na.rm = T) + 0.1
           }
