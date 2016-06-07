@@ -1,0 +1,35 @@
+VarImpact TODOs
+
+Alan priorities:
+- Make more scalable (multinode clustering, better parallelization).
+- Add CV-TMLE
+
+Chris items:
+* Arguments
+  - Also support "X" optional argument, ala glm
+  - Pass in cluster argument, ala mcSuperLearner / snowSuperLearner
+  - Parameter for the number of covariates after which we use dimensionality reduction (HOPACH).
+  - Argument for p-value cutoff for consistent results.
+* Coding style
+  - Create subfunctions.
+* Output
+  - Support summary()
+* Quality
+  - Figure out how to reduce the number of potential failures in various steps.
+* Testing
+  - Add tests
+* Performance
+  - Benchmark to random forest and related VIM algorithms.
+  - Compare to RF-style perturbation VIM but with SL?
+
+From existing documentation:
+- Making options to avoid errors include putting minimum cell size on validation sample of A vs. Y
+- Implementing CV-TMLE (minCell)
+- Making examples
+- References
+- See also's
+- Allow reporting of results that randomly do not have estimates for some of validation samples.
+
+
+Wishlist
+- Support clustering or variable reduction algorithms other than HOPACH.
