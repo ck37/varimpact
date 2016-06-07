@@ -20,3 +20,11 @@ Then install the packages:
 ```{r}
 biocLite(c("hopach", "multtest"))
 ```
+
+### varImpact install
+
+```{r}
+# Install devtools if necessary:
+if (!require("devtools")) install.packages("devtools")
+devtools::install_github("ck37/varImpact")
+```
