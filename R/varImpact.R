@@ -179,11 +179,7 @@ varImpact = function(Y, data, V = 2,
     num_numeric = 0
   }
 
-  #################################
-  # CK: COMBINE ALL THREE TYPES.
 
-  # if (n.num > 0 & n.fac > 0) {
-  {
   if (num_factors > 0) {
     if (verbose) cat("Cleaning up", num_factors, "factor variables.\n")
     ## For each factor, apply qq.range function and get rid of those where
@@ -545,14 +541,14 @@ varImpact = function(Y, data, V = 2,
         nYv = sum(Yv[!is.na(Av)])
 
         ############################
-        # Don't do if 1) no more than one category of A left or if missingness
-        # pattern for A is such that there are few death events left in either
-        # (< minYs)
-        if (num.cat < 2 | min(nYt, nYv) < minYs) {
+        # Don't do if 1) no more than one category of A left or
+        # 2) if missingness pattern for A is such that there are few death events left
+        # in either (< minYs)
+        if (num.cat < 2 || min(nYt, nYv) < minYs) {
           if (num.cat < 2) {
             error_msg = paste("Skipping", nameA, "due to lack of variation.")
           } else {
-            error_msg = paste("Skipping", nameA, "due to minCell constraint.", min(nYt, nYv), "<", minYs)
+            error_msg = paste("Skipping", nameA, "due to minY constraint.", min(nYt, nYv), "<", minYs)
           }
           if (verbose) cat(error_msg, "\n")
 
@@ -1099,9 +1095,11 @@ varImpact = function(Y, data, V = 2,
         outres = data.frame(factor = factr, theta, psi, CI95,
                             rawp = pvalue, Holm = pvalue, BH = pvalue, lbs, consist)
       }
-      outres = outres[is.na(outres[, "rawp"]) == F, , drop = F]
-      names(outres)[1:(1 + 2 * V)] = c("VarType", paste("psiV",
-                                                          1:V, sep = ""), "AvePsi", "CI95")
+
+      # Restrict to variables that aren't missing their p-value.
+      outres = outres[!is.na(outres[, "rawp"]), , drop = F]
+
+      names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("psiV", 1:V), "AvePsi", "CI95")
       names(outres)[(9 + 2 * V)] = "Consistent"
 
       ### Get Consistency Measure and only significant Make BH cut-off flexible
@@ -1109,20 +1107,15 @@ varImpact = function(Y, data, V = 2,
       outres.cons = outres[outres[, "BH"] < 0.05, , drop = F]
       outres.cons = outres.cons[outres.cons[, "Consistent"],
                                 c("VarType", "AvePsi", "rawp"), drop = F]
+      colnames(outres.cons) = c("Type", "Estimate", "P-value")
 
 
       # drops = c('VarType','description','Holm,')
       # outres.all=outres[,!(names(outres) %in% drops)]
       outres.byV = outres[, c(2:(2 + V - 1), 9:(9 + 2 * V)), drop = F]
-      outres.all = outres[, c("AvePsi", "CI95", "rawp", "BH"), drop = F]
-
-      # TODO: put these tables in a separate function.
-
+      outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH"), drop = F]
+      colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value")
     }
-
-  # TODO: delete this brace, it's for the main IF statement for cont & fact section.
-  }
-
 
   }) # End timing the full execution.
 
@@ -1140,13 +1133,13 @@ varImpact = function(Y, data, V = 2,
 
 exportLatex = function(impact_results, outname = "", dir = ".") {
   print(xtable::xtable(impact_results$results_by_fold,
-                       caption = "data Variable Importance Results By Estimation Sample",
+                       caption = "Variable Importance Results By Estimation Sample",
                        label = "byV", digits = 4),
         type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpByV.tex"),
         caption.placement = "top", include.rownames = T)
 
   print(xtable::xtable(impact_results$results_all,
-                       caption = "data Variable Importance Results for Combined Estimates",
+                       caption = "Variable Importance Results for Combined Estimates",
                        label = "allRes", digits = 4),
         type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpAll.tex"),
         caption.placement = "top", include.rownames = T)
