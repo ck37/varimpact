@@ -2,7 +2,7 @@ Package: varImpact
 Type: Package
 Title: Variable Impact via Data Adaptive Target Parameters and TMLE
 Version: 1.0
-Date: 2015-10-07
+Date: 2016-06-06
 Authors@R: person("Alan","Hubbard",role = c("aut", "cre"), email = "hubbard@berkeley.edu")
 Author: Alan Hubbard [aut, cre]
 Maintainer: "Alan Hubbard" <hubbard@berkeley.edu>
