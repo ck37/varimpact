@@ -20,4 +20,4 @@ names(vim)
 vim$results_all
 vim$results_consistent
 
-write_vim_latex(vim)
+exportLatex(vim, dir = "results")

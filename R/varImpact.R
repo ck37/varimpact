@@ -1136,24 +1136,24 @@ varImpact = function(Y, data, V = 2,
   invisible(results)
 }
 
-write_vim_latex = function(impact_results, outname = "", dirout = "") {
+exportLatex = function(impact_results, outname = "", dir = "") {
   print(xtable::xtable(impact_results$results_by_fold,
                        caption = "data Variable Importance Results By Estimation Sample",
                        label = "byV", digits = 4),
-        type = "latex", file = paste0(dirout, outname, "byV.tex"),
+        type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpByV.tex"),
         caption.placement = "top", include.rownames = T)
 
   print(xtable::xtable(impact_results$results_all,
                        caption = "data Variable Importance Results for Combined Estimates",
                        label = "allRes", digits = 4),
-        type = "latex", file = paste0(dirout, outname, "AllReslts.tex"),
+        type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpAll.tex"),
         caption.placement = "top", include.rownames = T)
 
 
   print(xtable::xtable(impact_results$results_consistent,
                        caption = "Subset of of Significant and ``Consistent'' Results",
                        label = "consisRes", digits = 4),
-        type = "latex", file = paste0(dirout, outname, "ConsistReslts.tex"),
+        type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpConsistent.tex"),
         caption.placement = "top", include.rownames = T)
 }
 
