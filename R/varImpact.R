@@ -912,11 +912,12 @@ varImpact = function(Y, data, V = 2,
             if (errcnt != numcat.cont[i] & minj != maxj) {
               # Estimate with the minimum level.
               IA = as.numeric(Avnew == vals[minj])
-              if (verbose) cat("Estimate on validation with the minimum level.\n")
+              if (verbose) cat("Estimate on validation: ")
               res = try(get.tmle.est(Yv, IA, Wvsht, deltav, Q.lib = Q.library,
                                      g.lib = g.library), silent = T)
+              if (verbose) cat("min ")
               if (class(res) == "try-error") {
-                if (verbose) cat("Failed :/\n")
+                if (verbose) cat(" Failed :/\n")
                 thetaV = c(thetaV, NA)
                 varICV = c(varICV, NA)
                 labV = rbind(labV, c(NA, NA))
@@ -929,11 +930,11 @@ varImpact = function(Y, data, V = 2,
                 IC0 = res$IC
                 EY0 = res$theta
                 IA = as.numeric(Avnew == vals[maxj])
-                if (verbose) cat("Estimate on validation with the maximum level.\n")
                 res2 = try(get.tmle.est(Yv, IA, Wvsht, deltav,
                                         Q.lib = Q.library, g.lib = g.library), silent = TRUE)
+                if (verbose) cat("max")
                 if (class(res2) == "try-error") {
-                  if (verbose) cat("Failed :/\n")
+                  if (verbose) cat(" Failed :/\n")
                   thetaV = c(thetaV, NA)
                   varICV = c(varICV, NA)
                   labV = rbind(labV, c(NA, NA))
@@ -942,6 +943,7 @@ varImpact = function(Y, data, V = 2,
                   nV = c(nV, NA)
                 }
                 if (class(res2) != "try-error") {
+                  if (verbose) cat(".\n")
                   IC1 = res2$IC
                   EY1 = res2$theta
                   thetaV = c(thetaV, EY1 - EY0)
