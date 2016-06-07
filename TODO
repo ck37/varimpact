@@ -17,7 +17,9 @@ Chris items:
 * Quality
   - Figure out how to reduce the number of potential failures in various steps.
 * Testing
-  - Add tests
+  - Add factors-only test.
+  - Add factors and continuous test.
+  - Add other tests.
 * Performance
   - Benchmark to random forest and related VIM algorithms.
   - Compare to RF-style perturbation VIM but with SL?
