@@ -1136,7 +1136,7 @@ varImpact = function(Y, data, V = 2,
   invisible(results)
 }
 
-exportLatex = function(impact_results, outname = "", dir = "") {
+exportLatex = function(impact_results, outname = "", dir = ".") {
   print(xtable::xtable(impact_results$results_by_fold,
                        caption = "data Variable Importance Results By Estimation Sample",
                        label = "byV", digits = 4),
