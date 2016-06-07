@@ -12,6 +12,12 @@ X = as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 
 Y = rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
 
-# This does not work right now.
+# This works.
 vim = varImpact(Y = Y, data = X, V = 2, verbose=T)
+vim
+names(vim)
+
+vim$results_all
+vim$results_consistent
+
 write_vim_latex(vim)
