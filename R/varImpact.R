@@ -1135,6 +1135,16 @@ varImpact = function(Y, data, V = 2,
   invisible(results)
 }
 
+#' Export varImpact results as Latex tables
+#'
+#' Outputs results from varImpact() into three Latex tables: consistent results,
+#' all results, and per-fold results.
+#'
+#' [Add details]
+#'
+#' @param impact_results Result object from previous varImpact() call.
+#' @param outname (Optional) String that is prepended to filenames.
+#' @param dir (Optional) Directory to save the results, defaults to current directory.
 exportLatex = function(impact_results, outname = "", dir = ".") {
   print(xtable::xtable(impact_results$results_by_fold,
                        caption = "Variable Importance Results By Estimation Sample",
