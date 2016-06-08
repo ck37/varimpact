@@ -76,6 +76,10 @@ varImpact = function(Y, data, V = 2,
   # Time the full function execution
   time = system.time({
 
+    # Ensure that Y is numeric; e.g. can't be a factor.
+    # (We also assume it's 0/1 but that isn't explictly checked yet.)
+    stopifnot(class(Y) == "numeric")
+
   ###
   # Get missingness for each column
   # Function for getting total number missing values for vector
@@ -1122,7 +1126,8 @@ varImpact = function(Y, data, V = 2,
   results = list(results_consistent = outres.cons,
                  results_all = outres.all,
                  results_by_fold = outres.byV,
-                 V=V,
+                 V=V, g.library = g.library, Q.library = Q.library,
+                 minCell = minCell, minYs = minYs,
                  family=family,
                  time = time)
   # Set a custom class so that we can override print and summary.
