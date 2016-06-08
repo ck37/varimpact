@@ -21,8 +21,10 @@ Chris items:
   - Add factors and continuous test.
   - Add other tests.
 * Performance
-  - Benchmark to random forest and related VIM algorithms.
-  - Compare to RF-style perturbation VIM but with SL?
+  - Benchmark to random forest, lasso, OLS and SL-perturbation algorithms.
+* Examples
+  - Simulated dataset
+  - mlbench dataset
 
 From existing documentation:
 - Making options to avoid errors include putting minimum cell size on validation sample of A vs. Y
