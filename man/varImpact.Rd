@@ -160,12 +160,6 @@ The function performs the following functions.
  \item Finds min and max estimate of E(Ya) w.r.t. a. after looping through
  all values of A* (after processed by histogram)
  \item Returns estimate of E(Ya(max)-Ya(min)) with SE
- \item Returns 3 latex table files:
- \itemize{
-   \item AllReslts.tex - the file with cross-validated average variable impacts ordered by statistical significance.
-   \item byV.tex - the comparison levels used within each validation sample.  Either integer ordering of factors or short-hand for percentile cut-off (0-1 is the 10th percentile, 10+ is the 100th percentile)
-   \item ConsistReslts.tex - the ``consistent'' significant results, meaning those with consistent categories chosen as comparison groups among factors and consistent ordering for numeric variables.
-}
  \item Things to do include implementing CV-TMLE, making examples, putting authors
 and references and see also's.  Allow reporting of results that
 randomly do not have estimates for some of validation samples.

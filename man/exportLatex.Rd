@@ -18,6 +18,11 @@ Outputs results from varImpact() into three Latex tables: consistent results,
 all results, and per-fold results.
 }
 \details{
-[Add details]
+Creates three Latex table files:
+ \itemize{
+   \item varimpConsistent.tex - the ``consistent'' significant results, meaning those with consistent categories chosen as comparison groups among factors and consistent ordering for numeric variables.
+   \item varimpAll.tex - the file with cross-validated average variable impacts ordered by statistical significance.
+   \item varimpByV.tex - the comparison levels used within each validation sample.  Either integer ordering of factors or short-hand for percentile cut-off (0-1 is the 10th percentile, 10+ is the 100th percentile)
+}
 }
 
