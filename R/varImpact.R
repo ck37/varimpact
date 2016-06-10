@@ -36,9 +36,7 @@
 #'    \item byV.tex - the comparison levels used within each validation sample.  Either integer ordering of factors or short-hand for percentile cut-off (0-1 is the 10th percentile, 10+ is the 100th percentile)
 #'    \item ConsistReslts.tex - the ``consistent'' significant results, meaning those with consistent categories chosen as comparison groups among factors and consistent ordering for numeric variables.
 #' }
-#'  \item Things to do include making options to avoid errors include putting
-#' minimum cell size on validation sample of A vs. Y
-#' and implementing CV-TMLE (minCell), making examples, putting authors
+#'  \item Things to do include implementing CV-TMLE, making examples, putting authors
 #' and references and see also's.  Allow reporting of results that
 #' randomly do not have estimates for some of validation samples.
 #' }

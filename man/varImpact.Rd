@@ -8,12 +8,12 @@ by statistical significance}
 \usage{
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
-  minCell = 0, ncov = 10, corthres = 0.8, impute = "zero",
+  minCell = 0, ncov = 10, corthres = 0.8, impute = "median",
   miss.cut = 0.5, verbose = F)
 
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
-  minCell = 0, ncov = 10, corthres = 0.8, impute = "zero",
+  minCell = 0, ncov = 10, corthres = 0.8, impute = "median",
   miss.cut = 0.5, verbose = F)
 }
 \arguments{
@@ -42,7 +42,7 @@ sample}
 \item{ncov}{minimum number of covariates to include as adjustment variables (must
 be less than # of basis functions of adjustment matrix)}
 
-\item{impute}{Type of missing value imputation to conduct. One of: "zero", "median", "knn".}
+\item{impute}{Type of missing value imputation to conduct. One of: "zero", "median" (default), "knn".}
 
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
 of missing obs > cut.off}
@@ -166,9 +166,7 @@ The function performs the following functions.
    \item byV.tex - the comparison levels used within each validation sample.  Either integer ordering of factors or short-hand for percentile cut-off (0-1 is the 10th percentile, 10+ is the 100th percentile)
    \item ConsistReslts.tex - the ``consistent'' significant results, meaning those with consistent categories chosen as comparison groups among factors and consistent ordering for numeric variables.
 }
- \item Things to do include making options to avoid errors include putting
-minimum cell size on validation sample of A vs. Y
-and implementing CV-TMLE (minCell), making examples, putting authors
+ \item Things to do include implementing CV-TMLE, making examples, putting authors
 and references and see also's.  Allow reporting of results that
 randomly do not have estimates for some of validation samples.
 }

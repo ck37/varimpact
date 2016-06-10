@@ -25,10 +25,16 @@ Chris items:
 * Examples
   - Simulated dataset
   - mlbench dataset
+* BUGS
+  - Warning in stratified CV function.
+
+  1: In out[Y == Ys[i]] = xx :
+  number of items to replace is not a multiple of replacement length
+
+  - In cor(na.omit(cbind(x, y))) : the standard deviation is zero
 
 From existing documentation:
-- Making options to avoid errors include putting minimum cell size on validation sample of A vs. Y
-- Implementing CV-TMLE (minCell)
+- Implementing CV-TMLE
 - Making examples
 - References
 - See also's
