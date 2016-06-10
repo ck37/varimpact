@@ -59,7 +59,6 @@
 #' @param verbose Boolean - if TRUE the method will display more detailed output.
 #'
 #' @export
-
 varImpact = function(Y, data, V = 2,
                      Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
@@ -683,9 +682,6 @@ varImpact = function(Y, data, V = 2,
     cor.two = function(x, y) {
       (cor(na.omit(cbind(x, y)))[1, 2])^2
     }
-
-    # TODO: confirm that we want to create separate folds for continus variables.
-    folds = CC.CV(V, Y)
 
     # detach('package:cvTools', unload=TRUE)
     # detach('package:lattice', unload=TRUE)
