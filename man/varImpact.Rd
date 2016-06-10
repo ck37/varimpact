@@ -8,11 +8,13 @@ by statistical significance}
 \usage{
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
-  minCell = 0, ncov = 10, corthres = 0.8, miss.cut = 0.5, verbose = F)
+  minCell = 0, ncov = 10, corthres = 0.8, impute = "zero",
+  miss.cut = 0.5, verbose = F)
 
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
-  minCell = 0, ncov = 10, corthres = 0.8, miss.cut = 0.5, verbose = F)
+  minCell = 0, ncov = 10, corthres = 0.8, impute = "zero",
+  miss.cut = 0.5, verbose = F)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}
@@ -39,6 +41,8 @@ sample}
 
 \item{ncov}{minimum number of covariates to include as adjustment variables (must
 be less than # of basis functions of adjustment matrix)}
+
+\item{impute}{Type of missing value imputation to conduct. One of: "zero", "median", "knn".}
 
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
 of missing obs > cut.off}
@@ -79,10 +83,6 @@ be less than # of basis functions of adjustment matrix)}
 
 \item{cothres}{cut-off correlation with explanatory
 variable for inclusion of an adjustment variables}
-
-\item{dirout}{directory to write output}
-
-\item{outname}{prefix name for files}
 
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
 of missing obs > cut.off}

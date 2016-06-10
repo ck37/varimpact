@@ -61,16 +61,18 @@
 #' be less than # of basis functions of adjustment matrix)
 #' @param cothres cut-off correlation with explanatory
 #' variable for inclusion of an adjustment variables
-#' @param   dirout directory to write output
-#' @param   outname prefix name for files
+#' @param impute Type of missing value imputation to conduct. One of: "zero", "median" (default), "knn".
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
 #' @param verbose Boolean - if TRUE the method will display more detailed output.
+#'
+#' @export
 
 varImpact = function(Y, data, V = 2,
                      Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
+                     impute = "median",
                      miss.cut = 0.5, verbose=F) {
 
   # Time the full function execution
@@ -78,7 +80,7 @@ varImpact = function(Y, data, V = 2,
 
     # Ensure that Y is numeric; e.g. can't be a factor.
     # (We also assume it's 0/1 but that isn't explictly checked yet.)
-    stopifnot(class(Y) == "numeric")
+    stopifnot(class(Y) %in% c("numeric", "integer"))
 
   ###
   # Get missingness for each column
@@ -164,6 +166,7 @@ varImpact = function(Y, data, V = 2,
     num_factors = ncol(data.fac)
   } else {
     num_factors = 0
+    datafac.dumW = NULL
   }
 
   ## Numeric variables
@@ -294,6 +297,9 @@ varImpact = function(Y, data, V = 2,
     miss.cont = NULL
     nmesm = NULL
 
+    # Create imputed version of the numeric dataframe.
+    data.numW = data.num
+
     # Loop over each binned numeric variable.
     for (k in 1:xp) {
       # Check if that variable has any missing values.
@@ -308,10 +314,22 @@ varImpact = function(Y, data, V = 2,
     # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
     colnames(miss.cont) = nmesm
 
-    # Create imputed version of the numeric dataframe.
-    data.numW = data.num
-    # Here numeric variables are being imputed to 0. Why not use median or mean?
-    data.numW[is.na(data.num)] = 0
+    # Impute missing data in numeric columns.
+    if (impute == "zero") {
+      data.numW[is.na(data.num)] = 0
+      impute_info = 0
+    } else if (impute == "median") {
+      impute_info = caret::preProcess(data.num, method=c("medianImpute"))
+      data.numW = caret::predict.preProcess(impute_info, data.num)
+    } else if (impute == "mean") {
+      stop("Mean imputation not implemented yet. Please use another imputation method.")
+    } else if (impute == "knn") {
+      impute_info = caret::preProcess(data.num, method=c("knnImpute"))
+      data.numW = caret::predict.preProcess(impute_info, data.num)
+    }
+
+    # Confirm that there are no missing values remaining in data.numW
+    stopifnot(sum(is.na(data.numW)) == 0)
   }
 
     cat("Finished pre-processing variables.\n")
@@ -1128,7 +1146,8 @@ varImpact = function(Y, data, V = 2,
                  results_by_fold = outres.byV,
                  V=V, g.library = g.library, Q.library = Q.library,
                  minCell = minCell, minYs = minYs,
-                 family=family,
+                 family=family,  datafac.dumW  = datafac.dumW,
+                 data.numW = data.numW, impute_info = impute_info,
                  time = time)
   # Set a custom class so that we can override print and summary.
   class(results) = "varImpact"
@@ -1145,6 +1164,8 @@ varImpact = function(Y, data, V = 2,
 #' @param impact_results Result object from previous varImpact() call.
 #' @param outname (Optional) String that is prepended to filenames.
 #' @param dir (Optional) Directory to save the results, defaults to current directory.
+#'
+#' @export
 exportLatex = function(impact_results, outname = "", dir = ".") {
   print(xtable::xtable(impact_results$results_by_fold,
                        caption = "Variable Importance Results By Estimation Sample",
@@ -1166,6 +1187,7 @@ exportLatex = function(impact_results, outname = "", dir = ".") {
         caption.placement = "top", include.rownames = T)
 }
 
+#' @export
 print.varImpact = function(obj) {
   # Just print the consistent results.
   if (nrow(obj$results_consistent) > 0) {

@@ -21,7 +21,8 @@ Imports:
     SuperLearner,
     histogram,
     MASS,
-    glmnet
+    glmnet,
+    RANN
 Suggests:
     testthat
 RoxygenNote: 5.0.1
