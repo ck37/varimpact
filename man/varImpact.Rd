@@ -9,12 +9,12 @@ by statistical significance}
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
   minCell = 0, ncov = 10, corthres = 0.8, impute = "median",
-  miss.cut = 0.5, verbose = F)
+  miss.cut = 0.5, verbose = F, parallel = T)
 
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
   minCell = 0, ncov = 10, corthres = 0.8, impute = "median",
-  miss.cut = 0.5, verbose = F)
+  miss.cut = 0.5, verbose = F, parallel = T)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}
@@ -48,6 +48,8 @@ be less than # of basis functions of adjustment matrix)}
 of missing obs > cut.off}
 
 \item{verbose}{Boolean - if TRUE the method will display more detailed output.}
+
+\item{parallel}{Use parallel processing if a backend is registered.}
 
 \item{cothres}{cut-off correlation with explanatory
 variable for inclusion of an adjustment variables}
@@ -89,12 +91,16 @@ of missing obs > cut.off}
 
 \item{verbose}{Boolean - if TRUE the method will display more detailed output.}
 }
+\value{
+TBD.
+}
 \description{
 Returns ordered estimates of variable importance measures using
 a combination of data-adaptive target parameter estimation, and
 targeted maximum likelihood estimation (TMLE).
 
-Returns ordered estimates of variable importance measures using
+\code{varImpact} returns variable importance statistics ordered
+by statistical significance using
 a combination of data-adaptive target parameter estimation, and
 targeted maximum likelihood estimation (TMLE).
 }
@@ -164,5 +170,12 @@ The function performs the following functions.
 and references and see also's.  Allow reporting of results that
 randomly do not have estimates for some of validation samples.
 }
+}
+\examples{
+# Multicore example.
+library(doMC)
+registerDoMC()
+vim = varImpact(Y = Y, data = X)
+
 }
 
