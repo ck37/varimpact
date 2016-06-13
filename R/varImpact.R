@@ -1,11 +1,11 @@
-#' Variable Impact Estimation
-#' \code{varImpact} returns variable importance statistics ordered
-#' by statistical significance
+#' @title Variable Impact Estimation
 #'
-#' Returns ordered estimates of variable importance measures using
+#' @description \code{varImpact} returns variable importance statistics ordered
+#' by statistical significance using
 #' a combination of data-adaptive target parameter estimation, and
 #' targeted maximum likelihood estimation (TMLE).
 #'
+#' @details
 #' The function performs the following functions.
 #'  \enumerate{
 #'  \item Drops variables missing > miss.cut of time (tuneable).
@@ -56,7 +56,16 @@
 #' @param impute Type of missing value imputation to conduct. One of: "zero", "median" (default), "knn".
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
+#' @param parallel Use parallel processing if a backend is registered.
 #' @param verbose Boolean - if TRUE the method will display more detailed output.
+#'
+#' @return TBD.
+#'
+#' @examples
+#' # Multicore example.
+#' library(doMC)
+#' registerDoMC()
+#' vim = varImpact(Y = Y, data = X)
 #'
 #' @export
 varImpact = function(Y, data, V = 2,
@@ -64,7 +73,7 @@ varImpact = function(Y, data, V = 2,
                      g.library = c("SL.stepAIC"), family = "binomial",
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
                      impute = "median",
-                     miss.cut = 0.5, verbose=F) {
+                     miss.cut = 0.5, verbose=F, parallel = T) {
 
   # Time the full function execution
   time = system.time({
@@ -229,9 +238,9 @@ varImpact = function(Y, data, V = 2,
     # Missing Basis for Factors
     xp = ncol(datafac.dum)
     sna = apply(datafac.dum, 2, sum.na)
-    nmesX = colnames(datafac.dum)
+    namesX = colnames(datafac.dum)
     miss.fac = NULL
-    nmesm = NULL
+    names_miss = NULL
     for (k in 1:xp) {
       if (sna[k] > 0) {
         # Again, we are flagging non-missing as 1 and missing as 0 here.
@@ -239,10 +248,13 @@ varImpact = function(Y, data, V = 2,
         # Replace missing factor indicators with 0.
         datafac.dum[is.na(datafac.dum[, k]), k] = 0
         miss.fac = cbind(miss.fac, ix)
-        nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
+        names_miss = c(names_miss, paste("Imiss_", namesX[k], sep = ""))
       }
     }
-    colnames(miss.fac) = nmesm
+    colnames(miss.fac) = names_miss
+  } else {
+    miss.fac = NULL
+    datafac.dum = NULL
   }
   # Finished pre-processing factor variables.
   ###########################################################
@@ -321,6 +333,8 @@ varImpact = function(Y, data, V = 2,
 
     # Confirm that there are no missing values remaining in data.numW
     stopifnot(sum(is.na(data.numW)) == 0)
+  } else {
+    impute_info = NULL
   }
 
     cat("Finished pre-processing variables.\n")
@@ -360,6 +374,7 @@ varImpact = function(Y, data, V = 2,
       for (i in 1:nys) {
         n = as.numeric(tt[i])
         xx = cvTools::cvFolds(n, K = V, R = 1, type = "random")$which
+        # TODO: there is a bug in this somewhere.
         out[Y == Ys[i]] = xx
       }
       return(out)
@@ -378,15 +393,15 @@ varImpact = function(Y, data, V = 2,
       }
     }
 
-    # detach('package:cvTools', unload=TRUE)
-    # detach('package:lattice', unload=TRUE)
-    # library(doParallel)
-    # cl <- makeCluster(10)
-    # registerDoParallel(cl)
-
-    ####
-    # Start Estimator First using All Data
-    # Start with continuous variables
+    # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
+    `%do_op%` = foreach::`%do%`
+    # Use parallelism if there is a backend registered, unless parallel == F.
+    if (foreach::getDoParRegistered() && parallel) {
+      `%do_op%` = foreach::`%dopar%`
+      if (verbose) cat("Parallel backend detected: using foreach parallelization.\n")
+    } else {
+      if (verbose) cat("No parallel backend detected. Operating sequentially.\n")
+    }
 
     n = length(Y)
 
@@ -418,7 +433,8 @@ varImpact = function(Y, data, V = 2,
       xc = ncol(data.fac)
       n.fac = nrow(data.fac)
 
-      vim_factor = lapply(1:xc, function(i) {
+      # vim_factor = lapply(1:xc, function(i) {
+      vim_factor = foreach::foreach(i = 1:xc, .verbose=T) %do_op% {
       # output <- lapply(1:2, function(i) { pp1=proc.time()
       nameA = names.fac[i]
 
@@ -489,15 +505,19 @@ varImpact = function(Y, data, V = 2,
         } else {
           if (verbose) cat("Reducing dimensions via clustering.")
           #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
-          mydist = hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T)
-          hopach.1 = try(hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F, K = 10,
+          mydist = try(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T),
+                       silent = !verbose)
+          if (class(mydist) == "try-error") {
+            cat("Error in HOPACH clustering: failed to calculate distance matrix.\n")
+          }
+          hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F, K = 10,
                                 kmax = 3, khigh = 3),
-                         silent = T)
+                         silent = !verbose)
           if (class(hopach.1) == "try-error") {
             if (verbose) cat(" Attempt 1 fail.")
-            hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "med", verbose = F, K = 10,
+            hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F, K = 10,
                                    kmax = 3, khigh = 3),
-                            silent = T)
+                            silent = !verbose)
           }
           if (class(hopach.1) == "try-error") {
             if (verbose) cat(" Attempt 2 fail.")
@@ -667,7 +687,13 @@ varImpact = function(Y, data, V = 2,
 
       list(EY1V, EY0V, thetaV, varICV, labV, nV, "factor")
       # print(data.frame(EY1V,EY0V,thetaV,varICV,labV,nV))
-    })
+    } # End foreach loop.
+
+      if (verbose) cat("Factor VIMs:", length(vim_factor), "\n")
+
+      # Confirm that we have the correct number of results, otherwise fail out.
+      stopifnot(length(vim_factor) == xc)
+
       colnames_factor = colnames(data.fac)
     } else {
       colnames_factor = NULL
@@ -682,13 +708,6 @@ varImpact = function(Y, data, V = 2,
     cor.two = function(x, y) {
       (cor(na.omit(cbind(x, y)))[1, 2])^2
     }
-
-    # detach('package:cvTools', unload=TRUE)
-    # detach('package:lattice', unload=TRUE)
-    # library(doParallel)
-    # cl <- makeCluster(20)
-    # registerDoParallel(cl)
-
 
     ######################################################
     # We use && so that the second check will be skipped when num_numeric == 0.
@@ -706,7 +725,9 @@ varImpact = function(Y, data, V = 2,
         sort(unique(data.cont.dist[, i]))
       })
 
-      vim_numeric = lapply(1:xc, function(i) {
+      ### Loop over each numeric variable.
+      #vim_numeric = lapply(1:xc, function(i) {
+      vim_numeric = foreach::foreach(i = 1:xc) %do_op% {
       nameA = names.cont[i]
 
       if (verbose) cat("i =", i, "Var =", nameA, "out of", xc, "numeric variables\n")
@@ -799,14 +820,18 @@ varImpact = function(Y, data, V = 2,
             if (verbose) cat("Reducing dimensions via clustering.")
           #if (nw > 10) {
             #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
-            mydist = hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T)
-            hopach.1 = try(hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F),
-                           silent = T)
+            mydist = try(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T),
+                         silent = !verbose)
+            if (class(mydist) == "try-error") {
+              cat("Error in HOPACH clustering: failed to calculate distance matrix.\n")
+            }
+            hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F),
+                           silent = !verbose)
             if (class(hopach.1) == "try-error") {
               if (verbose) cat(" Attempt 1 fail.")
               # Retry with a different specification.
-              hopach.1 <- try(hopach(t(Wt), dmat = mydist, mss = "med", verbose = F),
-                              silent = T)
+              hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F),
+                              silent = !verbose)
             }
             if (class(hopach.1) == "try-error") {
               if (verbose) cat(" Attempt 2 fail.")
@@ -964,11 +989,18 @@ varImpact = function(Y, data, V = 2,
         }
       }
       list(EY1V, EY0V, thetaV, varICV, labV, nV, "numeric")
-    })
+    } # end foreach loop.
+
+      if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
+
+      # Confirm that we have the correct number of results, otherwise fail out.
+      stopifnot(length(vim_numeric) == xc)
+
       colnames_numeric = colnames(data.cont.dist)
     } else {
       colnames_numeric = NULL
       vim_numeric = NULL
+      data.numW = NULL
       cat("No numeric variables - skim VIM estimation.\n")
     }
 
@@ -995,7 +1027,9 @@ varImpact = function(Y, data, V = 2,
     # Get rid of any variables that have a validation sample with no
     # estimates of variable importance.
     if (length(vim_combined) == 0) {
-      warning("No VIMs could be calculated due to sample size, etc.")
+      error_msg = "No VIMs could be calculated due to sample size, etc."
+      if (verbose) cat(error_msg, "\n")
+      warning(error_msg)
       # TODO: also write output to the file in a separate function call.
       #write("No VIM's could be calculated due to sample size, etc",
       #     file = "AllReslts.tex")
@@ -1135,6 +1169,7 @@ varImpact = function(Y, data, V = 2,
                  V=V, g.library = g.library, Q.library = Q.library,
                  minCell = minCell, minYs = minYs,
                  family=family,  datafac.dumW  = datafac.dumW,
+                 miss.fac = miss.fac,
                  data.numW = data.numW, impute_info = impute_info,
                  time = time)
   # Set a custom class so that we can override print and summary.
@@ -1180,6 +1215,11 @@ exportLatex = function(impact_results, outname = "", dir = ".") {
         caption.placement = "top", include.rownames = T)
 }
 
+#' Custom printing of the varImpact results.
+#'
+#' Shows the consistent results by default. If there are no consistent results
+#' it shows all results.
+#'
 #' @export
 print.varImpact = function(obj) {
   # Just print the consistent results.
