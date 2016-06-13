@@ -11,18 +11,22 @@ Description: Automated data processing and variable importance using data-
     variable list of importance.
 License: GPL (>= 2)
 Imports:
-    histogram,
-    tmle,
     arules,
-    hopach,
+    caret,
     cvTools,
-    multtest,
-    xtable,
-    SuperLearner,
-    histogram,
-    MASS,
+    foreach,
     glmnet,
-    RANN
+    histogram,
+    hopach,
+    MASS,
+    multtest,
+    RANN,
+    SuperLearner,
+    tmle,
+    xtable
 Suggests:
+    doMC,
+    doParallel,
+    doSNOW,
     testthat
 RoxygenNote: 5.0.1
