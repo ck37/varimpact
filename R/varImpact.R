@@ -53,26 +53,35 @@
 #' be less than # of basis functions of adjustment matrix)
 #' @param cothres cut-off correlation with explanatory
 #' variable for inclusion of an adjustment variables
-#' @param impute Type of missing value imputation to conduct. One of: "zero", "median" (default), "knn".
+#' @param impute Type of missing value imputation to conduct. One of: "zero", "median", "knn" (default).
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
-#' @param parallel Use parallel processing if a backend is registered.
+#' @param parallel Use parallel processing if a backend is registered; enabled by default.
 #' @param verbose Boolean - if TRUE the method will display more detailed output.
 #'
-#' @return TBD.
+#' @return Results object.
 #'
 #' @examples
-#' # Multicore example.
+#' # doMC parallel (multicore) example.
 #' library(doMC)
 #' registerDoMC()
-#' vim = varImpact(Y = Y, data = X)
+#' vim <- varImpact(Y = Y, data = X)
+#'
+#' # doSNOW parallel example.
+#' library(doSNOW)
+#' library(RhpcBLASctl)
+#' # Detect the number of physical cores on this computer using RhpcBLASctl.
+#' cluster <- makeCluster(get_num_cores())
+#' registerDoSNOW(cluster)
+#' vim <- varImpact(Y = Y, data = X)
+#' stopCluster(cluster)
 #'
 #' @export
 varImpact = function(Y, data, V = 2,
                      Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
-                     impute = "median",
+                     impute = "knn",
                      miss.cut = 0.5, verbose=F, parallel = T) {
 
   # Time the full function execution
