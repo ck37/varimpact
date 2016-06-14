@@ -2,10 +2,11 @@ Package: varImpact
 Type: Package
 Title: Variable Impact via Data Adaptive Target Parameters and TMLE
 Version: 1.0
-Date: 2016-06-06
-Authors@R: person("Alan","Hubbard",role = c("aut", "cre"), email = "hubbard@berkeley.edu")
-Author: Alan Hubbard [aut, cre]
-Maintainer: "Alan Hubbard" <hubbard@berkeley.edu>
+Date: 2016-06-14
+Authors@R: as.person(c(
+  "Alan Hubbard <hubbard@berkeley.edu> [aut, cre]",
+  "Chris Kennedy <chrisken@gmail.com> [aut]"))
+URL: http://github.com/ck37/varImpact
 Description: Automated data processing and variable importance using data-
     adaptive target parameter methods combined with TMLE. Results in ordered
     variable list of importance.
