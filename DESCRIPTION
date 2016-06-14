@@ -28,5 +28,6 @@ Suggests:
     doMC,
     doParallel,
     doSNOW,
+    RhpcBLASctl,
     testthat
 RoxygenNote: 5.0.1
