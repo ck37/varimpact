@@ -1,9 +1,7 @@
 #' @title Variable Impact Estimation
 #'
 #' @description \code{varImpact} returns variable importance statistics ordered
-#' by statistical significance using
-#' a combination of data-adaptive target parameter estimation, and
-#' targeted maximum likelihood estimation (TMLE).
+#' by statistical significance using a combination of data-adaptive target parameter
 #'
 #' @details
 #' The function performs the following functions.

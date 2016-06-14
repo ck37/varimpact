@@ -8,12 +8,12 @@ by statistical significance}
 \usage{
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
-  minCell = 0, ncov = 10, corthres = 0.8, impute = "median",
+  minCell = 0, ncov = 10, corthres = 0.8, impute = "knn",
   miss.cut = 0.5, verbose = F, parallel = T)
 
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
-  minCell = 0, ncov = 10, corthres = 0.8, impute = "median",
+  minCell = 0, ncov = 10, corthres = 0.8, impute = "knn",
   miss.cut = 0.5, verbose = F, parallel = T)
 }
 \arguments{
@@ -42,14 +42,14 @@ sample}
 \item{ncov}{minimum number of covariates to include as adjustment variables (must
 be less than # of basis functions of adjustment matrix)}
 
-\item{impute}{Type of missing value imputation to conduct. One of: "zero", "median" (default), "knn".}
+\item{impute}{Type of missing value imputation to conduct. One of: "zero", "median", "knn" (default).}
 
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
 of missing obs > cut.off}
 
 \item{verbose}{Boolean - if TRUE the method will display more detailed output.}
 
-\item{parallel}{Use parallel processing if a backend is registered.}
+\item{parallel}{Use parallel processing if a backend is registered; enabled by default.}
 
 \item{cothres}{cut-off correlation with explanatory
 variable for inclusion of an adjustment variables}
@@ -92,7 +92,7 @@ of missing obs > cut.off}
 \item{verbose}{Boolean - if TRUE the method will display more detailed output.}
 }
 \value{
-TBD.
+Results object.
 }
 \description{
 Returns ordered estimates of variable importance measures using
@@ -100,9 +100,7 @@ a combination of data-adaptive target parameter estimation, and
 targeted maximum likelihood estimation (TMLE).
 
 \code{varImpact} returns variable importance statistics ordered
-by statistical significance using
-a combination of data-adaptive target parameter estimation, and
-targeted maximum likelihood estimation (TMLE).
+by statistical significance using a combination of data-adaptive target parameter
 }
 \details{
 The function performs the following functions.
@@ -172,10 +170,19 @@ randomly do not have estimates for some of validation samples.
 }
 }
 \examples{
-# Multicore example.
+# doMC parallel (multicore) example.
 library(doMC)
 registerDoMC()
-vim = varImpact(Y = Y, data = X)
+vim <- varImpact(Y = Y, data = X)
+
+# doSNOW parallel example.
+library(doSNOW)
+library(RhpcBLASctl)
+# Detect the number of physical cores on this computer using RhpcBLASctl.
+cluster <- makeCluster(get_num_cores())
+registerDoSNOW(cluster)
+vim <- varImpact(Y = Y, data = X)
+stopCluster(cluster)
 
 }
 

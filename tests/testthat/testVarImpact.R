@@ -1,4 +1,4 @@
-
+library(varImpact)
 library(testthat)
 
 # Create test dataset.
@@ -17,7 +17,7 @@ miss_num = 10
 for (i in 1:5) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test.
-vim = varImpact(Y = Y, data = X, V = 2, verbose=T)
+vim = varImpact(Y = Y, data = X[, 1:4], V = 2, verbose=T)
 vim
 vim$results_all
 # names(vim)
@@ -25,21 +25,34 @@ exportLatex(vim, dir = "results")
 
 
 # Test imputation
-vim = varImpact(Y = Y, data = X, verbose=T, impute="median")
-vim = varImpact(Y = Y, data = X, verbose=T, impute="knn")
+vim = varImpact(Y = Y, data = X[, 1:4], verbose=T, impute="zero")
+vim = varImpact(Y = Y, data = X[, 1:4], verbose=T, impute="median")
+vim = varImpact(Y = Y, data = X[, 1:4], verbose=T, impute="knn")
 
 
-# Test parallelization.
+# Test parallelization via doMC.
 doMC::registerDoMC()
 # Check how many cores we're using.
 foreach::getDoParWorkers()
-vim = varImpact(Y = Y, data = X, verbose=T, impute="knn")
+vim = varImpact(Y = Y, data = X[, 1:4], verbose=T)
 
 # Test disabling parallelization.
-vim = varImpact(Y = Y, data = X, verbose=T, impute="knn", parallel = F)
+vim = varImpact(Y = Y, data = X[, 1:4], verbose=T, parallel = F)
 # Return to single core usage.
 foreach::registerDoSEQ()
 foreach::getDoParWorkers()
+
+# Test parallelization via doSnow.
+cluster = snow::makeCluster(2)
+doSNOW::registerDoSNOW(cluster)
+# Check that we're using the snow cluster.
+foreach::getDoParName()
+foreach::getDoParWorkers()
+vim = varImpact(Y = Y, data = X[, 1:4], verbose=T)
+vim
+snow::stopCluster(cluster)
+# Return to single core usage.
+foreach::registerDoSEQ()
 
 context("Dataset B: factor variables")
 
@@ -50,7 +63,7 @@ colnames(X_fac)
 summary(X_fac)
 
 # Basic factor test.
-vim = varImpact(Y = Y, data = X_fac[, 1:5], V = 2, verbose=T)
+vim = varImpact(Y = Y, data = X_fac[, 1:4], V = 2, verbose=T)
 
 # Test parallelization.
 doMC::registerDoMC()
@@ -58,12 +71,12 @@ doMC::registerDoMC()
 foreach::getDoParWorkers()
 
 # Factor variables with parallelization.
-vim = varImpact(Y = Y, data = X_fac, verbose=T, impute="knn")
+vim = varImpact(Y = Y, data = X_fac[, 1:4], verbose=T)
 vim
 
 context("Dataset C: numeric and factor variables")
 
-X_combined = cbind(X[1:4], X_fac[5:7])
+X_combined = cbind(X[1:3], X_fac[5:7])
 
 # Basic factor test.
 vim = varImpact(Y = Y, data = X_combined, V = 2, verbose=T)
