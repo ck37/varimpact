@@ -35,6 +35,9 @@ sample}
 \item{ncov}{minimum number of covariates to include as adjustment variables (must
 be less than # of basis functions of adjustment matrix)}
 
+\item{corthres}{cut-off correlation with explanatory
+variable for inclusion of an adjustment variables}
+
 \item{impute}{Type of missing value imputation to conduct. One of: "zero", "median", "knn" (default).}
 
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
@@ -43,9 +46,6 @@ of missing obs > cut.off}
 \item{verbose}{Boolean - if TRUE the method will display more detailed output.}
 
 \item{parallel}{Use parallel processing if a backend is registered; enabled by default.}
-
-\item{cothres}{cut-off correlation with explanatory
-variable for inclusion of an adjustment variables}
 }
 \value{
 Results object.

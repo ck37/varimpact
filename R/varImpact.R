@@ -49,7 +49,7 @@
 #' sample
 #' @param ncov minimum number of covariates to include as adjustment variables (must
 #' be less than # of basis functions of adjustment matrix)
-#' @param cothres cut-off correlation with explanatory
+#' @param corthres cut-off correlation with explanatory
 #' variable for inclusion of an adjustment variables
 #' @param impute Type of missing value imputation to conduct. One of: "zero", "median", "knn" (default).
 #' @param miss.cut eliminates explanatory (X) variables with proportion
@@ -1245,6 +1245,8 @@ exportLatex = function(impact_results, outname = "", dir = ".") {
 #'
 #' Shows the consistent results by default. If there are no consistent results
 #' it shows all results.
+#'
+#' @param obj Results object from varImpact.
 #'
 #' @export
 print.varImpact = function(obj) {
