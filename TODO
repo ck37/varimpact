@@ -7,7 +7,6 @@ Alan priorities:
 Chris items:
 * Arguments
   - Also support "X" optional argument, ala glm
-  - Pass in cluster argument, ala mcSuperLearner / snowSuperLearner
   - Parameter for the number of covariates after which we use dimensionality reduction (HOPACH).
   - Argument for p-value cutoff for consistent results.
 * Coding style
@@ -17,8 +16,6 @@ Chris items:
 * Quality
   - Figure out how to reduce the number of potential failures in various steps.
 * Testing
-  - Add factors-only test.
-  - Add factors and continuous test.
   - Add other tests.
 * Performance
   - Benchmark to random forest, lasso, OLS and SL-perturbation algorithms.
