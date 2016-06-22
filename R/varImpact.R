@@ -468,7 +468,7 @@ varImpact = function(Y, data, V = 2,
       n.fac = nrow(data.fac)
 
       # vim_factor = lapply(1:xc, function(i) {
-      vim_factor = foreach::foreach(i = 1:xc, .verbose=T) %do_op% {
+      vim_factor = foreach::foreach(i = 1:xc, .verbose=verbose) %do_op% {
       # output <- lapply(1:2, function(i) { pp1=proc.time()
       nameA = names.fac[i]
 
