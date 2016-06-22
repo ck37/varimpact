@@ -76,8 +76,24 @@ vim
 
 context("Dataset C: numeric and factor variables")
 
+#################################
+# Combined numeric and factor test.
 X_combined = cbind(X[1:3], X_fac[5:7])
 
-# Basic factor test.
+# Basic combined test.
 vim = varImpact(Y = Y, data = X_combined, V = 2, verbose=T)
 vim
+
+#################################
+# mlbench BreastCancer dataset.
+data(BreastCancer, package="mlbench")
+data = BreastCancer
+
+# Create a numeric outcome variable.
+data$Y = as.numeric(data$Class == "malignant")
+table(data$Y)
+
+# Use multicore parallelization to speed up processing.
+doMC::registerDoMC()
+# This takes 1-3 minutes.
+vim = varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))

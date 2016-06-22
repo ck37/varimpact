@@ -31,6 +31,7 @@ Suggests:
     doMC,
     doParallel,
     doSNOW,
+    mlbench,
     RhpcBLASctl,
     testthat
 RoxygenNote: 5.0.1
