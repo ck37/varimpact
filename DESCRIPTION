@@ -8,8 +8,9 @@ Authors@R: as.person(c(
   "Chris Kennedy <chrisken@gmail.com> [aut]"
   ))
 URL: http://github.com/ck37/varImpact
+BugReports: https://github.com/ck37/varImpact/issues
 Description: Automated data processing and variable importance using data-
-    adaptive target parameter methods combined with TMLE. Results in ordered
+    adaptive target parameter methods combined with TMLE. Returns an ordered
     variable list of importance.
 License: GPL (>= 2)
 Imports:
