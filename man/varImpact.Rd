@@ -84,6 +84,15 @@ and references and see also's.  Allow reporting of results that
 randomly do not have estimates for some of validation samples.
 }
 }
+\section{Authors}{
+
+Alan Hubbard and Chris Kennedy
+}
+
+\section{References}{
+
+Hubbard, A., & van der Laan, M. (2016). \emph{Mining with inference: data-adaptive target parameter (pp. 439-452)}. In P. Bühlmann et al. (Ed.), \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
+}
 \examples{
 # Create test dataset.
 set.seed(1)
