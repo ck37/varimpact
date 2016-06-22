@@ -14,7 +14,7 @@ Y = rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .
 
 # Add some missing data to X.
 miss_num = 10
-for (i in 1:5) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
+for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test.
 vim = varImpact(Y = Y, data = X[, 1:4], V = 2, verbose=T)
