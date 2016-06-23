@@ -65,25 +65,28 @@
 #' Alan Hubbard and Chris Kennedy
 #'
 #' @section References:
-#' Gruber, S., & Laan, M. V. D. (2012). \emph{tmle: An R Package for Targeted Maximum Likelihood Estimation}. Journal of Statistical Software, 51(i13).
+#' Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a practical and powerful approach to multiple testing. Journal of the royal statistical society. Series B (Methodological), 289-300.
 #'
-#' Hubbard, A., & van der Laan, M. (2016). \emph{Mining with inference: data-adaptive target parameter (pp. 439-452)}. In P. Bühlmann et al. (Ed.), \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
+#' Gruber, S., & van der Laan, M. J. (2012). \emph{tmle: An R Package for Targeted Maximum Likelihood Estimation}. Journal of Statistical Software, 51(i13).
 #'
-#' Van der Laan, M. J., Polley, E. C., & Hubbard, A. E. (2007). \emph{Super learner}. Statistical applications in genetics and molecular biology, 6(1).
+#' Hubbard, A. E., & van der Laan, M. J. (2016). \emph{Mining with inference: data-adaptive target parameter (pp. 439-452)}. In P. Bühlmann et al. (Ed.), \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
 #'
-#' Van der Laan, M. J., & Rose, S. (2011). \emph{Targeted learning: causal inference for observational and experimental data}. Springer Science & Business Media.
+#' van der Laan, M. J., Polley, E. C., & Hubbard, A. E. (2007). \emph{Super learner}. Statistical applications in genetics and molecular biology, 6(1).
+#'
+#' van der Laan, M. J., & Rose, S. (2011). \emph{Targeted learning: causal inference for observational and experimental data}. Springer Science & Business Media.
 #'
 #' @examples
+#' ####################################
 #' # Create test dataset.
 #' set.seed(1)
-#' N = 200
-#' num_normal = 7
-#' X = as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
-#' Y = rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
-#' # Add some missing data to X.
-#' miss_num = 10
-#' for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
+#' N <- 200
+#' num_normal <- 7
+#' X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
+#' Y <- rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
+#' # Add some missing data to X so we can test imputation.
+#' for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
 #'
+#' ####################################
 #' # Basic example
 #' vim <- varImpact(Y = Y, data = X)
 #' vim
@@ -93,11 +96,13 @@
 #' # Impute by median rather than knn.
 #' vim <- varImpact(Y = Y, data = X, impute = "median")
 #'
+#' ####################################
 #' # doMC parallel (multicore) example.
 #' library(doMC)
 #' registerDoMC()
 #' vim <- varImpact(Y = Y, data = X)
 #'
+#' ####################################
 #' # doSNOW parallel example.
 #' library(doSNOW)
 #' library(RhpcBLASctl)
@@ -106,6 +111,18 @@
 #' registerDoSNOW(cluster)
 #' vim <- varImpact(Y = Y, data = X)
 #' stopCluster(cluster)
+#'
+#' ####################################
+#' # mlbench BreastCancer example.
+#' data(BreastCancer, package="mlbench")
+#' data <- BreastCancer
+#
+#' # Create a numeric outcome variable.
+#' data$Y <- as.numeric(data$Class == "malignant")
+#
+#' # Use multicore parallelization to speed up processing.
+#' doMC::registerDoMC()
+#' vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 #'
 #' @export
 varImpact = function(Y, data, V = 2,
