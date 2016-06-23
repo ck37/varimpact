@@ -94,6 +94,8 @@ Alan Hubbard and Chris Kennedy, University of California, Berkeley
 
 ## References
 
+Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a practical and powerful approach to multiple testing. Journal of the royal statistical society. Series B (Methodological), 289-300.
+
 Gruber, S., & van der Laan, M. J. (2012). tmle: An R Package for Targeted Maximum Likelihood Estimation. Journal of Statistical Software, 51(i13).
 
 Hubbard, A. E., & van der Laan, M. J. (2016). Mining with inference: data-adaptive target parameter (pp. 439-452). In P. Bühlmann et al. (Ed.), Handbook of Big Data. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
