@@ -55,7 +55,7 @@ vim <- varImpact(Y = Y, data = X, impute = "median")
 
 # Customize Q and g libraries for TMLE estimation.
 Q_lib <- c("SL.gam","SL.glmnet", "SL.stepAIC", "SL.randomForest", "SL.rpartPrune", "SL.bayesglm")
-g_lib = c("SL.stepAIC", "SL.glmnet")
+g_lib <- c("SL.stepAIC", "SL.glmnet")
 vim <- varImpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
 
 ####################################
