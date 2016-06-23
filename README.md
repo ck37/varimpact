@@ -7,7 +7,7 @@ varImpact is under active development so please submit any bug reports or featur
 
 ## Install
 
-### Bioconductor packages
+### Requirements
 
 A few package requirements are installed via [bioconductor](https://www.bioconductor.org) rather than CRAN.
 
