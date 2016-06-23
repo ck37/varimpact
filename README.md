@@ -22,7 +22,7 @@ Then install the packages:
 biocLite(c("hopach", "multtest"))
 ```
 
-### varImpact install
+### Install varImpact
 
 ```{r}
 # Install devtools if necessary:
@@ -33,16 +33,17 @@ devtools::install_github("ck37/varImpact")
 ### Examples
 
 ```{r}
+####################################
 # Create test dataset.
 set.seed(1)
 N = 200
 num_normal = 7
 X = as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 Y = rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
-# Add some missing data to X.
-miss_num = 10
-for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
+# Add some missing data to X so we can test imputation.
+for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
+####################################
 # Basic example
 vim <- varImpact(Y = Y, data = X)
 vim
@@ -52,11 +53,13 @@ exportLatex(vim)
 # Impute by median rather than knn.
 vim <- varImpact(Y = Y, data = X, impute = "median")
 
+####################################
 # doMC parallel (multicore) example.
 library(doMC)
 registerDoMC()
 vim <- varImpact(Y = Y, data = X)
 
+####################################
 # doSNOW parallel example.
 library(doSNOW)
 library(RhpcBLASctl)
@@ -65,6 +68,19 @@ cluster <- makeCluster(get_num_cores())
 registerDoSNOW(cluster)
 vim <- varImpact(Y = Y, data = X)
 stopCluster(cluster)
+
+####################################
+# mlbench BreastCancer example.
+data(BreastCancer, package="mlbench")
+data = BreastCancer
+
+# Create a numeric outcome variable.
+data$Y = as.numeric(data$Class == "malignant")
+
+# Use multicore parallelization to speed up processing.
+doMC::registerDoMC()
+vim = varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+
 ```
 
 ## Authors
