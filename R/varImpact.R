@@ -28,9 +28,8 @@
 #'  \item Finds min and max estimate of E(Ya) w.r.t. a. after looping through
 #'  all values of A* (after processed by histogram)
 #'  \item Returns estimate of E(Ya(max)-Ya(min)) with SE
-#'  \item Things to do include implementing CV-TMLE, and see also's.
-#'  Allow reporting of results that randomly do not have estimates for
-#'  some of validation samples.
+#'  \item Things to do include implementing CV-TMLE and allow reporting of results
+#'  that randomly do not have estimates for some of validation samples.
 #' }
 #'
 #' @param Y outcome of interest (numeric vector)
@@ -60,6 +59,9 @@
 #' @return Results object.
 #'
 #' @importFrom stats cor model.matrix na.omit pnorm quantile var
+#'
+#' @seealso
+#' \code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}} method
 #'
 #' @section Authors:
 #' Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley

@@ -15,6 +15,9 @@
 #' @param outname (Optional) String that is prepended to filenames.
 #' @param dir (Optional) Directory to save the results, defaults to current directory.
 #'
+#' @seealso
+#' \code{\link[varImpact]{varImpact}}
+#'
 #' @export
 exportLatex = function(impact_results, outname = "", dir = ".") {
   print(xtable::xtable(impact_results$results_by_fold,

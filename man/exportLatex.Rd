@@ -25,4 +25,7 @@ Creates three Latex table files:
    \item varimpByV.tex - the comparison levels used within each validation sample.  Either integer ordering of factors or short-hand for percentile cut-off (0-1 is the 10th percentile, 10+ is the 100th percentile)
 }
 }
+\seealso{
+\code{\link[varImpact]{varImpact}}
+}
 
