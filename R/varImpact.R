@@ -65,11 +65,13 @@
 #' Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 #'
 #' @section References:
-#' Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a practical and powerful approach to multiple testing. Journal of the royal statistical society. Series B (Methodological), 289-300.
+#' Benjamini, Y., & Hochberg, Y. (1995). \emph{Controlling the false discovery rate: a practical and powerful approach to multiple testing}. Journal of the royal statistical society. Series B (Methodological), 289-300.
 #'
 #' Gruber, S., & van der Laan, M. J. (2012). \emph{tmle: An R Package for Targeted Maximum Likelihood Estimation}. Journal of Statistical Software, 51(i13).
 #'
 #' Hubbard, A. E., & van der Laan, M. J. (2016). \emph{Mining with inference: data-adaptive target parameter (pp. 439-452)}. In P. Bühlmann et al. (Ed.), \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
+#'
+#' van der Laan, M. J., & Pollard, K. S. (2003). \emph{A new algorithm for hybrid hierarchical clustering with visualization and the bootstrap}. Journal of Statistical Planning and Inference, 117(2), 275-303.
 #'
 #' van der Laan, M. J., Polley, E. C., & Hubbard, A. E. (2007). \emph{Super learner}. Statistical applications in genetics and molecular biology, 6(1).
 #'
