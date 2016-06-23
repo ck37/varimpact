@@ -22,7 +22,7 @@ Then install the packages:
 biocLite(c("hopach", "multtest"))
 ```
 
-### Install varImpact
+### Install varImpact from Github
 
 ```{r}
 # Install devtools if necessary:
