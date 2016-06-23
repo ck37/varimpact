@@ -28,9 +28,9 @@
 #'  \item Finds min and max estimate of E(Ya) w.r.t. a. after looping through
 #'  all values of A* (after processed by histogram)
 #'  \item Returns estimate of E(Ya(max)-Ya(min)) with SE
-#'  \item Things to do include implementing CV-TMLE, making examples, putting authors
-#' and references and see also's.  Allow reporting of results that
-#' randomly do not have estimates for some of validation samples.
+#'  \item Things to do include implementing CV-TMLE, and see also's.
+#'  Allow reporting of results that randomly do not have estimates for
+#'  some of validation samples.
 #' }
 #'
 #' @param Y outcome of interest (numeric vector)
@@ -62,7 +62,7 @@
 #' @importFrom stats cor model.matrix na.omit pnorm quantile var
 #'
 #' @section Authors:
-#' Alan Hubbard and Chris Kennedy
+#' Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 #'
 #' @section References:
 #' Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a practical and powerful approach to multiple testing. Journal of the royal statistical society. Series B (Methodological), 289-300.
