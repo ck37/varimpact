@@ -1,5 +1,5 @@
 # varImpact
-varImpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. Each covariate is analyzed using targeted minimum loss-based estimation (TMLE) as though it were a treatment, with all other variables serving as adjustment variables via SuperLearner. Then the change in the outcome variable due to treatment is how the variable importance is estimated. This formulation allows the asymptotics of TMLE to provide valid standard errors and p-values, unlike other variable importance estimates. See Hubbard & van der Laan (2016) for more details.
+varImpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. Each covariate is analyzed using targeted minimum loss-based estimation (TMLE) as though it were a treatment, with all other variables serving as adjustment variables via [SuperLearner](https://github.com/ecpolley/SuperLearner). Then the change in the outcome variable due to treatment is how the variable importance is estimated. This formulation allows the asymptotics of TMLE to provide valid standard errors and p-values, unlike other variable importance estimates. See Hubbard & van der Laan (2016) for more details.
 
 The results provide raw p-values as well as p-values adjusted for false discovery rate using the Benjamini-Hochman (1995) procedure. Adjustment variables are automatically clustered hierarchically using HOPACH in order to reduce dimensionality.  The package supports multi-core and multi-node parallelization, which are detected and used automatically when a parallel backend is registered. Missing values are automatically imputed using K-nearest neighbors and missingness indicator variables are incorporated into the analysis.
 
@@ -52,6 +52,11 @@ exportLatex(vim)
 
 # Impute by median rather than knn.
 vim <- varImpact(Y = Y, data = X, impute = "median")
+
+# Customize Q and g libraries for TMLE estimation.
+Q_lib <- c("SL.gam","SL.glmnet", "SL.stepAIC", "SL.randomForest", "SL.rpartPrune", "SL.bayesglm")
+g_lib = c("SL.stepAIC", "SL.glmnet")
+vim <- varImpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
 
 ####################################
 # doMC parallel (multicore) example.
