@@ -3,7 +3,7 @@ varImpact uses causal inference statistics to generate variable importance estim
 
 The results provide raw p-values as well as p-values adjusted for false discovery rate using the Benjamini-Hochman (1995) procedure. Adjustment variables are automatically clustered hierarchically using HOPACH in order to reduce dimensionality.  The package supports multi-core and multi-node parallelization, which are detected and used automatically when a parallel backend is registered. Missing values are automatically imputed using K-nearest neighbors and missingness indicator variables are incorporated into the analysis.
 
-varImpact is under active development so please submit any bug reports or feature requests to the issue queue, or email Alan & Chris directly.
+varImpact is under active development so please submit any bug reports or feature requests to the [issue queue](https://github.com/ck37/varImpact/issues), or email Alan & Chris directly.
 
 ## Install
 
