@@ -90,7 +90,7 @@ vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 
 ## Authors
 
-Alan Hubbard and Chris Kennedy, University of California, Berkeley
+Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 
 ## References
 
