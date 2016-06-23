@@ -65,7 +65,13 @@
 #' Alan Hubbard and Chris Kennedy
 #'
 #' @section References:
+#' Gruber, S., & Laan, M. V. D. (2012). \emph{tmle: An R Package for Targeted Maximum Likelihood Estimation}. Journal of Statistical Software, 51(i13).
+#'
 #' Hubbard, A., & van der Laan, M. (2016). \emph{Mining with inference: data-adaptive target parameter (pp. 439-452)}. In P. Bühlmann et al. (Ed.), \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
+#'
+#' Van der Laan, M. J., Polley, E. C., & Hubbard, A. E. (2007). \emph{Super learner}. Statistical applications in genetics and molecular biology, 6(1).
+#'
+#' Van der Laan, M. J., & Rose, S. (2011). \emph{Targeted learning: causal inference for observational and experimental data}. Springer Science & Business Media.
 #'
 #' @examples
 #' # Create test dataset.
