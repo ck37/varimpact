@@ -441,16 +441,23 @@ varImpact = function(Y, data, V = 2,
     ####
     # Stratified CV to insure balance (by one grouping variable, Y)
     CC.CV = function(V, Y) {
-      nn = length(Y)
-      tt = table(Y)
       Ys = unique(Y)
       nys = length(Ys)
-      out = rep(NA, nn)
-      for (i in 1:nys) {
-        n = as.numeric(tt[i])
-        xx = cvTools::cvFolds(n, K = V, R = 1, type = "random")$which
-        # TODO: there is a bug in this somewhere.
-        out[Y == Ys[i]] = xx
+      nn = length(Y)
+      # Binary outcome so we can do stratified fold generation.
+      if (nys == 2) {
+        tt = table(Y)
+        out = rep(NA, nn)
+        for (i in 1:nys) {
+          n = as.numeric(tt[i])
+          xx = cvTools::cvFolds(n, K = V, R = 1, type = "random")$which
+          # TODO: there is a bug in this somewhere.
+          out[Y == Ys[i]] = xx
+        }
+      } else {
+        # More than 2 Ys, so don't stratify.
+        xx = cvTools::cvFolds(nn, K = V, R = 1, type = "random")$which
+        out = xx
       }
       return(out)
     }
@@ -638,7 +645,13 @@ varImpact = function(Y, data, V = 2,
         levA = levels(At)
         minc = apply(table(Av, Yv), 1, min)
         minc2 = apply(table(At, Yt), 1, min)
-        vals = levA[pmin(minc, minc2) > minCell]
+        if (length(unique(Yt)) == 2) {
+          # Binary outcome.
+          vals = levA[pmin(minc, minc2) > minCell]
+        } else {
+          # Continuous outcome.
+          vals = levA
+        }
         num.cat = length(vals)
 
         # CK 6/6: don't assume that positive outcome is the rare outcome. (e.g. via table)
@@ -652,7 +665,8 @@ varImpact = function(Y, data, V = 2,
         # Don't do if 1) no more than one category of A left or
         # 2) if missingness pattern for A is such that there are few death events left
         # in either (< minYs)
-        if (num.cat < 2 || min(nYt, nYv) < minYs) {
+        # Applies only to binary outcomes, not continuous.
+        if (length(unique(Yt)) == 2 && (num.cat < 2 || min(nYt, nYv) < minYs)) {
           if (num.cat < 2) {
             error_msg = paste("Skipping", nameA, "due to lack of variation.")
           } else {
@@ -821,9 +835,18 @@ varImpact = function(Y, data, V = 2,
         Av = data.cont.dist[folds == kk, i]
         Yt = Y[folds != kk]
         Yv = Y[folds == kk]
-        AY1 = At[Yt == 1 & !is.na(At)]
-        # Check if AY1 has only a single value. If so, skip histogramming to avoid an error.
-        singleAY1 = length(unique(na.omit(AY1))) == 1
+
+        if (length(unique(Yt)) == 2) {
+          # Binary outcome.
+          AY1 = At[Yt == 1 & !is.na(At)]
+          # Check if AY1 has only a single value. If so, skip histogramming to avoid an error.
+          singleAY1 = length(unique(na.omit(AY1))) == 1
+        } else {
+          # Continuous outcome.
+          AY1 = At[!is.na(At)]
+          singleAY1 = F
+        }
+
         if (!singleAY1) {
           hh = histogram::histogram(AY1, verbose = F, type = "irregular", plot = F)$breaks
           if (hh[length(hh)] < max(At, na.rm = T)) {
@@ -952,7 +975,8 @@ varImpact = function(Y, data, V = 2,
           ICmax = NULL
           Atnew[is.na(Atnew)] = -1
           Avnew[is.na(Avnew)] = -1
-          if (min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell) {
+          # Only applies to binary outcomes.
+          if (length(unique(Yt)) == 2 && min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell) {
             error_msg = paste("Skipping", nameA, "due to minCell constraint.\n")
             if (verbose) cat(error_msg)
             warning(error_msg)
@@ -964,7 +988,7 @@ varImpact = function(Y, data, V = 2,
             nV = c(nV, NA)
           }
           # CK TODO: this is not exactly the opposite of the IF above. Is that intentional?
-          if (min(table(Avnew, Yv)) > minCell) {
+          if (length(unique(Yt)) > 2 || min(table(Avnew, Yv)) > minCell) {
             labmin = NULL
             labmax = NULL
             errcnt = 0
