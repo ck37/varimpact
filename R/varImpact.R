@@ -156,6 +156,10 @@ varImpact = function(Y, data, V = 2,
     # (We also assume it's 0/1 but that isn't explictly checked yet.)
     stopifnot(class(Y) %in% c("numeric", "integer"))
 
+    if (family == "binomial" && (min(Y, na.rm = T) < 0 | max(Y, na.rm = T) > 1)) {
+      stop("With binomial family Y must be bounded by [0, 1]. Specify family=\"gaussian\" otherwise.")
+    }
+
   ###
   # Get missingness for each column
   # Function for getting total number missing values for vector
