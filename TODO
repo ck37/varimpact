@@ -35,6 +35,5 @@ From existing documentation:
 - Implementing CV-TMLE
 - Allow reporting of results that randomly do not have estimates for some of validation samples.
 
-
 Wishlist
 - Support clustering or variable reduction algorithms other than HOPACH.
