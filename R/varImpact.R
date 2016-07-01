@@ -1127,6 +1127,9 @@ varImpact = function(Y, data, V = 2,
     vars = vars[lngth == 7]
     factr = factr[lngth == 7]
 
+    # Set defaults for variables we want to return.
+    outres.all = outres.cons = outres.byV = NULL
+
     # Get rid of any variables that have a validation sample with no
     # estimates of variable importance.
     if (length(vim_combined) == 0) {
@@ -1139,128 +1142,135 @@ varImpact = function(Y, data, V = 2,
     } else {
       lngth2 = sapply(vim_combined, function(x) length(na.omit(x[[1]])))
       out.put = vim_combined[lngth2 == V]
-      vars = vars[lngth2 == V]
-      factr = factr[lngth2 == V]
-      tst = lapply(out.put, function(x) x[[3]])
-      tst = do.call(rbind, tst)
-      tot.na = function(x) {
-        sum(is.na(x))
-      }
-      xx = apply(tst, 1, tot.na)
-      out.sht = out.put[xx == 0]
-      vars = vars[xx == 0]
-      factr = factr[xx == 0]
-
-      # names(out.sht)=vars[xx==0]
-      tst = lapply(out.sht, function(x) x[[1]])
-      EY1 = do.call(rbind, tst)
-      tst = lapply(out.sht, function(x) x[[2]])
-      EY0 = do.call(rbind, tst)
-      tst = lapply(out.sht, function(x) x[[3]])
-      theta = do.call(rbind, tst)
-      tst = lapply(out.sht, function(x) x[[4]])
-      varIC = do.call(rbind, tst)
-      tst = lapply(out.sht, function(x) x[[6]])
-      nV = do.call(rbind, tst)
-      n = sum(nV[1, ])
-      SEV = sqrt(varIC/nV)
-      ##### Get labels for each of the training sample
-      labs.get = function(x, fold) {
-        lbel = rep(1:fold, 2)
-        oo = order(lbel)
-        lbel = lbel[oo]
-        out = as.vector(t(x))
-        names(out) = paste("v.", lbel, rep(c("a_L", "a_H"), 2), sep = "")
-        out
-      }
-      tst = lapply(out.sht, function(x) x[[5]])
-      tst = lapply(tst, labs.get, fold = V)
-      lbs = do.call(rbind, tst)
-
-      meanvarIC = apply(varIC, 1, mean)
-      psi = apply(theta, 1, mean)
-      SE = sqrt(meanvarIC/n)
-
-      lower = psi - 1.96 * SE
-      upper = psi + 1.96 * SE
-      signdig = 3
-      CI95 = paste0("(", signif(lower, signdig), " - ", signif(upper, signdig), ")")
-
-      # 1-sided p-value
-      pvalue = 1 - pnorm(psi/SE)
-      ##### FOR THETA (generalize to chi-square test?)  TT =
-      ##### (theta[,1]-theta[,2])/sqrt(SEV[,1]^2+SEV[,2]^2)
-      ##### pval.comp=2*(1-pnorm(abs(TT))) FOR levels (just make sure in same
-      ##### order)
-      nc = sum(factr == "ordered")
-      n = length(factr)
-      ### Ordered variables first
-      length.uniq = function(x) {
-        length(unique(x))
-      }
-      cons = NULL
-      if (nc > 0) {
-        dir = NULL
-        for (i in 1:V) {
-          ltemp = lbs[1:nc, i * 2 - 1]
-          xx = regexpr(",", ltemp)
-          lwr = as.numeric(substr(ltemp, 2, xx - 1))
-          utemp = lbs[1:nc, i * 2]
-          xx = regexpr(",", utemp)
-          nx = nchar(utemp)
-          uwr = as.numeric(substr(utemp, xx + 1, nx - 1))
-          dir = cbind(dir, uwr > lwr)
+      if (length(out.put) == 0) {
+        error_msg = "No VIMs could be calculated due to sample size, etc."
+        if (verbose) cat(error_msg, "\n")
+        warning(error_msg)
+      } else {
+        vars = vars[lngth2 == V]
+        factr = factr[lngth2 == V]
+        tst = lapply(out.put, function(x) x[[3]])
+        tst = do.call(rbind, tst)
+        tot.na = function(x) {
+          sum(is.na(x))
         }
-        cons = apply(dir, 1, length.uniq)
-      }
-      #### Factors
-      if (n - nc > 0) {
-        lwr = NULL
-        uwr = NULL
-        for (i in 1:V) {
-          lwr = cbind(lwr, lbs[(nc + 1):n, i * 2 - 1])
-          uwr = cbind(uwr, lbs[(nc + 1):n, i * 2 - 1])
+        if (verbose) cat("Dim tst:", paste(dim(tst)), "\n")
+        xx = apply(tst, 1, tot.na)
+        out.sht = out.put[xx == 0]
+        vars = vars[xx == 0]
+        factr = factr[xx == 0]
+
+        # names(out.sht)=vars[xx==0]
+        tst = lapply(out.sht, function(x) x[[1]])
+        EY1 = do.call(rbind, tst)
+        tst = lapply(out.sht, function(x) x[[2]])
+        EY0 = do.call(rbind, tst)
+        tst = lapply(out.sht, function(x) x[[3]])
+        theta = do.call(rbind, tst)
+        tst = lapply(out.sht, function(x) x[[4]])
+        varIC = do.call(rbind, tst)
+        tst = lapply(out.sht, function(x) x[[6]])
+        nV = do.call(rbind, tst)
+        n = sum(nV[1, ])
+        SEV = sqrt(varIC/nV)
+        ##### Get labels for each of the training sample
+        labs.get = function(x, fold) {
+          lbel = rep(1:fold, 2)
+          oo = order(lbel)
+          lbel = lbel[oo]
+          out = as.vector(t(x))
+          names(out) = paste("v.", lbel, rep(c("a_L", "a_H"), 2), sep = "")
+          out
         }
-        conslwr = apply(lwr, 1, length.uniq)
-        consupr = apply(uwr, 1, length.uniq)
-        cons = c(cons, conslwr * consupr)
+        tst = lapply(out.sht, function(x) x[[5]])
+        tst = lapply(tst, labs.get, fold = V)
+        lbs = do.call(rbind, tst)
+
+        meanvarIC = apply(varIC, 1, mean)
+        psi = apply(theta, 1, mean)
+        SE = sqrt(meanvarIC/n)
+
+        lower = psi - 1.96 * SE
+        upper = psi + 1.96 * SE
+        signdig = 3
+        CI95 = paste0("(", signif(lower, signdig), " - ", signif(upper, signdig), ")")
+
+        # 1-sided p-value
+        pvalue = 1 - pnorm(psi/SE)
+        ##### FOR THETA (generalize to chi-square test?)  TT =
+        ##### (theta[,1]-theta[,2])/sqrt(SEV[,1]^2+SEV[,2]^2)
+        ##### pval.comp=2*(1-pnorm(abs(TT))) FOR levels (just make sure in same
+        ##### order)
+        nc = sum(factr == "ordered")
+        n = length(factr)
+        ### Ordered variables first
+        length.uniq = function(x) {
+          length(unique(x))
+        }
+        cons = NULL
+        if (nc > 0) {
+          dir = NULL
+          for (i in 1:V) {
+            ltemp = lbs[1:nc, i * 2 - 1]
+            xx = regexpr(",", ltemp)
+            lwr = as.numeric(substr(ltemp, 2, xx - 1))
+            utemp = lbs[1:nc, i * 2]
+            xx = regexpr(",", utemp)
+            nx = nchar(utemp)
+            uwr = as.numeric(substr(utemp, xx + 1, nx - 1))
+            dir = cbind(dir, uwr > lwr)
+          }
+          cons = apply(dir, 1, length.uniq)
+        }
+        #### Factors
+        if (n - nc > 0) {
+          lwr = NULL
+          uwr = NULL
+          for (i in 1:V) {
+            lwr = cbind(lwr, lbs[(nc + 1):n, i * 2 - 1])
+            uwr = cbind(uwr, lbs[(nc + 1):n, i * 2 - 1])
+          }
+          conslwr = apply(lwr, 1, length.uniq)
+          consupr = apply(uwr, 1, length.uniq)
+          cons = c(cons, conslwr * consupr)
+        }
+        # consist= (cons==1 & pval.comp > 0.05)
+        signsum = function(x) {
+          sum(sign(x))
+        }
+        consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
+        procs = c("Holm", "BH")
+        if (n > 1) {
+          res = multtest::mt.rawp2adjp(pvalue, procs)
+          oo = res$index
+          outres = data.frame(factor = factr[oo], theta[oo, ],
+                              psi[oo], CI95[oo], res$adj, lbs[oo, ], consist[oo])
+        }
+        if (n == 1) {
+          outres = data.frame(factor = factr, theta, psi, CI95,
+                              rawp = pvalue, Holm = pvalue, BH = pvalue, lbs, consist)
+        }
+
+        # Restrict to variables that aren't missing their p-value.
+        outres = outres[!is.na(outres[, "rawp"]), , drop = F]
+
+        names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("psiV", 1:V), "AvePsi", "CI95")
+        names(outres)[(9 + 2 * V)] = "Consistent"
+
+        ### Get Consistency Measure and only significant Make BH cut-off flexible
+        ### in future versions (default at 0.05)
+        outres.cons = outres[outres[, "BH"] < 0.05, , drop = F]
+        outres.cons = outres.cons[outres.cons[, "Consistent"],
+                                  c("VarType", "AvePsi", "rawp"), drop = F]
+        colnames(outres.cons) = c("Type", "Estimate", "P-value")
+
+
+        # drops = c('VarType','description','Holm,')
+        # outres.all=outres[,!(names(outres) %in% drops)]
+        outres.byV = outres[, c(2:(2 + V - 1), 9:(9 + 2 * V)), drop = F]
+        outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH"), drop = F]
+        colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value")
       }
-      # consist= (cons==1 & pval.comp > 0.05)
-      signsum = function(x) {
-        sum(sign(x))
-      }
-      consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
-      procs = c("Holm", "BH")
-      if (n > 1) {
-        res = multtest::mt.rawp2adjp(pvalue, procs)
-        oo = res$index
-        outres = data.frame(factor = factr[oo], theta[oo, ],
-                            psi[oo], CI95[oo], res$adj, lbs[oo, ], consist[oo])
-      }
-      if (n == 1) {
-        outres = data.frame(factor = factr, theta, psi, CI95,
-                            rawp = pvalue, Holm = pvalue, BH = pvalue, lbs, consist)
-      }
-
-      # Restrict to variables that aren't missing their p-value.
-      outres = outres[!is.na(outres[, "rawp"]), , drop = F]
-
-      names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("psiV", 1:V), "AvePsi", "CI95")
-      names(outres)[(9 + 2 * V)] = "Consistent"
-
-      ### Get Consistency Measure and only significant Make BH cut-off flexible
-      ### in future versions (default at 0.05)
-      outres.cons = outres[outres[, "BH"] < 0.05, , drop = F]
-      outres.cons = outres.cons[outres.cons[, "Consistent"],
-                                c("VarType", "AvePsi", "rawp"), drop = F]
-      colnames(outres.cons) = c("Type", "Estimate", "P-value")
-
-
-      # drops = c('VarType','description','Holm,')
-      # outres.all=outres[,!(names(outres) %in% drops)]
-      outres.byV = outres[, c(2:(2 + V - 1), 9:(9 + 2 * V)), drop = F]
-      outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH"), drop = F]
-      colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value")
     }
 
   }) # End timing the full execution.
