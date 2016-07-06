@@ -800,7 +800,7 @@ varImpact = function(Y, data, V = 2,
         if (singleAY1 || length(na.omit(unique(Atnew))) <= 1 || length(na.omit(unique(Avnew))) <= 1) {
           error_msg = paste("Skipping", nameA, "in this fold because there is no variation.")
           if (verbose) cat(error_msg, "\n")
-          warning(error_msg)
+          #warning(error_msg)
           thetaV = c(thetaV, NA)
           varICV = c(varICV, NA)
           labV = rbind(labV, c(NA, NA))
