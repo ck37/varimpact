@@ -2,6 +2,7 @@
 #'
 #' @param V number of folds
 #' @param Y Outcome variable. If binary will be used for stratification.
+#' @param verbose If T will display extra output.
 #'
 #' @return Vector of fold assignments.
 create_cv_folds = function(V, Y, verbose = F) {
@@ -15,13 +16,13 @@ create_cv_folds = function(V, Y, verbose = F) {
       # Record how many observations have this Y value.
       n = sum(Y == Ys[i])
       folds = cvTools::cvFolds(n, K = V, R = 1, type = "random")$which
-      if (verbose) {
-        cat("Y", i, "is", Ys[i], "count:", sum(Y == Ys[i]), "n=", n, "fold length:",
-            length(folds), "\n")
-      }
+      #if (verbose) {
+      #  cat("Y", i, "is", Ys[i], "count:", sum(Y == Ys[i]), "n=", n, "fold length:",
+      #      length(folds), "\n")
+      #}
       out[Y == Ys[i]] = folds
     }
-    if (verbose) print(table(out, useNA="ifany"))
+    if (verbose) print(table(Y, "Fold"=out, useNA="ifany"))
   } else {
     # More than 2 Ys, so don't stratify.
     xx = cvTools::cvFolds(nn, K = V, R = 1, type = "random")$which

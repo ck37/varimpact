@@ -10,6 +10,8 @@ create_cv_folds(V, Y, verbose = F)
 \item{V}{number of folds}
 
 \item{Y}{Outcome variable. If binary will be used for stratification.}
+
+\item{verbose}{If T will display extra output.}
 }
 \value{
 Vector of fold assignments.
