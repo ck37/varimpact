@@ -381,31 +381,6 @@ varImpact = function(Y, data, V = 2,
 
     cat("Finished pre-processing variables.\n")
 
-    get.tmle.est = function(Y, A, W, delta = NULL, Q.lib, g.lib) {
-      ## Because of quirk of program, delete observations with delta=0 if #>0
-      ## & < 10
-      n = length(Y)
-      inc = rep(TRUE, n)
-      if (is.null(delta) == F) {
-        ss = sum(delta == 0)
-        if (ss > 0 & ss < 10) {
-          inc[delta == 0] = FALSE
-        }
-      }
-      Y = Y[inc]
-      A = A[inc]
-      W = W[inc, , drop = F]
-      delta = delta[inc]
-      tmle.1 = tmle::tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
-                    Q.SL.library = Q.lib, family = family, verbose = F)
-      g1 = tmle.1$g$g1W
-      Qst = tmle.1$Qstar[, 2]
-      theta = mean(Qst)
-      IC = (A/g1) * (Y - Qst) + Qst - theta
-      return(list(theta = theta, IC = IC))
-    }
-
-
     # Create cross-validation folds (2 by default).
     folds = create_cv_folds(V, Y, verbose=verbose)
 
@@ -653,7 +628,7 @@ varImpact = function(Y, data, V = 2,
             IA = as.numeric(At == vals[j])
             IA[is.na(IA)] = 0
             # if(min(table(IA,Yt))>=)
-            res = try(get.tmle.est(Yt, IA, Wtsht, deltat, Q.lib = Q.library,
+            res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
                                    g.lib = g.library), silent = TRUE)
             if (class(res) == "try-error") {
               if (verbose) cat("X")
@@ -688,7 +663,7 @@ varImpact = function(Y, data, V = 2,
           if (errcnt != num.cat & minj != maxj) {
             IA = as.numeric(Av == vals[minj])
             IA[is.na(IA)] = 0
-            res = try(get.tmle.est(Yv, IA, Wvsht, deltav, Q.lib = Q.library,
+            res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
                                    g.lib = c("SL.glmnet", "SL.glm")), silent = TRUE)
             if (class(res) == "try-error") {
               if (verbose) cat("TMLE on validation failed.\n")
@@ -705,7 +680,7 @@ varImpact = function(Y, data, V = 2,
               EY0 = res$theta
               IA = as.numeric(Av == vals[maxj])
               IA[is.na(IA)] = 0
-              res2 = try(get.tmle.est(Yv, IA, Wvsht, deltav, Q.lib = Q.library,
+              res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
                                       g.lib = g.library), silent = TRUE)
               if (class(res2) == "try-error") {
                 thetaV = c(thetaV, NA)
@@ -961,7 +936,7 @@ varImpact = function(Y, data, V = 2,
             for (j in 1:numcat.cont[i]) {
               # cat(' i = ',i,' kk = ',kk,' j = ',j,'\n')
               IA = as.numeric(Atnew == vals[j])
-              res = try(get.tmle.est(Yt, IA, Wtsht, deltat, Q.lib = Q.library,
+              res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
                                      g.lib = g.library), silent = T)
               if (class(res) == "try-error") {
                 # Error.
@@ -1007,7 +982,7 @@ varImpact = function(Y, data, V = 2,
               # Estimate with the minimum level.
               IA = as.numeric(Avnew == vals[minj])
               if (verbose) cat("Estimate on validation: ")
-              res = try(get.tmle.est(Yv, IA, Wvsht, deltav, Q.lib = Q.library,
+              res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
                                      g.lib = g.library), silent = T)
               if (verbose) cat("min ")
               if (class(res) == "try-error") {
@@ -1024,7 +999,7 @@ varImpact = function(Y, data, V = 2,
                 IC0 = res$IC
                 EY0 = res$theta
                 IA = as.numeric(Avnew == vals[maxj])
-                res2 = try(get.tmle.est(Yv, IA, Wvsht, deltav,
+                res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
                                         Q.lib = Q.library, g.lib = g.library), silent = TRUE)
                 if (verbose) cat("max")
                 if (class(res2) == "try-error") {
