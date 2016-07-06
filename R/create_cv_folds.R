@@ -5,6 +5,8 @@
 #' @param verbose If T will display extra output.
 #'
 #' @return Vector of fold assignments.
+#'
+#' @importFrom cvTools cvFolds
 create_cv_folds = function(V, Y, verbose = F) {
   Ys = unique(Y)
   nys = length(Ys)
