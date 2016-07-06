@@ -98,7 +98,7 @@ Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a pr
 
 Gruber, S., & van der Laan, M. J. (2012). tmle: An R Package for Targeted Maximum Likelihood Estimation. Journal of Statistical Software, 51(i13).
 
-Hubbard, A. E., & van der Laan, M. J. (2016). Mining with inference: data-adaptive target parameter (pp. 439-452). In P. Bühlmann et al. (Ed.), Handbook of Big Data. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
+Hubbard, A. E., & van der Laan, M. J. (2016). Mining with inference: data-adaptive target parameters (pp. 439-452). In P. Bühlmann et al. (Ed.), Handbook of Big Data. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
 
 van der Laan, M. J., & Pollard, K. S. (2003). A new algorithm for hybrid hierarchical clustering with visualization and the bootstrap. Journal of Statistical Planning and Inference, 117(2), 275-303.
 
