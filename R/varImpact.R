@@ -80,7 +80,7 @@
 #' 51(i13).
 #'
 #' Hubbard, A. E., & van der Laan, M. J. (2016). \emph{Mining with inference:
-#' data-adaptive target parameter (pp. 439-452)}. In P. Bühlmann et al. (Ed.),
+#' data-adaptive target parameters (pp. 439-452)}. In P. Bühlmann et al. (Ed.),
 #' \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca
 #' Raton, FL.
 #'
