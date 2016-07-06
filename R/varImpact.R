@@ -297,7 +297,13 @@ varImpact = function(Y, data, V = 2,
     }
     data.num = data.num[, dropind == F, drop = F]
 
-    if (verbose) cat("Dropping", sum(dropind), "numerics due to lack of variation.\n")
+    if (verbose) {
+      if (sum(dropind) > 0) {
+        cat("Dropping", sum(dropind), "numerics due to lack of variation.\n")
+      } else {
+        cat("No numerics dropped due to lack of variation.\n")
+      }
+    }
 
     # Save how many numeric variables we have in this dataframe.
     num_numeric = ncol(data.num)

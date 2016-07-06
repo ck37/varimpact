@@ -24,7 +24,10 @@ create_cv_folds = function(V, Y, verbose = F) {
       #}
       out[Y == Ys[i]] = folds
     }
-    if (verbose) print(table(Y, "Fold"=out, useNA="ifany"))
+    if (verbose) {
+      cat("Cross-validation fold breakdown:\n")
+      print(table(Y, "Fold"=out, useNA="ifany"))
+    }
   } else {
     # More than 2 Ys, so don't stratify.
     xx = cvTools::cvFolds(nn, K = V, R = 1, type = "random")$which
