@@ -2,6 +2,7 @@
 
 S3method(print,varImpact)
 export(exportLatex)
+export(factors_to_indicators)
 export(varImpact)
 importFrom(stats,cor)
 importFrom(stats,model.matrix)

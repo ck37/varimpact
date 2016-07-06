@@ -11,9 +11,9 @@
 #'  \item Drops variables for which their distribution is uneven  - e.g., all 1 value (tuneable)
 #'  separately for factors and numeric variables (ADD MORE DETAIL HERE)
 #'  \item Changes all factors to remove spaces (used for naming dummies later)
-#'  \item Changes variable names to remove spaces
+#'  \item Removes spaces from variable names.
 #'  \item Makes dummy variable basis for factors, including naming dummies
-#'  to be traceable to original factor variable laters
+#'  to be traceable to original factor variables later.
 #'  \item Makes new ordered variable of integers mapped to intervals defined by deciles for the ordered numeric variables (automatically makes)
 #'  fewer categories if original variable has < 10 values.
 #'  \item Creates associated list of number of unique values and the list of them
@@ -56,6 +56,7 @@
 #' of missing obs > cut.off
 #' @param parallel Use parallel processing if a backend is registered; enabled by default.
 #' @param verbose Boolean - if TRUE the method will display more detailed output.
+#' @param digits Number of digits to round the value labels.
 #'
 #' @return Results object.
 #'
@@ -66,6 +67,8 @@
 #'
 #' @section Authors:
 #' Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
+#'
+#' @encoding utf8
 #'
 #' @section References:
 #' Benjamini, Y., & Hochberg, Y. (1995). \emph{Controlling the false discovery
@@ -117,6 +120,8 @@
 #' # doMC parallel (multicore) example.
 #' library(doMC)
 #' registerDoMC()
+#' # Use L'Ecuyer for multicore seeds; see ?set.seed for details.
+#' set.seed(23432, "L'Ecuyer-CMRG")
 #' vim <- varImpact(Y = Y, data = X)
 #'
 #' ####################################
@@ -146,8 +151,8 @@ varImpact = function(Y, data, V = 2,
                      Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
-                     impute = "knn",
-                     miss.cut = 0.5, verbose=F, parallel = T) {
+                     impute = "knn", miss.cut = 0.5, verbose=F, parallel = T,
+                     digits = 4) {
 
   # Time the full function execution
   time = system.time({
@@ -160,16 +165,9 @@ varImpact = function(Y, data, V = 2,
       stop("With binomial family Y must be bounded by [0, 1]. Specify family=\"gaussian\" otherwise.")
     }
 
-  ###
-  # Get missingness for each column
-  # Function for getting total number missing values for vector
-  sum.na = function(x) {
-    sum(is.na(x))
-  }
-
   ########
   # Applied to Explanatory (X) data frame
-  sna = apply(data, 2, sum.na)
+  sna = apply(data, 2, sum_na)
 
   n = nrow(data)
 
@@ -188,7 +186,7 @@ varImpact = function(Y, data, V = 2,
   isit.factor = !ind.num
 
   ###
-  # Function that counts # of unique values
+  # Function that counts # of unique values.
   length_unique = function(x) {
     length(unique(x))
   }
@@ -211,41 +209,81 @@ varImpact = function(Y, data, V = 2,
     n.fac = 0
   }
 
-  #### data.fac is data frame of variables that are factors
+  #####################
+  # data.fac is data frame of variables that are factors
   if (sum(isit.factor) > 0) {
+
+    # Create a dataframe consisting only of factors.
     data.fac = data[, isit.factor, drop = F]
 
-    ## Replace blanks with NA's
-    nc = ncol(data.fac)
-    for (i in 1:nc) {
-      xx = as.character(data.fac[, i])
-      xx = factor(xx, exclude = "")
-      data.fac[, i] = xx
+    if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
+
+    ######################################
+    # Replace blank factor values with NA's.
+    num_cols = ncol(data.fac)
+    for (i in 1:num_cols) {
+      new_factor = as.character(data.fac[, i])
+      new_factor = factor(new_factor, exclude = "")
+      data.fac[, i] = new_factor
     }
+
+
+    ###################
+    # For each factor, apply qq.range function and get rid of those where
+    # 'true' data.fac is data frame of variables that are factors
 
     # List of column indices to remove.
-    dropind = NULL
-    for (i in 1:nc) {
-      dropind = c(dropind, qq.range(data.fac[, i], rr = c(0.1, 0.9)))
+    drop_indices = NULL
+    for (i in 1:num_cols) {
+      drop_indices = c(drop_indices, qq.range(data.fac[, i], rr = c(0.1, 0.9)))
     }
 
-    data.fac = data.fac[, dropind == F, drop = F]
+    data.fac = data.fac[, drop_indices == F, drop = F]
 
+    if (verbose) cat("Dropped", sum(drop_indices), "factors due to lack of variation.\n")
+
+    # We don't seem to use this yet.
     num.cat = apply(data.fac, 2, length_unique)
-    sna = apply(data.fac, 2, sum.na)
 
-    n = nrow(data.fac)
-    mis.prop = sna / n
+    ######################
+    # Remove columns with missing data % greater than the threshold.
+    sum_nas = apply(data.fac, 2, sum_na)
 
-    # POSSIBLE BUG: shouldn't this be using mis.cut rather than 0.5?
-    data.fac = data.fac[, mis.prop < 0.5, drop = F]
+    if (verbose) cat("Factors with missingness:", sum(sum_nas > 0), "\n")
 
-    # Save how many factors we have in this dataframe.
+    miss_pct = sum_nas / nrow(data.fac)
+
+    data.fac = data.fac[, miss_pct < miss.cut, drop = F]
+
+    if (verbose) cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
+
+    # Save how many separate factors we have in this dataframe.
     num_factors = ncol(data.fac)
+
+    factor_results = factors_to_indicators(data.fac, verbose = verbose)
+
+    datafac.dum = factor_results$data
+    miss.fac = factor_results$miss.fac
+
+    if (verbose) {
+      cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
+          "Missing indicators:", ncol(miss.fac), "\n")
+      # TEMP
+      stopifnot(length(miss.fac) > 0)
+    }
+
   } else {
     num_factors = 0
     datafac.dumW = NULL
+    miss.fac = NULL
+    datafac.dum = NULL
   }
+
+  # Finished pre-processing factor variables.
+  ###########################################################
+
+  ###########################################################
+  # Pre-process numeric/continuous variables.
 
   ## Numeric variables
   data.num = data[, !isit.factor, drop = F]
@@ -258,6 +296,9 @@ varImpact = function(Y, data, V = 2,
       dropind = c(dropind, qq.range.num(data.num[, i], rr = c(0.1, 0.9)))
     }
     data.num = data.num[, dropind == F, drop = F]
+
+    if (verbose) cat("Dropping", sum(dropind), "numerics due to lack of variation.\n")
+
     # Save how many numeric variables we have in this dataframe.
     num_numeric = ncol(data.num)
   } else {
@@ -265,80 +306,6 @@ varImpact = function(Y, data, V = 2,
   }
 
 
-  if (num_factors > 0) {
-    if (verbose) cat("Cleaning up", num_factors, "factor variables.\n")
-    ## For each factor, apply qq.range function and get rid of those where
-    ## 'true' data.fac is data frame of variables that are factors
-    facnames = names(data.fac)
-    nam.fac = function(x, name) {
-      nc = nchar(x)
-      out = paste(name, substr(x, 2, nc), sep = "XX")
-      # Remove spaces in variable names.
-      out = gsub(" ", "", out)
-      return(out)
-    }
-
-    newX = NULL
-    cumulative_names = NULL
-
-    # TODO: remove this line?
-    options(na.action = "na.pass")
-
-    # Loop over each factor variable.
-    for (i in 1:num_factors) {
-      # cat(' i = ',i,'\n')
-      x = data.fac[, i]
-      # Convert to a series of indicators.
-      # CK: looks like we are omitting the first level?
-      inds = model.matrix(~ x - 1)[, -1]
-      nmes = colnames(inds)
-      if (is.null(nmes)) {
-        nmes2 = facnames[i]
-      } else {
-        # Clean up the names for each indicator.
-        nmes2 = nam.fac(nmes, facnames[i])
-      }
-      # Accumulate the names.
-      cumulative_names = c(cumulative_names, nmes2)
-      newX = cbind(newX, inds)
-    }
-
-    colnames(newX) = cumulative_names
-
-    ## Indexing vector for dummy basis back to original factors
-    cc = regexpr("XX", cumulative_names)
-    ncc = nchar(cumulative_names)
-    cc[cc < 0] = ncc[cc < 0] + 1
-    fac.indx = substr(cumulative_names, 1, cc - 1)
-    datafac.dum = newX
-
-    ############
-    # Missing Basis for Factors
-    xp = ncol(datafac.dum)
-    sna = apply(datafac.dum, 2, sum.na)
-    namesX = colnames(datafac.dum)
-    miss.fac = NULL
-    names_miss = NULL
-    for (k in 1:xp) {
-      if (sna[k] > 0) {
-        # Again, we are flagging non-missing as 1 and missing as 0 here.
-        ix = as.numeric(is.na(datafac.dum[, k]) == F)
-        # Replace missing factor indicators with 0.
-        datafac.dum[is.na(datafac.dum[, k]), k] = 0
-        miss.fac = cbind(miss.fac, ix)
-        names_miss = c(names_miss, paste("Imiss_", namesX[k], sep = ""))
-      }
-    }
-    colnames(miss.fac) = names_miss
-  } else {
-    miss.fac = NULL
-    datafac.dum = NULL
-  }
-  # Finished pre-processing factor variables.
-  ###########################################################
-
-  ###########################################################
-  # Pre-process numeric/continuous variables.
 
   if (num_numeric > 0) {
     if (verbose) cat("Cleaning up", num_numeric, "numeric variables.\n")
@@ -369,11 +336,7 @@ varImpact = function(Y, data, V = 2,
     xp = ncol(data.cont.dist)
     n.cont = nrow(data.cont.dist)
 
-    sum.na = function(x) {
-      sum(is.na(x))
-    }
-
-    sna = apply(data.cont.dist, 2, sum.na)
+    sna = apply(data.cont.dist, 2, sum_na)
     nmesX = colnames(data.cont.dist)
     miss.cont = NULL
     nmesm = NULL
@@ -495,9 +458,9 @@ varImpact = function(Y, data, V = 2,
     # VIM for Factors
     # NOTE: we use && so that conditional will short-circuit if num_factors == 0.
     if (num_factors > 0 && ncol(data.fac) > 0) {
-      if (verbose) cat("\nVIM for factors.\n")
+      cat("Estimating variable importance for", num_factors, "factors.\n")
 
-      ## Find the level of covariate that has lowest risk
+      # Find the level of covariate that has lowest risk
       datafac.dumW = datafac.dum
       # NOTE: can't we skip this line because we already imputed missing data to 0?
       datafac.dumW[is.na(datafac.dum)] = 0
@@ -574,7 +537,12 @@ varImpact = function(Y, data, V = 2,
         #if (sd(Adum) == 0) {
         #  if (verbose) cat("Warning: sd of Adum = 0.\n")
         #}
-        corAt = apply(cor(Adum, Wt, use = "complete.obs"), 2, max.2)
+
+        # Supress possible "the standard deviation is zero" warning from cor().
+        # TODO: investigate more and confirm that this is ok.
+        suppressWarnings({
+          corAt = apply(cor(Adum, Wt, use = "complete.obs"), 2, max.2)
+        })
         corAt[corAt < -1] = 0
         # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
         incc = abs(corAt) < corthres & is.na(corAt) == F
@@ -621,7 +589,11 @@ varImpact = function(Y, data, V = 2,
               ncv = c(ncv, length(unique(trunc(hopach.1$final$labels/10^(no - (ii - 1))))))
             }
             ncv = unique(ncv)
-            lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= ncov]))
+            # Suppress possible "no non-missing arguments to min; returning Inf" warning from min().
+            # TODO: investigate more and confirm that this is ok.
+            suppressWarnings({
+              lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= ncov]))
+            })
             two.clust <- unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
             md <- hopach.1$final$medoids
             mm = md[, 1] %in% two.clust
@@ -767,6 +739,7 @@ varImpact = function(Y, data, V = 2,
                 EY1 = res2$theta
                 thetaV = c(thetaV, EY1 - EY0)
                 varICV = c(varICV, var(IC1 - IC0))
+                # Don't round these labels, because they are factor values.
                 labV = rbind(labV, c(labmin, labmax))
                 EY0V = c(EY0V, EY0)
                 EY1V = c(EY1V, EY1)
@@ -805,7 +778,7 @@ varImpact = function(Y, data, V = 2,
     ######################################################
     # We use && so that the second check will be skipped when num_numeric == 0.
     if (num_numeric > 0 && ncol(data.cont.dist) > 0) {
-      if (verbose) cat("\nVIM for numeric variables.\n")
+      cat("Estimating variable importance for", num_numeric, "numerics.\n")
 
       xc = ncol(data.cont.dist)
       names.cont = colnames(data.cont.dist)
@@ -906,7 +879,10 @@ varImpact = function(Y, data, V = 2,
           Wv = Wv[, is.na(mtch), drop = F]
           ### Pull out any variables that are overly correlated with At (corr coef
           ### < corthes)
-          corAt = apply(Wt, 2, cor.two, y = At)
+          # Suppress possible warning from cor() "the standard deviation is zero".
+          suppressWarnings({
+            corAt = apply(Wt, 2, cor.two, y = At)
+          })
           # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
           incc = corAt < corthres & is.na(corAt) == F
           Wv = Wv[, incc, drop = F]
@@ -932,7 +908,7 @@ varImpact = function(Y, data, V = 2,
             if (class(hopach.1) == "try-error") {
               if (verbose) cat(" Attempt 1 fail.")
               # Retry with a different specification.
-              hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F),
+              hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F),
                               silent = !verbose)
             }
             if (class(hopach.1) == "try-error") {
@@ -950,8 +926,12 @@ varImpact = function(Y, data, V = 2,
                 ncv = c(ncv, length(unique(trunc(hopach.1$final$labels/10^(no - (ii - 1))))))
               }
               ncv = unique(ncv)
-              lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= ncov]))
-              two.clust <- unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
+              # Suppress possible "no non-missing arguments to min; returning Inf" warning from min().
+              # TODO: investigate more and confirm that this is ok.
+              suppressWarnings({
+                lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= ncov]))
+              })
+              two.clust = unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
               md = hopach.1$final$medoids
               mm = md[, 1] %in% two.clust
               incc = md[mm, 2]
@@ -982,8 +962,8 @@ varImpact = function(Y, data, V = 2,
           # Only applies to binary outcomes.
           if (length(unique(Yt)) == 2 && min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell) {
             error_msg = paste("Skipping", nameA, "due to minCell constraint.\n")
-            if (verbose) cat(error_msg)
-            warning(error_msg)
+            if (T || verbose) cat(error_msg)
+            # warning(error_msg)
             thetaV = c(thetaV, NA)
             varICV = c(varICV, NA)
             labV = rbind(labV, c(NA, NA))
@@ -1081,6 +1061,7 @@ varImpact = function(Y, data, V = 2,
                   EY1 = res2$theta
                   thetaV = c(thetaV, EY1 - EY0)
                   varICV = c(varICV, var(IC1 - IC0))
+                  #labV = rbind(labV, round(c(labmin, labmax), digits = digits))
                   labV = rbind(labV, c(labmin, labmax))
                   EY0V = c(EY0V, EY0)
                   EY1V = c(EY1V, EY1)
@@ -1151,11 +1132,8 @@ varImpact = function(Y, data, V = 2,
         factr = factr[lngth2 == V]
         tst = lapply(out.put, function(x) x[[3]])
         tst = do.call(rbind, tst)
-        tot.na = function(x) {
-          sum(is.na(x))
-        }
         if (verbose) cat("Dim tst:", paste(dim(tst)), "\n")
-        xx = apply(tst, 1, tot.na)
+        xx = apply(tst, 1, sum_na)
         out.sht = out.put[xx == 0]
         vars = vars[xx == 0]
         factr = factr[xx == 0]
