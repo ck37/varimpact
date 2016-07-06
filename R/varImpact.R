@@ -405,32 +405,9 @@ varImpact = function(Y, data, V = 2,
       return(list(theta = theta, IC = IC))
     }
 
-    ####
-    # Stratified CV to insure balance (by one grouping variable, Y)
-    CC.CV = function(V, Y) {
-      Ys = unique(Y)
-      nys = length(Ys)
-      nn = length(Y)
-      # Binary outcome so we can do stratified fold generation.
-      if (nys == 2) {
-        tt = table(Y)
-        out = rep(NA, nn)
-        for (i in 1:nys) {
-          n = as.numeric(tt[i])
-          xx = cvTools::cvFolds(n, K = V, R = 1, type = "random")$which
-          # TODO: there is a bug in this somewhere.
-          out[Y == Ys[i]] = xx
-        }
-      } else {
-        # More than 2 Ys, so don't stratify.
-        xx = cvTools::cvFolds(nn, K = V, R = 1, type = "random")$which
-        out = xx
-      }
-      return(out)
-    }
 
     # Create cross-validation folds (2 by default).
-    folds = CC.CV(V, Y)
+    folds = create_cv_folds(V, Y, verbose=verbose)
 
     max.2 = function(x) {
       # Handle missing data manually so we don't get warnings when it occurs.
@@ -473,19 +450,22 @@ varImpact = function(Y, data, V = 2,
       nmes.mfacW = colnames(miss.fac)
       nchar.facW = nchar(nmes.facW) + 1
       nchar.mfacW = nchar(nmes.mfacW) + 1
+
       XXm = regexpr("XX", nmes.facW)
       XXm[XXm < 0] = nchar.facW[XXm < 0]
+
       XXm2 = regexpr("XX", nmes.mfacW)
       XXm2[XXm2 < 0] = nchar.mfacW[XXm2 < 0]
+
       vars.facW = substr(nmes.facW, 1, XXm - 1)
       vars.mfacW = substr(nmes.mfacW, 7, XXm2 - 1)
+
       xc = ncol(data.fac)
       n.fac = nrow(data.fac)
 
       # vim_factor = lapply(1:xc, function(i) {
       vim_factor = foreach::foreach(i = 1:xc, .verbose=verbose) %do_op% {
-      # output <- lapply(1:2, function(i) { pp1=proc.time()
-      nameA = names.fac[i]
+        nameA = names.fac[i]
 
       if (verbose) cat("i =", i, "Var =", nameA, "out of", xc, "factor variables\n")
 
@@ -527,6 +507,7 @@ varImpact = function(Y, data, V = 2,
         }
 
         W = data.frame(data.numW, miss.cont, dumW, missdumW)
+        # TODO: what is this doing?
         W = W[, !apply(is.na(W), 2, all), drop = F]
         Wt = W[folds != kk, , drop = F]
         Wv = W[folds == kk, , drop = F]
