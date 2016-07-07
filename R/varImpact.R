@@ -185,18 +185,17 @@ varImpact = function(Y, data, V = 2,
     ## Identify factor variables
     isit.factor = !ind.num
 
+    # TODO: convert characters to factors, and/or warn.
+
     ###
     # Function that counts # of unique values.
     length_unique = function(x) {
       length(unique(x))
     }
 
-    ### num.values is vector of number of unique values by variable
+    # Vector of number of unique values by variable.
+    # TODO: run in parallel to support very wide/big datasets.
     num.values = apply(data, 2, length_unique)
-
-    if (sum(isit.factor) == 0) {
-      n.fac = 0
-    }
 
     #####################
     if (sum(isit.factor) > 0) {
@@ -262,6 +261,7 @@ varImpact = function(Y, data, V = 2,
             "Missing indicators:", ncol(miss.fac), "\n")
       }
     } else {
+      n.fac = 0
       num_factors = 0
       datafac.dumW = NULL
       miss.fac = NULL
@@ -1022,11 +1022,13 @@ varImpact = function(Y, data, V = 2,
       colnames_numeric = NULL
       vim_numeric = NULL
       data.numW = NULL
-      cat("No numeric variables - skim VIM estimation.\n")
+      cat("No numeric variables for variable importance estimation.\n")
     }
 
-    if (verbose) cat("Completed VIM estimation.\n")
+    if (verbose) cat("Completed numeric variable importance estimation.\n")
 
+
+    #####################################################
     # Combine the separate continuous and factor results.
 
     num_numeric = length(colnames_numeric)
@@ -1051,15 +1053,23 @@ varImpact = function(Y, data, V = 2,
     # Get rid of any variables that have a validation sample with no
     # estimates of variable importance.
     if (length(vim_combined) == 0) {
-      error_msg = "No VIMs could be calculated due to sample size, etc."
+      error_msg = "No variable importance estimates could be calculated due to sample size, etc."
       if (verbose) cat(error_msg, "\n")
       warning(error_msg)
       # TODO: also write output to the file in a separate function call.
       #write("No VIM's could be calculated due to sample size, etc",
       #     file = "AllReslts.tex")
     } else {
-      lngth2 = sapply(vim_combined, function(x) length(na.omit(x[[1]])))
+      lngth2 = sapply(vim_combined, function(x) {
+        # In some cases class(x[[1]]) is NULL, so this avoids a warning.
+        if (class(x[[1]]) != "numeric") {
+          return(0)
+        }
+        element_one = na.omit(x[[1]])
+        length(element_one)
+      })
       out.put = vim_combined[lngth2 == V]
+
       if (length(out.put) == 0) {
         error_msg = "No VIMs could be calculated due to sample size, etc."
         if (verbose) cat(error_msg, "\n")

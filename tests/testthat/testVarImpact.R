@@ -1,3 +1,5 @@
+# Make sure we're using the rebuilt package.
+detach(package:varImpact)
 library(varImpact)
 library(testthat)
 
