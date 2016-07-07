@@ -26,7 +26,9 @@ vim = varImpact(Y = Y_bin, data = X[, 1:4], V = 2, verbose=T)
 vim
 vim$results_all
 # names(vim)
-exportLatex(vim, dir = "results")
+exportLatex(vim)
+# Clean up
+file.remove(c("varimpByV.tex", "varImpAll.tex", "varimpConsistent.tex"))
 
 # And try a gaussian outcome.
 vim = varImpact(Y = Y_gaus, data = X[, 1:4], V = 2, verbose=T, family="gaussian")

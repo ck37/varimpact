@@ -1,6 +1,8 @@
 library(varImpact)
 library(testthat)
 
+context("factorsToIndicators")
+
 # Create test dataset.
 
 set.seed(1)
