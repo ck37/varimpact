@@ -258,7 +258,9 @@ varImpact = function(Y, data, V = 2,
 
       data.fac = data.fac[, miss_pct < miss.cut, drop = F]
 
-      if (verbose) cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
+      if (verbose) {
+        cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
+      }
 
       # Save how many separate factors we have in this dataframe.
       num_factors = ncol(data.fac)
@@ -326,9 +328,18 @@ varImpact = function(Y, data, V = 2,
 
       for (k in 1:num_numeric) {
         Xt = X[, k]
-        # TODO: number of bins should be a function argument.
-        tst = as.numeric(arules::discretize(Xt, method = "frequency", categories = 10,
+        # cat("Numeric", k, "", colnames(X)[k], "mean missing:", mean(is.na(Xt)), "\n")
+
+        # Suppress the warning that can occur when there are fewer than 10 bins.
+        # We should be able to see this as tst containing fewer than 10 columns.
+        # Warning is in .cut2(): min(xx[xx > upper])
+        # "no non-missing arguments to min; returning Inf"
+        suppressWarnings({
+          # Discretize into up to 10 deciles.
+          # TODO: number of bins should be a function argument.
+          tst = as.numeric(arules::discretize(Xt, method = "frequency", categories = 10,
                                   ordered = T))
+        })
         Xnew = cbind(Xnew, tst)
       }
       colnames(Xnew) = varn
