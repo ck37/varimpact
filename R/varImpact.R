@@ -165,6 +165,18 @@ varImpact = function(Y, data, V = 2,
       stop("With binomial family Y must be bounded by [0, 1]. Specify family=\"gaussian\" otherwise.")
     }
 
+
+    # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
+    `%do_op%` = foreach::`%do%`
+    # Use parallelism if there is a backend registered, unless parallel == F.
+    if (foreach::getDoParRegistered() && parallel) {
+      `%do_op%` = foreach::`%dopar%`
+      if (verbose) cat("Parallel backend detected: using foreach parallelization.\n")
+    } else {
+      if (verbose) cat("No parallel backend detected. Operating sequentially.\n")
+    }
+
+
     ########
     # Applied to Explanatory (X) data frame
     sna = apply(data, 2, sum_na)
@@ -374,16 +386,6 @@ varImpact = function(Y, data, V = 2,
 
     # Create cross-validation folds (2 by default).
     folds = create_cv_folds(V, Y, verbose=verbose)
-
-    # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
-    `%do_op%` = foreach::`%do%`
-    # Use parallelism if there is a backend registered, unless parallel == F.
-    if (foreach::getDoParRegistered() && parallel) {
-      `%do_op%` = foreach::`%dopar%`
-      if (verbose) cat("Parallel backend detected: using foreach parallelization.\n")
-    } else {
-      if (verbose) cat("No parallel backend detected. Operating sequentially.\n")
-    }
 
     n = length(Y)
 
