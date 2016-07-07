@@ -25,7 +25,8 @@ vim
 vim$results_all
 # names(vim)
 exportLatex(vim, dir = "results")
-# And a gaussian outcome.
+
+# And try a gaussian outcome.
 vim = varImpact(Y = Y_gaus, data = X[, 1:4], V = 2, verbose=T, family="gaussian")
 
 # Test imputation

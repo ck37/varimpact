@@ -165,242 +165,215 @@ varImpact = function(Y, data, V = 2,
       stop("With binomial family Y must be bounded by [0, 1]. Specify family=\"gaussian\" otherwise.")
     }
 
-  ########
-  # Applied to Explanatory (X) data frame
-  sna = apply(data, 2, sum_na)
+    ########
+    # Applied to Explanatory (X) data frame
+    sna = apply(data, 2, sum_na)
 
-  n = nrow(data)
+    n = nrow(data)
 
-  #######
-  # Missing proportion by variable.
-  mis.prop = sna / n
+    #######
+    # Missing proportion by variable.
+    mis.prop = sna / n
 
-  #######
-  # Cut-off for eliminating variable for proportion of obs missing.
-  data = data[, mis.prop < miss.cut]
+    #######
+    # Cut-off for eliminating variable for proportion of obs missing.
+    data = data[, mis.prop < miss.cut]
 
-  ###### Identify numeric variables (ordered)
-  ind.num = sapply(data, is.numeric)
+    ###### Identify numeric variables (ordered)
+    ind.num = sapply(data, is.numeric)
 
-  ## Identify factor variables
-  isit.factor = !ind.num
+    ## Identify factor variables
+    isit.factor = !ind.num
 
-  ###
-  # Function that counts # of unique values.
-  length_unique = function(x) {
-    length(unique(x))
-  }
-
-  ### num.values is vector of number of unique values by variable
-  num.values = apply(data, 2, length_unique)
-
-  ### Function that returns logical T if no variability by variable
-  qq.range = function(x, rr) {
-    qq = quantile(unclass(x), probs = rr, na.rm = T)
-    (qq[2] - qq[1]) == 0
-  }
-
-  qq.range.num = function(x, rr) {
-    qq = quantile(x, probs = rr, na.rm = T)
-    (qq[2] - qq[1]) == 0
-  }
-
-  if (sum(isit.factor) == 0) {
-    n.fac = 0
-  }
-
-  #####################
-  if (sum(isit.factor) > 0) {
-
-    # Create a dataframe consisting only of variables that are factors.
-    data.fac = data[, isit.factor, drop = F]
-
-    if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
-
-    ######################################
-    # Replace blank factor values with NA's.
-
-    # We re-use this num_cols variable in the next loop.
-    num_cols = ncol(data.fac)
-    for (i in 1:num_cols) {
-      new_factor = as.character(data.fac[, i])
-      # The exclude argument replaces any empty strings with NAs.
-      new_factor = factor(new_factor, exclude = "")
-      data.fac[, i] = new_factor
+    ###
+    # Function that counts # of unique values.
+    length_unique = function(x) {
+      length(unique(x))
     }
 
+    ### num.values is vector of number of unique values by variable
+    num.values = apply(data, 2, length_unique)
 
-    ###################
-    # For each factor, apply qq.range function and get rid of those where
-    # 'true' data.fac is data frame of variables that are factors
-
-    # List of column indices to remove.
-    drop_indices = NULL
-    for (i in 1:num_cols) {
-      # TODO: explain how this qq.range works.
-      drop_indices = c(drop_indices, qq.range(data.fac[, i], rr = c(0.1, 0.9)))
+    if (sum(isit.factor) == 0) {
+      n.fac = 0
     }
 
-    # Restrict to variables with variation.
-    data.fac = data.fac[, !drop_indices, drop = F]
+    #####################
+    if (sum(isit.factor) > 0) {
 
-    if (verbose) cat("Dropped", sum(drop_indices), "factors due to lack of variation.\n")
+      # Create a dataframe consisting only of variables that are factors.
+      data.fac = data[, isit.factor, drop = F]
 
-    # We don't seem to use this yet.
-    num.cat = apply(data.fac, 2, length_unique)
+      if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
 
-    ######################
-    # Remove columns with missing data % greater than the threshold.
-    sum_nas = apply(data.fac, 2, sum_na)
+      ######################################
+      # Replace blank factor values with NA's.
 
-    if (verbose) cat("Factors with missingness:", sum(sum_nas > 0), "\n")
-
-    miss_pct = sum_nas / nrow(data.fac)
-
-    data.fac = data.fac[, miss_pct < miss.cut, drop = F]
-
-    if (verbose) cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
-
-    # Save how many separate factors we have in this dataframe.
-    num_factors = ncol(data.fac)
-
-    factor_results = factors_to_indicators(data.fac, verbose = verbose)
-
-    datafac.dum = factor_results$data
-    miss.fac = factor_results$miss.fac
-
-    if (verbose) {
-      cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
-          "Missing indicators:", ncol(miss.fac), "\n")
-    }
-
-  } else {
-    num_factors = 0
-    datafac.dumW = NULL
-    miss.fac = NULL
-    datafac.dum = NULL
-  }
-
-  # Finished pre-processing factor variables.
-  ###########################################################
-
-  ###########################################################
-  # Pre-process numeric/continuous variables.
-
-  ## Numeric variables
-  data.num = data[, !isit.factor, drop = F]
-
-  if (ncol(data.num) > 0) {
-    dropind = NULL
-    nc = ncol(data.num)
-    for (i in 1:nc) {
-      # cat(" i = ", i, "\n")
-      dropind = c(dropind, qq.range.num(data.num[, i], rr = c(0.1, 0.9)))
-    }
-    data.num = data.num[, dropind == F, drop = F]
-
-    if (verbose) {
-      if (sum(dropind) > 0) {
-        cat("Dropping", sum(dropind), "numerics due to lack of variation.\n")
-      } else {
-        cat("No numerics dropped due to lack of variation.\n")
+      # We re-use this num_cols variable in the next section.
+      num_cols = ncol(data.fac)
+      for (i in 1:num_cols) {
+        new_factor = as.character(data.fac[, i])
+        # The exclude argument replaces any empty strings with NAs.
+        new_factor = factor(new_factor, exclude = "")
+        data.fac[, i] = new_factor
       }
+
+      ###################
+      # For each factor, apply function and get rid of those where
+      # 'true' data.fac is data frame of variables that are factors
+
+      data.fac = restrict_by_quantiles(data.fac, quantile_probs = c(0.1, 0.9))
+
+      dropped_cols = num_cols - ncol(data.fac)
+
+      if (verbose) {
+        if (dropped_cols > 0) {
+          cat("Dropped", dropped_cols, "factors due to lack of variation.\n")
+        } else {
+          cat("No factors dropped due to lack of variation.\n")
+        }
+      }
+
+      # We don't seem to use this yet.
+      num.cat = apply(data.fac, 2, length_unique)
+
+      ######################
+      # Remove columns with missing data % greater than the threshold.
+      sum_nas = apply(data.fac, 2, sum_na)
+
+      if (verbose) cat("Factors with missingness:", sum(sum_nas > 0), "\n")
+
+      miss_pct = sum_nas / nrow(data.fac)
+
+      data.fac = data.fac[, miss_pct < miss.cut, drop = F]
+
+      if (verbose) cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
+
+      # Save how many separate factors we have in this dataframe.
+      num_factors = ncol(data.fac)
+
+      factor_results = factors_to_indicators(data.fac, verbose = verbose)
+
+      datafac.dum = factor_results$data
+      miss.fac = factor_results$miss.fac
+
+      if (verbose) {
+        cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
+            "Missing indicators:", ncol(miss.fac), "\n")
+      }
+    } else {
+      num_factors = 0
+      datafac.dumW = NULL
+      miss.fac = NULL
+      datafac.dum = NULL
     }
 
-    # Save how many numeric variables we have in this dataframe.
-    num_numeric = ncol(data.num)
-  } else {
-    num_numeric = 0
-  }
+    # Finished pre-processing factor variables.
+    ###########################################################
 
+    ###########################################################
+    # Pre-process numeric/continuous variables.
 
+    # Numeric variables
+    data.num = data[, !isit.factor, drop = F]
 
-  if (num_numeric > 0) {
-    if (verbose) cat("Cleaning up", num_numeric, "numeric variables.\n")
-    # Make deciles for continuous variables
-    X = data.num
-    xc = dim(X)[2]
-    qt = apply(na.omit(X), 2, quantile, probs = seq(0.1, 0.9, 0.1))
-    newX = NULL
-    coln = NULL
-    varn = colnames(X)
+    if (ncol(data.num) > 0) {
+      num_cols = ncol(data.num)
 
-    num.cat = apply(X, 2, length_unique)
+      # Remove columns where the 0.1 and 0.9 quantiles have the same value, i.e. insufficent variation.
+      data.num = restrict_by_quantiles(data.num, quantile_probs = c(0.1, 0.9))
 
-    Xnew = NULL
+      if (verbose) {
+        num_dropped = ncol(data.num) - num_cols
+        if (num_dropped > 0) {
+          cat("Dropped", num_dropped, "numerics due to lack of variation.\n")
+        } else {
+          cat("No numerics dropped due to lack of variation.\n")
+        }
+      }
 
-    for (k in 1:num_numeric) {
-      Xt = X[, k]
-      # TODO: number of bins should be a function argument.
-      tst = as.numeric(arules::discretize(Xt, method = "frequency", categories = 10,
+      # Save how many numeric variables we have in this dataframe.
+      num_numeric = ncol(data.num)
+    } else {
+      num_numeric = 0
+    }
+
+    if (num_numeric > 0) {
+      if (verbose) cat("Cleaning up", num_numeric, "numeric variables.\n")
+      # Make deciles for continuous variables
+      X = data.num
+      xc = dim(X)[2]
+      qt = apply(na.omit(X), 2, quantile, probs = seq(0.1, 0.9, 0.1))
+      newX = NULL
+      coln = NULL
+      varn = colnames(X)
+
+      num.cat = apply(X, 2, length_unique)
+
+      Xnew = NULL
+
+      for (k in 1:num_numeric) {
+        Xt = X[, k]
+        # TODO: number of bins should be a function argument.
+        tst = as.numeric(arules::discretize(Xt, method = "frequency", categories = 10,
                                   ordered = T))
-      Xnew = cbind(Xnew, tst)
-    }
-    colnames(Xnew) = varn
-    data.cont.dist = Xnew
-
-    ###############
-    # Missing Basis for numeric variables.
-    xp = ncol(data.cont.dist)
-    n.cont = nrow(data.cont.dist)
-
-    sna = apply(data.cont.dist, 2, sum_na)
-    nmesX = colnames(data.cont.dist)
-    miss.cont = NULL
-    nmesm = NULL
-
-    # Create imputed version of the numeric dataframe.
-    data.numW = data.num
-
-    # Loop over each binned numeric variable.
-    for (k in 1:xp) {
-      # Check if that variable has any missing values.
-      if (sna[k] > 0) {
-        # TODO: is this correct? shouldn't it be is.na() == T?
-        # The effect is that the basis is set to 1 if it exists and 0 if it's missing.
-        ix = as.numeric(is.na(data.cont.dist[, k]) == F)
-        miss.cont = cbind(miss.cont, ix)
-        nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
+        Xnew = cbind(Xnew, tst)
       }
-    }
-    # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
-    colnames(miss.cont) = nmesm
+      colnames(Xnew) = varn
+      data.cont.dist = Xnew
 
-    # Impute missing data in numeric columns.
-    if (impute == "zero") {
-      data.numW[is.na(data.num)] = 0
-      impute_info = 0
-    } else if (impute == "median") {
-      impute_info = caret::preProcess(data.num, method=c("medianImpute"))
-      data.numW = caret::predict.preProcess(impute_info, data.num)
-    } else if (impute == "mean") {
-      stop("Mean imputation not implemented yet. Please use another imputation method.")
-    } else if (impute == "knn") {
-      impute_info = caret::preProcess(data.num, method=c("knnImpute"))
-      data.numW = caret::predict.preProcess(impute_info, data.num)
-    }
+      ###############
+      # Missing Basis for numeric variables.
+      xp = ncol(data.cont.dist)
+      n.cont = nrow(data.cont.dist)
 
-    # Confirm that there are no missing values remaining in data.numW
-    stopifnot(sum(is.na(data.numW)) == 0)
-  } else {
-    impute_info = NULL
-    miss.cont = NULL
-  }
+      sna = apply(data.cont.dist, 2, sum_na)
+      nmesX = colnames(data.cont.dist)
+      miss.cont = NULL
+      nmesm = NULL
+
+      # Create imputed version of the numeric dataframe.
+      data.numW = data.num
+
+      # Loop over each binned numeric variable.
+      for (k in 1:xp) {
+        # Check if that variable has any missing values.
+        if (sna[k] > 0) {
+          # TODO: is this correct? shouldn't it be is.na() == T?
+          # The effect is that the basis is set to 1 if it exists and 0 if it's missing.
+          ix = as.numeric(is.na(data.cont.dist[, k]) == F)
+          miss.cont = cbind(miss.cont, ix)
+          nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
+        }
+      }
+      # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
+      colnames(miss.cont) = nmesm
+
+      # Impute missing data in numeric columns.
+      if (impute == "zero") {
+        data.numW[is.na(data.num)] = 0
+        impute_info = 0
+      } else if (impute == "median") {
+        impute_info = caret::preProcess(data.num, method=c("medianImpute"))
+        data.numW = caret::predict.preProcess(impute_info, data.num)
+      } else if (impute == "mean") {
+        stop("Mean imputation not implemented yet. Please use another imputation method.")
+      } else if (impute == "knn") {
+        impute_info = caret::preProcess(data.num, method=c("knnImpute"))
+        data.numW = caret::predict.preProcess(impute_info, data.num)
+      }
+
+      # Confirm that there are no missing values remaining in data.numW
+      stopifnot(sum(is.na(data.numW)) == 0)
+    } else {
+      impute_info = NULL
+      miss.cont = NULL
+    }
 
     cat("Finished pre-processing variables.\n")
 
     # Create cross-validation folds (2 by default).
     folds = create_cv_folds(V, Y, verbose=verbose)
-
-    max.2 = function(x) {
-      # Handle missing data manually so we don't get warnings when it occurs.
-      x = na.omit(x)
-      if (length(x) == 0) {
-        -Inf
-      } else {
-        max(x^2)
-      }
-    }
 
     # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
     `%do_op%` = foreach::`%do%`
@@ -505,7 +478,7 @@ varImpact = function(Y, data, V = 2,
         # Supress possible "the standard deviation is zero" warning from cor().
         # TODO: investigate more and confirm that this is ok.
         suppressWarnings({
-          corAt = apply(cor(Adum, Wt, use = "complete.obs"), 2, max.2)
+          corAt = apply(cor(Adum, Wt, use = "complete.obs"), 2, max_sqr)
         })
         corAt[corAt < -1] = 0
         # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
