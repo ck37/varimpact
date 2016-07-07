@@ -210,19 +210,21 @@ varImpact = function(Y, data, V = 2,
   }
 
   #####################
-  # data.fac is data frame of variables that are factors
   if (sum(isit.factor) > 0) {
 
-    # Create a dataframe consisting only of factors.
+    # Create a dataframe consisting only of variables that are factors.
     data.fac = data[, isit.factor, drop = F]
 
     if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
 
     ######################################
     # Replace blank factor values with NA's.
+
+    # We re-use this num_cols variable in the next loop.
     num_cols = ncol(data.fac)
     for (i in 1:num_cols) {
       new_factor = as.character(data.fac[, i])
+      # The exclude argument replaces any empty strings with NAs.
       new_factor = factor(new_factor, exclude = "")
       data.fac[, i] = new_factor
     }
@@ -235,10 +237,12 @@ varImpact = function(Y, data, V = 2,
     # List of column indices to remove.
     drop_indices = NULL
     for (i in 1:num_cols) {
+      # TODO: explain how this qq.range works.
       drop_indices = c(drop_indices, qq.range(data.fac[, i], rr = c(0.1, 0.9)))
     }
 
-    data.fac = data.fac[, drop_indices == F, drop = F]
+    # Restrict to variables with variation.
+    data.fac = data.fac[, !drop_indices, drop = F]
 
     if (verbose) cat("Dropped", sum(drop_indices), "factors due to lack of variation.\n")
 
@@ -268,8 +272,6 @@ varImpact = function(Y, data, V = 2,
     if (verbose) {
       cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
           "Missing indicators:", ncol(miss.fac), "\n")
-      # TEMP
-      stopifnot(length(miss.fac) > 0)
     }
 
   } else {
