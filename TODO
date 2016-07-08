@@ -16,6 +16,7 @@ Chris items:
 * Coding style
   - Create subfunctions.
 * Output
+  - Sort consistent results by p-value then estimate size?
   - Support summary()
 * Quality
   - Figure out how to reduce the number of potential failures in various steps.
@@ -26,6 +27,10 @@ Chris items:
 * Performance
   - Try Rprofvis
   - Use Jeremy's method of not wasting SL folds during CV-TMLE.
+* Documentation
+  - Improve varImpact() roxygen description.
+  - Document return object
+  - Vignette
 * Benchmarking
   - Benchmark to random forest, lasso, OLS and SL-perturbation algorithms.
 * CRAN
@@ -36,8 +41,10 @@ Chris items:
   'x' must be an array of at least two dimensions
   - Error in predmat[which, seq(nlami)] = preds : replacement has length zero
      - Occurs when estimating TMLE on training samples.
+  - Error in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  :
+  one multinomial or binomial class has 1 or 0 observations; not allowed
+     -- Can happen with BreastCancer dataset, seems to depend on seed.
 * WARNINGS
-  - In cor(na.omit(cbind(x, y))) : the standard deviation is zero
   - Warning in collap(data, level, d, dmat, newmed) (conducting HOPACH, at least on factors):
   Not enough medoids to use newmed='medsil' in collap() -
  using newmed='nn' instead
@@ -48,3 +55,4 @@ From existing documentation:
 
 Wishlist
 - Support clustering or variable reduction algorithms other than HOPACH.
+- Support more than 2 external folds.

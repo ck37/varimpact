@@ -3,7 +3,7 @@
 \encoding{utf8}
 \name{varImpact}
 \alias{varImpact}
-\title{Variable Impact Estimation}
+\title{Variable importance estimation using causal inference (TMLE)}
 \usage{
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,

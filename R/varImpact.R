@@ -1,4 +1,4 @@
-#' @title Variable Impact Estimation
+#' @title Variable importance estimation using causal inference (TMLE)
 #'
 #' @description \code{varImpact} returns variable importance statistics ordered
 #' by statistical significance using a combination of data-adaptive target parameter
@@ -507,24 +507,50 @@ varImpact = function(Y, data, V = 2,
           Wtsht = Wt
           Wvsht = Wv
         } else {
-          if (verbose) cat("Reducing dimensions via clustering.")
-          #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
+          if (verbose) {
+            cat("Reducing W columns (currently", ncol(Wt), "cols) via clustering.\n")
+          }
+           #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
+
+          # We transpose Wt because we want to cluster columns rather than rows.
           mydist = try(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T),
                        silent = !verbose)
           if (class(mydist) == "try-error") {
             cat("Error in HOPACH clustering: failed to calculate distance matrix.\n")
           }
+
+          # We transpose Wt to cluster the columns rather than rows.
           hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F, K = 10,
                                 kmax = 3, khigh = 3),
                          silent = !verbose)
           if (class(hopach.1) == "try-error") {
-            if (verbose) cat(" Attempt 1 fail.")
+            if (verbose) {
+              cat("Hopach attempt 1 fail.\n")
+              print(hopach.1)
+            }
+
+            # We transpose Wt to cluster the columns rather than rows.
             hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F, K = 10,
                                    kmax = 3, khigh = 3),
                             silent = !verbose)
           }
           if (class(hopach.1) == "try-error") {
-            if (verbose) cat(" Attempt 2 fail.")
+            if (verbose) {
+              cat("Attempt 2 fail.")# Reverting to original W dataframe.\n")
+              print(hopach.1)
+            }
+            # We transpose Wt to cluster the columns rather than rows.
+            # Last try.
+            hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F, K = 10,
+                                           kmax = 3, khigh = 3, newmed="nn"),
+                            silent = !verbose)
+          }
+          if (class(hopach.1) == "try-error") {
+            if (verbose) {
+              cat("Attempt 3 fail. Reverting to original W dataframe.\n")
+              # Now try to debug this.
+              # stop()
+            }
             #warning("Dimensionality reduction failed. i=", i, "V=", kk, "A=", nameA)
             Wtsht = Wt
             Wvsht = Wv
@@ -551,7 +577,7 @@ varImpact = function(Y, data, V = 2,
             Wtsht = Wt[, incc]
             Wvsht = Wv[, incc]
           }
-          if (verbose) cat(" Updated columns:", ncol(Wtsht), "\n")
+          if (verbose) cat("Updated columns:", ncol(Wtsht), "\n")
         }
         # Finished with any needed clustering for variable reduction.
 
@@ -658,7 +684,7 @@ varImpact = function(Y, data, V = 2,
             IA = as.numeric(Av == vals[minj])
             IA[is.na(IA)] = 0
             res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                   g.lib = c("SL.glmnet", "SL.glm")), silent = TRUE)
+                                   g.lib = g.library), silent = TRUE)
             if (class(res) == "try-error") {
               if (verbose) cat("TMLE on validation failed.\n")
               thetaV = c(thetaV, NA)

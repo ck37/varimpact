@@ -6,7 +6,8 @@ library(testthat)
 # Create test dataset.
 context("Dataset A: continuous variables")
 
-set.seed(1)
+# Set multicore-compatible seed.
+set.seed(1, "L'Ecuyer-CMRG")
 N = 200
 
 num_normal = 7
@@ -55,8 +56,8 @@ foreach::getDoParWorkers()
 cluster = snow::makeCluster(2)
 doSNOW::registerDoSNOW(cluster)
 # Check that we're using the snow cluster.
-foreach::getDoParName()
-foreach::getDoParWorkers()
+expect_equal(foreach::getDoParName(), "doSNOW")
+expect_equal(foreach::getDoParWorkers(), 2)
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T)
 vim
 snow::stopCluster(cluster)
@@ -65,6 +66,9 @@ foreach::registerDoSEQ()
 
 context("Dataset B: factor variables")
 
+# Set a new multicore-compatible seed.
+set.seed(2, "L'Ecuyer-CMRG")
+
 X_fac = data.frame(lapply(1:ncol(X), FUN=function(col_i) as.factor(floor(abs(pmin(pmax(X[, col_i], -1), 1)*3)))))
 dim(X_fac)
 colnames(X_fac) = paste0("fac_", 1:ncol(X_fac))
@@ -72,6 +76,7 @@ colnames(X_fac)
 summary(X_fac)
 
 # Basic factor test.
+# TODO: this generates multiple errors for fac_4
 vim = varImpact(Y = Y_bin, data = X_fac[, 1:4], V = 2, verbose=T)
 # And gaussian
 vim = varImpact(Y = Y_gaus, data = X_fac[, 1:4], V = 2, verbose=T, family="gaussian")
@@ -110,4 +115,5 @@ table(data$Y)
 doMC::registerDoMC()
 # This takes 1-3 minutes.
 vim = varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+vim$time
 vim
