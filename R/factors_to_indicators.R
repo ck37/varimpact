@@ -101,7 +101,7 @@ factors_to_indicators = function(factor_df, miss_name_prefix = "Imiss_",
   # NOTE: we don't seem to actually use this in varImpact() at the moment.
   factor_index = substr(factor_names, 1, cc - 1)
 
-  # Create a list to hold multiple results.
+  # Create a list to hold multi-variable results.
   results = list(data = newX, factor_index = factor_index, miss.fac = miss.fac)
 
   results

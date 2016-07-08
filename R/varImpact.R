@@ -346,7 +346,7 @@ varImpact = function(Y, data, V = 2,
       data.cont.dist = Xnew
 
       ###############
-      # Missing Basis for numeric variables.
+      # Missing Basis for numeric variables, post-binning.
       xp = ncol(data.cont.dist)
       n.cont = nrow(data.cont.dist)
 
