@@ -6,8 +6,8 @@
 \title{Variable importance estimation using causal inference (TMLE)}
 \usage{
 varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
-  g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
-  minCell = 0, ncov = 10, corthres = 0.8, impute = "knn",
+  g.library = c("SL.stepAIC"), family = "binomial", adjust_cutoff = 10,
+  minYs = 15, minCell = 0, ncov = 10, corthres = 0.8, impute = "knn",
   miss.cut = 0.5, verbose = F, parallel = T, digits = 4)
 }
 \arguments{
@@ -25,6 +25,10 @@ versus predictors}
 predictor variable of interest versus other predictors}
 
 \item{family}{family ('binomial' or 'gaussian')}
+
+\item{adjust_cutoff}{Maximum number of adjustment variables during TMLE. If more
+than this cutoff varImpact will attempt to reduce the dimensions to that
+number.}
 
 \item{minYs}{mininum # of obs with event  - if it is < minYs, skip VIM}
 
@@ -78,7 +82,7 @@ The function performs the following functions.
  optimal histogram function to combine values using the
  distribution of A | Y=1 to avoid very small cell sizes in
  distribution of Y vs. A (tuneable) (ADD DETAIL)
- \item Uses HOPACH to cluster variables associated confounder/missingness basis for W,
+ \item Uses HOPACH* to cluster variables associated confounder/missingness basis for W,
  that uses specified minimum number of adjustment variables.
  \item Finds min and max estimate of E(Ya) w.r.t. a. after looping through
  all values of A* (after processed by histogram)
@@ -86,6 +90,7 @@ The function performs the following functions.
  \item Things to do include implementing CV-TMLE and allow reporting of results
  that randomly do not have estimates for some of validation samples.
 }
+*HOPACH is "Hierarchical Ordered Partitioning and Collapsing Hybrid"
 }
 \section{Authors}{
 

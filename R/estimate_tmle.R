@@ -1,8 +1,8 @@
 #' Get TMLE estimate.
 #' @importFrom tmle tmle
 estimate_tmle = function(Y, A, W, family, delta = NULL, Q.lib, g.lib) {
-  ## Because of quirk of program, delete observations with delta=0 if #>0
-  ## & < 10
+  # Because of quirk of program, delete observations with delta=0 if #>0
+  # & < 10
   n = length(Y)
   inc = rep(TRUE, n)
   if (is.null(delta) == F) {
@@ -20,6 +20,6 @@ estimate_tmle = function(Y, A, W, family, delta = NULL, Q.lib, g.lib) {
   g1 = tmle.1$g$g1W
   Qst = tmle.1$Qstar[, 2]
   theta = mean(Qst)
-  IC = (A/g1) * (Y - Qst) + Qst - theta
+  IC = (A / g1) * (Y - Qst) + Qst - theta
   return(list(theta = theta, IC = IC))
 }

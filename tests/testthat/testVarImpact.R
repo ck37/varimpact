@@ -1,5 +1,5 @@
-# Make sure we're using the rebuilt package.
-detach(package:varImpact)
+# Make sure we're using the rebuilt package. Suppress any error if it isn't loaded.
+tryCatch( detach(package:varImpact), error = function(e) invisible() )
 library(varImpact)
 library(testthat)
 

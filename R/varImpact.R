@@ -23,7 +23,7 @@
 #'  optimal histogram function to combine values using the
 #'  distribution of A | Y=1 to avoid very small cell sizes in
 #'  distribution of Y vs. A (tuneable) (ADD DETAIL)
-#'  \item Uses HOPACH to cluster variables associated confounder/missingness basis for W,
+#'  \item Uses HOPACH* to cluster variables associated confounder/missingness basis for W,
 #'  that uses specified minimum number of adjustment variables.
 #'  \item Finds min and max estimate of E(Ya) w.r.t. a. after looping through
 #'  all values of A* (after processed by histogram)
@@ -31,6 +31,7 @@
 #'  \item Things to do include implementing CV-TMLE and allow reporting of results
 #'  that randomly do not have estimates for some of validation samples.
 #' }
+#' *HOPACH is "Hierarchical Ordered Partitioning and Collapsing Hybrid"
 #'
 #' @param Y outcome of interest (numeric vector)
 #' @param data data frame of predictor variables of interest for
@@ -41,6 +42,9 @@
 #' @param g.library library used by SuperLearner for model of
 #' predictor variable of interest versus other predictors
 #' @param family family ('binomial' or 'gaussian')
+#' @param adjust_cutoff Maximum number of adjustment variables during TMLE. If more
+#'   than this cutoff varImpact will attempt to reduce the dimensions to that
+#'   number.
 #' @param minYs mininum # of obs with event  - if it is < minYs, skip VIM
 #' @param minCell is the cut-off for including a category of
 #' A in analysis, and  presents the minumum of cells in a 2x2 table of the indicator of
@@ -191,15 +195,6 @@ varImpact = function(Y, data, V = 2,
     # Cut-off for eliminating variable for proportion of obs missing.
     data = data[, mis.prop < miss.cut]
 
-    ###### Identify numeric variables (ordered)
-    ind.num = sapply(data, is.numeric)
-
-    ## Identify factor variables
-    isit.factor = !ind.num
-
-    # TODO: convert characters to factors, and/or warn.
-
-    ###
     # Function that counts # of unique values.
     length_unique = function(x) {
       length(unique(x))
@@ -209,11 +204,17 @@ varImpact = function(Y, data, V = 2,
     # TODO: run in parallel to support very wide/big datasets.
     num.values = apply(data, 2, length_unique)
 
-    #####################
-    if (sum(isit.factor) > 0) {
+    # Separate dataframe into factors-only and numerics-only.
+    # Also converts characters to factors automatically.
+    separated_data = separate_factors_numerics(data)
 
-      # Create a dataframe consisting only of variables that are factors.
-      data.fac = data[, isit.factor, drop = F]
+    # Create a dataframe consisting only of columns that are factors.
+    data.fac = separated_data$df_factors
+    # And samesies for numerics.
+    data.num = separated_data$df_numerics
+
+    #####################
+    if (ncol(data.fac) > 0) {
 
       if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
 
@@ -268,7 +269,8 @@ varImpact = function(Y, data, V = 2,
       factor_results = factors_to_indicators(data.fac, verbose = verbose)
 
       datafac.dum = factor_results$data
-      miss.fac = factor_results$miss.fac
+      # Here 1 = defined, 0 = missing.
+      miss.fac = factor_results$missing_indicators
 
       if (verbose) {
         cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
@@ -287,9 +289,6 @@ varImpact = function(Y, data, V = 2,
 
     ###########################################################
     # Pre-process numeric/continuous variables.
-
-    # Numeric variables
-    data.num = data[, !isit.factor, drop = F]
 
     if (ncol(data.num) > 0) {
       num_cols = ncol(data.num)
@@ -555,6 +554,7 @@ varImpact = function(Y, data, V = 2,
             Wtsht = Wt
             Wvsht = Wv
           } else {
+            # TODO: annotate what is going on here with the HOPACH result object.
             nlvls = nchar(max(hopach.1$final$labels))
             no = trunc(mean(log10(hopach.1$final$labels)))
 
