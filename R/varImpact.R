@@ -122,14 +122,17 @@
 #'
 #' ####################################
 #' # doMC parallel (multicore) example.
+#' \dontrun{
 #' library(doMC)
 #' registerDoMC()
 #' # Use L'Ecuyer for multicore seeds; see ?set.seed for details.
 #' set.seed(23432, "L'Ecuyer-CMRG")
 #' vim <- varImpact(Y = Y, data = X)
+#' }
 #'
 #' ####################################
 #' # doSNOW parallel example.
+#' \dontrun{
 #' library(doSNOW)
 #' library(RhpcBLASctl)
 #' # Detect the number of physical cores on this computer using RhpcBLASctl.
@@ -137,6 +140,7 @@
 #' registerDoSNOW(cluster)
 #' vim <- varImpact(Y = Y, data = X)
 #' stopCluster(cluster)
+#' }
 #'
 #' ####################################
 #' # mlbench BreastCancer example.
@@ -147,7 +151,9 @@
 #' data$Y <- as.numeric(data$Class == "malignant")
 #
 #' # Use multicore parallelization to speed up processing.
+#' \dontrun{
 #' doMC::registerDoMC()
+#' }
 #' vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 #'
 #' @export
