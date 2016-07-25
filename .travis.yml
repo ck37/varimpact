@@ -3,4 +3,7 @@
 
 language: r
 cache: packages
-bioc_packages: hopach, multtest
+sudo: false
+bioc_packages:
+ - hopach
+ - multtest
