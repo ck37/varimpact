@@ -1,4 +1,11 @@
 #' Get TMLE estimate.
+#' @param Y Outcome variable
+#' @param A Treatment indicator
+#' @param W Dataframe of adjustment covariates
+#' @param family Binomial or gaussian
+#' @param delta Indicator of missing outcome or treatment assignment. 1 - observed, 0 - missing.
+#' @param Q.lib SuperLearner library for estimating Q (potential outcome)
+#' @param g.lib SuperLearner library for estimating g (propensity score)
 #' @importFrom tmle tmle
 estimate_tmle = function(Y, A, W, family, delta = NULL, Q.lib, g.lib) {
   # Because of quirk of program, delete observations with delta=0 if #>0

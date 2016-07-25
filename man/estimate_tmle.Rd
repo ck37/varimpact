@@ -6,6 +6,21 @@
 \usage{
 estimate_tmle(Y, A, W, family, delta = NULL, Q.lib, g.lib)
 }
+\arguments{
+\item{Y}{Outcome variable}
+
+\item{A}{Treatment indicator}
+
+\item{W}{Dataframe of adjustment covariates}
+
+\item{family}{Binomial or gaussian}
+
+\item{delta}{Indicator of missing outcome or treatment assignment. 1 - observed, 0 - missing.}
+
+\item{Q.lib}{SuperLearner library for estimating Q (potential outcome)}
+
+\item{g.lib}{SuperLearner library for estimating g (propensity score)}
+}
 \description{
 Get TMLE estimate.
 }
