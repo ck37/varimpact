@@ -20,13 +20,14 @@ Imports:
     foreach,
     glmnet,
     histogram,
-    hopach,
     MASS,
-    multtest,
     RANN,
     SuperLearner,
     tmle,
     xtable
+biocViews:
+  hopach,
+  multtest
 Suggests:
     doMC,
     doParallel,
