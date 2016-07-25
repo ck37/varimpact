@@ -27,6 +27,7 @@ Imports:
     SuperLearner,
     tmle,
     xtable
+biocViews:
 Suggests:
     doMC,
     doParallel,

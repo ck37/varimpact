@@ -5,7 +5,7 @@
 \alias{varImpact}
 \title{Variable importance estimation using causal inference (TMLE)}
 \usage{
-varImpact(Y, data, V = 2, Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
+varImpact(Y, data, V = 2, Q.library = c("SL.glmnet", "SL.mean"),
   g.library = c("SL.stepAIC"), family = "binomial", adjust_cutoff = 10,
   minYs = 15, minCell = 0, ncov = 10, corthres = 0.8, impute = "knn",
   miss.cut = 0.5, verbose = F, parallel = T, digits = 4)

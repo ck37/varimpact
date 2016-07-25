@@ -12,21 +12,6 @@ varImpact is under active development so please submit any bug reports or featur
 
 ## Install
 
-### Requirements
-
-A few package requirements are installed via [bioconductor](https://www.bioconductor.org) rather than CRAN.
-
-First, [install bioconductor](https://www.bioconductor.org/install/) if you don't have it already:
-```{r}
-source("http://bioconductor.org/biocLite.R")
-biocLite()
-```
-
-Then install the packages:
-```{r}
-biocLite(c("hopach", "multtest"))
-```
-
 ### Install varImpact from Github
 
 ```{r}

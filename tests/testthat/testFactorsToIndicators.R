@@ -31,14 +31,14 @@ dim(results$data)
 # We should have indicators for 1, 2, 3.
 colnames(results$data)
 
-dim(results$miss.fac)
-colnames(results$miss.fac)
+dim(results$missing_indicators)
+colnames(results$missing_indicators)
 
 # We should have 1 missing data indicator, with 2 0s and the rest 1s.
-table(results$miss.fac[, 1])
-expect_equal(min(table(results$miss.fac[, 1])), 2)
+table(results$missing_indicators[, 1])
+expect_equal(min(table(results$missing_indicators[, 1])), 2)
 
-expect_gt(ncol(results$miss.fac), 0)
+expect_gt(ncol(results$missing_indicators), 0)
 
 # Test multiple factors.
 results = factors_to_indicators(X_fac[, 1:2, drop=F], verbose=T)
@@ -46,18 +46,18 @@ results = factors_to_indicators(X_fac[, 1:2, drop=F], verbose=T)
 dim(results$data)
 colnames(results$data)
 
-dim(results$miss.fac)
-colnames(results$miss.fac)
+dim(results$missing_indicators)
+colnames(results$missing_indicators)
 
-table(results$miss.fac[, 1])
+table(results$missing_indicators[, 1])
 
 # We expect our missing indicator matrix to have more than 0 columns.
-expect_is(results$miss.fac, "matrix")
+expect_is(results$missing_indicators, "matrix")
 
 # Test the full factor dataframe.
 results = factors_to_indicators(X_fac, verbose=T)
 dim(results$data)
 colnames(results$data)
 
-dim(results$miss.fac)
-colnames(results$miss.fac)
+dim(results$missing_indicators)
+colnames(results$missing_indicators)

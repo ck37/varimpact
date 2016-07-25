@@ -1,0 +1,14 @@
+# Sample .travis.yml for R projects.
+# Via https://docs.travis-ci.com/user/languages/r/
+
+language: r
+cache: packages
+sudo: false
+bioc_packages:
+ - hopach
+ - multtest
+
+r_github_packages:
+ - jimhester/covr
+after_success:
+ - Rscript -e 'covr::codecov()'
