@@ -154,6 +154,7 @@
 varImpact = function(Y, data, V = 2,
                      Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
+                     adjust_cutoff = 10,
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
                      impute = "knn", miss.cut = 0.5, verbose=F, parallel = T,
                      digits = 4) {
@@ -501,16 +502,20 @@ varImpact = function(Y, data, V = 2,
         nw = ncol(Wv)
 
         ###
-        # Skip if number covariates < 10
+        # Skip if number covariates <= 10
+        # TODO: should this use ncov instead of adjust_cutoff?
         if (nw <= 10) {
           Wtsht = Wt
           Wvsht = Wv
         } else {
           if (verbose) {
-            cat("Reducing W columns (currently", ncol(Wt), "cols) via clustering.\n")
+            # Use paste0 to avoid a space before the period.
+            cat("Exceeded adjustment threshold:", ncol(Wt), ">",
+                paste0(adjust_cutoff, "."), "Attempting dimension reduction.\n")
           }
            #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
 
+          # Compute pairwise distances between each variable in the dataframe.
           # We transpose Wt because we want to cluster columns rather than rows.
           mydist = try(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T),
                        silent = !verbose)
@@ -518,9 +523,12 @@ varImpact = function(Y, data, V = 2,
             cat("Error in HOPACH clustering: failed to calculate distance matrix.\n")
           }
 
+          # Attempt #1.
           # We transpose Wt to cluster the columns rather than rows.
-          hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F, K = 10,
-                                kmax = 3, khigh = 3),
+          # kmax = maximum number of children at each node in the tree.
+          # khigh = max # of children at each node when computing mss, usually the same.
+          hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "mean", verbose = T,
+                               K = 10, kmax = 3, khigh = 3),
                          silent = !verbose)
           if (class(hopach.1) == "try-error") {
             if (verbose) {
@@ -528,9 +536,10 @@ varImpact = function(Y, data, V = 2,
               print(hopach.1)
             }
 
+            # Attempt #2.
             # We transpose Wt to cluster the columns rather than rows.
-            hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F, K = 10,
-                                   kmax = 3, khigh = 3),
+            hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = T,
+                                K = adjust_cutoff, kmax = 3, khigh = 3),
                             silent = !verbose)
           }
           if (class(hopach.1) == "try-error") {
@@ -538,11 +547,12 @@ varImpact = function(Y, data, V = 2,
               cat("Attempt 2 fail.")# Reverting to original W dataframe.\n")
               print(hopach.1)
             }
+
+            # Attempt #3. Last try!
             # We transpose Wt to cluster the columns rather than rows.
-            # Last try.
-            hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F, K = 10,
-                                           kmax = 3, khigh = 3, newmed="nn"),
-                            silent = !verbose)
+            hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F,
+                                 K = adjust_cutoff, kmax = 3, khigh = 3, newmed="nn"),
+                           silent = !verbose)
           }
           if (class(hopach.1) == "try-error") {
             if (verbose) {
