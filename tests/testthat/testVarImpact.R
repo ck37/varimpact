@@ -107,6 +107,11 @@ vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose=T, family="gaussia
 data(BreastCancer, package="mlbench")
 data = BreastCancer
 
+set.seed(3, "L'Ecuyer-CMRG")
+
+# Reduce to a dataset of 100 observations to speed up testing.
+data = data[sample(nrow(data), 100), ]
+
 # Create a numeric outcome variable.
 data$Y = as.numeric(data$Class == "malignant")
 table(data$Y)
