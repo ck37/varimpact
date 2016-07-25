@@ -152,7 +152,7 @@
 #'
 #' @export
 varImpact = function(Y, data, V = 2,
-                     Q.library = c("SL.gam", "SL.glmnet", "SL.mean"),
+                     Q.library = c("SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
                      adjust_cutoff = 10,
                      minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
