@@ -1,3 +1,8 @@
+[![Build Status](https://travis-ci.org/ck37/varImpact.svg?branch=master)](https://travis-ci.org/ck37/varImpact)
+[![Coverage Status](https://coveralls.io/repos/github/ck37/varImpact/badge.svg?branch=master)](https://coveralls.io/github/ck37/varImpact?branch=master)
+[//]: # ([![Downloads](http://cranlogs.r-pkg.org/badges/varImpact)](http://cran.rstudio.com/package=varImpact))
+[//]: # ([![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/varImpact)](http://cran.r-project.org/web/packages/varImpact))
+
 # varImpact
 varImpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome - each variable's influence on the outcome is estimated, and the covariate list is returned sorted by descending order of importance. This can be used for exploratory data analysis, for dimensionality reduction, for experimental design (e.g. blocking and re-randomization), to reduce variance in an estimation procedure, etc. Each covariate is analyzed using targeted minimum loss-based estimation ([TMLE](https://cran.r-project.org/web/packages/tmle/index.html)) as though it were a treatment, with all other variables serving as adjustment variables via [SuperLearner](https://github.com/ecpolley/SuperLearner). Then the statistical significance of the estimated treatment effect for each covariate determines the variable importance ranking. This formulation allows the asymptotics of TMLE to provide valid standard errors and p-values, unlike other variable importance algorithms. See Hubbard & van der Laan (2016) for more details.
 
