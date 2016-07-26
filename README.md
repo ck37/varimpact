@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/ck37/varImpact.svg?branch=master)](https://travis-ci.org/ck37/varImpact)
-[![Coverage Status](https://coveralls.io/repos/github/ck37/varImpact/badge.svg?branch=master)](https://coveralls.io/github/ck37/varImpact?branch=master)
+[![codecov](https://codecov.io/gh/ck37/varImpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varImpact)
 [//]: # ([![Downloads](http://cranlogs.r-pkg.org/badges/varImpact)](http://cran.rstudio.com/package=varImpact))
 [//]: # ([![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/varImpact)](http://cran.r-project.org/web/packages/varImpact))
 
