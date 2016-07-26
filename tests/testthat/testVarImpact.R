@@ -40,29 +40,44 @@ vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T, impute="median")
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T, impute="knn")
 
 
-# Test parallelization via doMC.
-doMC::registerDoMC()
-# Check how many cores we're using.
-foreach::getDoParWorkers()
+# Only run in RStudio so that automated CRAN checks don't give errors.
+if (.Platform$GUI == "RStudio") {
+  # Test parallelization via doMC.
+  doMC::registerDoMC()
+  # Check how many cores we're using.
+  foreach::getDoParWorkers()
+}
+
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T)
 
 # Test disabling parallelization.
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T, parallel = F)
-# Return to single core usage.
-foreach::registerDoSEQ()
-foreach::getDoParWorkers()
+# Only run in RStudio so that automated CRAN checks don't give errors.
+if (.Platform$GUI == "RStudio") {
+  # Return to single core usage.
+  foreach::registerDoSEQ()
+  foreach::getDoParWorkers()
+}
 
-# Test parallelization via doSnow.
-cluster = snow::makeCluster(2)
-doSNOW::registerDoSNOW(cluster)
-# Check that we're using the snow cluster.
-expect_equal(foreach::getDoParName(), "doSNOW")
-expect_equal(foreach::getDoParWorkers(), 2)
+# Only run in RStudio so that automated CRAN checks don't give errors.
+if (.Platform$GUI == "RStudio") {
+  # Test parallelization via doSnow.
+  cluster = snow::makeCluster(2)
+  doSNOW::registerDoSNOW(cluster)
+  # Check that we're using the snow cluster.
+  expect_equal(foreach::getDoParName(), "doSNOW")
+  expect_equal(foreach::getDoParWorkers(), 2)
+}
+
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T)
 vim
-snow::stopCluster(cluster)
-# Return to single core usage.
-foreach::registerDoSEQ()
+
+# Only run in RStudio so that automated CRAN checks don't give errors.
+if (.Platform$GUI == "RStudio") {
+  snow::stopCluster(cluster)
+  # Return to single core usage.
+  foreach::registerDoSEQ()
+}
 
 context("Dataset B: factor variables")
 
@@ -81,10 +96,13 @@ vim = varImpact(Y = Y_bin, data = X_fac[, 1:4], V = 2, verbose=T)
 # And gaussian
 vim = varImpact(Y = Y_gaus, data = X_fac[, 1:4], V = 2, verbose=T, family="gaussian")
 
-# Test parallelization.
-doMC::registerDoMC()
-# Check how many cores we're using.
-foreach::getDoParWorkers()
+# Only run in RStudio so that automated CRAN checks don't give errors.
+if (.Platform$GUI == "RStudio") {
+  # Test parallelization.
+  doMC::registerDoMC()
+  # Check how many cores we're using.
+  foreach::getDoParWorkers()
+}
 
 # Factor variables with parallelization.
 vim = varImpact(Y = Y_bin, data = X_fac[, 1:4], verbose=T)
@@ -116,8 +134,11 @@ data = data[sample(nrow(data), 100), ]
 data$Y = as.numeric(data$Class == "malignant")
 table(data$Y)
 
-# Use multicore parallelization to speed up processing.
-doMC::registerDoMC()
+# Only run in RStudio so that automated CRAN checks don't give errors.
+if (.Platform$GUI == "RStudio") {
+  # Use multicore parallelization to speed up processing.
+  doMC::registerDoMC()
+}
 # This takes 1-3 minutes.
 vim = varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 vim$time
