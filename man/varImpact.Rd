@@ -191,6 +191,6 @@ vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 
 }
 \seealso{
-\code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}} method
+\code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}}
 }
 

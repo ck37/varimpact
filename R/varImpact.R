@@ -70,7 +70,7 @@
 #' @importFrom stats cor model.matrix na.omit pnorm quantile var
 #'
 #' @seealso
-#' \code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}} method
+#' \code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}}
 #'
 #' @section Authors:
 #' Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
