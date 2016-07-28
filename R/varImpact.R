@@ -1,35 +1,37 @@
 #' @title Variable importance estimation using causal inference (TMLE)
 #'
 #' @description \code{varImpact} returns variable importance statistics ordered
-#' by statistical significance using a combination of data-adaptive target parameter
+#'   by statistical significance using a combination of data-adaptive target
+#'   parameter
 #'
 #' @details
 #' The function performs the following functions.
 #'  \enumerate{
 #'  \item Drops variables missing > miss.cut of time (tuneable).
 #'  \item Separate out covariates into factors and continuous (ordered).
-#'  \item Drops variables for which their distribution is uneven  - e.g., all 1 value (tuneable)
-#'  separately for factors and numeric variables (ADD MORE DETAIL HERE)
-#'  \item Changes all factors to remove spaces (used for naming dummies later)
+#'  \item Drops variables for which their distribution is uneven  - e.g., all 1
+#'  value (tuneable) separately for factors and numeric variables (ADD MORE
+#'  DETAIL HERE)
+#'  \item Removes spaces from factor labels (used for naming dummies later).
 #'  \item Removes spaces from variable names.
 #'  \item Makes dummy variable basis for factors, including naming dummies
 #'  to be traceable to original factor variables later.
-#'  \item Makes new ordered variable of integers mapped to intervals defined by deciles for the ordered numeric variables (automatically makes)
-#'  fewer categories if original variable has < 10 values.
+#'  \item Makes new ordered variable of integers mapped to intervals defined by
+#'  deciles for the ordered numeric variables (automatically makes) fewer
+#'  categories if original variable has < 10 values.
 #'  \item Creates associated list of number of unique values and the list of them
 #'  for each variable for use in variable importance part.
 #'  \item Makes missing covariate basis for both factors and ordered variables
-#'  \item For each variable, after assigning it as A, uses
-#'  optimal histogram function to combine values using the
-#'  distribution of A | Y=1 to avoid very small cell sizes in
-#'  distribution of Y vs. A (tuneable) (ADD DETAIL)
-#'  \item Uses HOPACH* to cluster variables associated confounder/missingness basis for W,
-#'  that uses specified minimum number of adjustment variables.
+#'  \item For each variable, after assigning it as A, uses optimal histogram
+#'  function to combine values using the distribution of A | Y=1 to avoid very
+#'  small cell sizes in distribution of Y vs. A (tuneable) (ADD DETAIL)
+#'  \item Uses HOPACH* to cluster variables associated confounder/missingness
+#'  basis for W, that uses specified minimum number of adjustment variables.
 #'  \item Finds min and max estimate of E(Ya) w.r.t. a. after looping through
 #'  all values of A* (after processed by histogram)
 #'  \item Returns estimate of E(Ya(max)-Ya(min)) with SE
-#'  \item Things to do include implementing CV-TMLE and allow reporting of results
-#'  that randomly do not have estimates for some of validation samples.
+#'  \item Things to do include implementing CV-TMLE and allow reporting of
+#'  results that randomly do not have estimates for some of validation samples.
 #' }
 #' *HOPACH is "Hierarchical Ordered Partitioning and Collapsing Hybrid"
 #'
@@ -42,24 +44,25 @@
 #' @param g.library library used by SuperLearner for model of
 #' predictor variable of interest versus other predictors
 #' @param family family ('binomial' or 'gaussian')
-#' @param adjust_cutoff Maximum number of adjustment variables during TMLE. If more
-#'   than this cutoff varImpact will attempt to reduce the dimensions to that
-#'   number.
+#' @param adjust_cutoff Maximum number of adjustment variables during TMLE. If
+#'   more than this cutoff varImpact will attempt to reduce the dimensions to
+#'   that number.
 #' @param minYs mininum # of obs with event  - if it is < minYs, skip VIM
-#' @param minCell is the cut-off for including a category of
-#' A in analysis, and  presents the minumum of cells in a 2x2 table of the indicator of
-#' that level versus outcome, separately by training and validation
-#' sample
-#' @param ncov minimum number of covariates to include as adjustment variables (must
-#' be less than # of basis functions of adjustment matrix)
+#' @param minCell is the cut-off for including a category of A in analysis, and
+#'   presents the minumum of cells in a 2x2 table of the indicator of that level
+#'   versus outcome, separately by training and validation sample.
+#' @param ncov minimum number of covariates to include as adjustment variables
+#'   (must be less than # of basis functions of adjustment matrix)
 #' @param corthres cut-off correlation with explanatory
 #' variable for inclusion of an adjustment variables
 #' @param impute Type of missing value imputation to conduct. One of: "zero",
 #'   "median", "knn" (default).
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
-#' @param parallel Use parallel processing if a backend is registered; enabled by default.
-#' @param verbose Boolean - if TRUE the method will display more detailed output.
+#' @param parallel Use parallel processing if a backend is registered; enabled
+#'   by default.
+#' @param verbose Boolean - if TRUE the method will display more detailed
+#'   output.
 #' @param digits Number of digits to round the value labels.
 #'
 #' @return Results object.
