@@ -8,7 +8,7 @@ context("Dataset A: continuous variables")
 
 # Set multicore-compatible seed.
 set.seed(1, "L'Ecuyer-CMRG")
-N = 200
+N = 100
 
 num_normal = 7
 X = as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
