@@ -24,7 +24,8 @@ for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test - binary outcome.
 vim = varImpact(Y = Y_bin, data = X[, 1:4], V = 2, verbose=T)
-vim
+# Be explict about printing for code coverage of tests.
+print(vim)
 vim$results_all
 # names(vim)
 exportLatex(vim)
