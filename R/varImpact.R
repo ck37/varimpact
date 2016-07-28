@@ -515,96 +515,13 @@ varImpact = function(Y, data, V = 2,
         Wv = Wv[, incc, drop = F]
         Wt = Wt[, incc, drop = F]
 
-        nw = ncol(Wv)
+        # Use HOPACH to reduce dimension of W to some level of tree
+        reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose)
 
-        ###
-        # Skip if number covariates <= adjust or if adjust_cutoff is set to NULL.
-        if (is.null(adjust_cutoff) || nw <= adjust_cutoff) {
-          Wtsht = Wt
-          Wvsht = Wv
-        } else {
-          if (verbose) {
-            # Use paste0 to avoid a space before the period.
-            cat("Exceeded adjustment threshold:", ncol(Wt), ">",
-                paste0(adjust_cutoff, "."), "Attempting dimension reduction.\n")
-          }
-           #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
+        Wtsht = reduced_results$data
+        Wvsht = reduced_results$newX
 
-          # Compute pairwise distances between each variable in the dataframe.
-          # We transpose Wt because we want to cluster columns rather than rows.
-          mydist = try(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T),
-                       silent = !verbose)
-          if (class(mydist) == "try-error") {
-            cat("Error in HOPACH clustering: failed to calculate distance matrix.\n")
-          }
-
-          # Attempt #1.
-          # We transpose Wt to cluster the columns rather than rows.
-          # kmax = maximum number of children at each node in the tree.
-          # khigh = max # of children at each node when computing mss, usually the same.
-          hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "mean", verbose = T,
-                               K = adjust_cutoff, kmax = 3, khigh = 3),
-                         silent = !verbose)
-          if (class(hopach.1) == "try-error") {
-            if (verbose) {
-              cat("Hopach attempt 1 fail.\n")
-              print(hopach.1)
-            }
-
-            # Attempt #2.
-            # We transpose Wt to cluster the columns rather than rows.
-            hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = T,
-                                K = adjust_cutoff, kmax = 3, khigh = 3),
-                            silent = !verbose)
-          }
-          if (class(hopach.1) == "try-error") {
-            if (verbose) {
-              cat("Attempt 2 fail.")# Reverting to original W dataframe.\n")
-              print(hopach.1)
-            }
-
-            # Attempt #3. Last try!
-            # We transpose Wt to cluster the columns rather than rows.
-            hopach.1 <- try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F,
-                                 K = adjust_cutoff, kmax = 3, khigh = 3, newmed="nn"),
-                           silent = !verbose)
-          }
-          if (class(hopach.1) == "try-error") {
-            if (verbose) {
-              cat("Attempt 3 fail. Reverting to original W dataframe.\n")
-              # Now try to debug this.
-              # stop()
-            }
-            #warning("Dimensionality reduction failed. i=", i, "V=", kk, "A=", nameA)
-            Wtsht = Wt
-            Wvsht = Wv
-          } else {
-            # TODO: annotate what is going on here with the HOPACH result object.
-            nlvls = nchar(max(hopach.1$final$labels))
-            no = trunc(mean(log10(hopach.1$final$labels)))
-
-            # Find highest level of tree where minimum number of covariates is >= adjust_cutoff.
-            lvl = 1:nlvls
-            ncv = NULL
-            for (ii in lvl) {
-              ncv = c(ncv, length(unique(trunc(hopach.1$final$labels/10^(no - (ii - 1))))))
-            }
-            ncv = unique(ncv)
-            # Suppress possible "no non-missing arguments to min; returning Inf" warning from min().
-            # TODO: investigate more and confirm that this is ok.
-            suppressWarnings({
-              lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= adjust_cutoff]))
-            })
-            two.clust <- unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
-            md <- hopach.1$final$medoids
-            mm = md[, 1] %in% two.clust
-            incc = md[mm, 2]
-            Wtsht = Wt[, incc]
-            Wvsht = Wv[, incc]
-          }
-          if (verbose) cat("Updated columns:", ncol(Wtsht), "\n")
-        }
-        # Finished with any needed clustering for variable reduction.
+      # Finished with any needed clustering for variable reduction.
 
         # cat(' time a = ',proc.time()-pp1,'\n') pp2=proc.time()
 
@@ -888,59 +805,13 @@ varImpact = function(Y, data, V = 2,
           incc = corAt < corthres & is.na(corAt) == F
           Wv = Wv[, incc, drop = F]
           Wt = Wt[, incc, drop = F]
-          #### Use HOPACH to reduce dimension of W to some level of tree
-          nw = ncol(Wv)
 
-          ### Skip if number covariates < 10
-          if (nw <= 10) {
-            Wtsht = Wt
-            Wvsht = Wv
-          } else {
-            if (verbose) cat("Reducing dimensions via clustering.")
-          #if (nw > 10) {
-            #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
-            mydist = try(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T),
-                         silent = !verbose)
-            if (class(mydist) == "try-error") {
-              cat("Error in HOPACH clustering: failed to calculate distance matrix.\n")
-            }
-            hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "mean", verbose = F),
-                           silent = !verbose)
-            if (class(hopach.1) == "try-error") {
-              if (verbose) cat(" Attempt 1 fail.")
-              # Retry with a different specification.
-              hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "med", verbose = F),
-                              silent = !verbose)
-            }
-            if (class(hopach.1) == "try-error") {
-              if (verbose) cat(" Attempt 2 fail.")
-              Wtsht = Wt
-              Wvsht = Wv
-            } else {
-            #if (class(hopach.1) != "try-error") {
-              nlvls = nchar(max(hopach.1$final$labels))
-              no = trunc(mean(log10(hopach.1$final$labels)))
-              # Find highest level of tree where minimum number of covariates is > adjust_cutoff
-              lvl = 1:nlvls
-              ncv = NULL
-              for (ii in lvl) {
-                ncv = c(ncv, length(unique(trunc(hopach.1$final$labels/10^(no - (ii - 1))))))
-              }
-              ncv = unique(ncv)
-              # Suppress possible "no non-missing arguments to min; returning Inf" warning from min().
-              # TODO: investigate more and confirm that this is ok.
-              suppressWarnings({
-                lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= adjust_cutoff]))
-              })
-              two.clust = unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
-              md = hopach.1$final$medoids
-              mm = md[, 1] %in% two.clust
-              incc = md[mm, 2]
-              Wtsht = Wt[, incc]
-              Wvsht = Wv[, incc]
-            }
-            if (verbose) cat(" Updated columns:", ncol(Wtsht), "\n")
-          }
+          # Use HOPACH to reduce dimension of W to some level of tree
+          reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose)
+
+          Wtsht = reduced_results$data
+          Wvsht = reduced_results$newX
+
           deltat = as.numeric(is.na(Yt) == F & is.na(Atnew) == F)
           deltav = as.numeric(is.na(Yv) == F & is.na(Avnew) == F)
 
