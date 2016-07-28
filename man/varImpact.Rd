@@ -6,8 +6,8 @@
 \title{Variable importance estimation using causal inference (TMLE)}
 \usage{
 varImpact(Y, data, V = 2, Q.library = c("SL.glmnet", "SL.mean"),
-  g.library = c("SL.stepAIC"), family = "binomial", adjust_cutoff = 10,
-  minYs = 15, minCell = 0, ncov = 10, corthres = 0.8, impute = "knn",
+  g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
+  minCell = 0, adjust_cutoff = 10, corthres = 0.8, impute = "knn",
   miss.cut = 0.5, verbose = F, parallel = T, digits = 4)
 }
 \arguments{
@@ -26,18 +26,17 @@ predictor variable of interest versus other predictors}
 
 \item{family}{family ('binomial' or 'gaussian')}
 
-\item{adjust_cutoff}{Maximum number of adjustment variables during TMLE. If
-more than this cutoff varImpact will attempt to reduce the dimensions to
-that number.}
-
 \item{minYs}{mininum # of obs with event  - if it is < minYs, skip VIM}
 
 \item{minCell}{is the cut-off for including a category of A in analysis, and
 presents the minumum of cells in a 2x2 table of the indicator of that level
 versus outcome, separately by training and validation sample.}
 
-\item{ncov}{minimum number of covariates to include as adjustment variables
-(must be less than # of basis functions of adjustment matrix)}
+\item{adjust_cutoff}{Maximum number of adjustment variables during TMLE. If
+more than this cutoff varImpact will attempt to reduce the dimensions to
+that number (using HOPACH hierarchical clustering). Must not be more than
+15 due to HOPACH constraints. Set to NULL to disable any dimension
+reduction.}
 
 \item{corthres}{cut-off correlation with explanatory
 variable for inclusion of an adjustment variables}

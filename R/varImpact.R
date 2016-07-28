@@ -44,15 +44,15 @@
 #' @param g.library library used by SuperLearner for model of
 #' predictor variable of interest versus other predictors
 #' @param family family ('binomial' or 'gaussian')
-#' @param adjust_cutoff Maximum number of adjustment variables during TMLE. If
-#'   more than this cutoff varImpact will attempt to reduce the dimensions to
-#'   that number.
 #' @param minYs mininum # of obs with event  - if it is < minYs, skip VIM
 #' @param minCell is the cut-off for including a category of A in analysis, and
 #'   presents the minumum of cells in a 2x2 table of the indicator of that level
 #'   versus outcome, separately by training and validation sample.
-#' @param ncov minimum number of covariates to include as adjustment variables
-#'   (must be less than # of basis functions of adjustment matrix)
+#' @param adjust_cutoff Maximum number of adjustment variables during TMLE. If
+#'   more than this cutoff varImpact will attempt to reduce the dimensions to
+#'   that number (using HOPACH hierarchical clustering). Must not be more than
+#'   15 due to HOPACH constraints. Set to NULL to disable any dimension
+#'   reduction.
 #' @param corthres cut-off correlation with explanatory
 #' variable for inclusion of an adjustment variables
 #' @param impute Type of missing value imputation to conduct. One of: "zero",
@@ -171,8 +171,7 @@
 varImpact = function(Y, data, V = 2,
                      Q.library = c("SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"), family = "binomial",
-                     adjust_cutoff = 10,
-                     minYs = 15, minCell = 0, ncov = 10, corthres = 0.8,
+                     minYs = 15, minCell = 0, adjust_cutoff = 10, corthres = 0.8,
                      impute = "knn", miss.cut = 0.5, verbose=F, parallel = T,
                      digits = 4) {
 
@@ -519,9 +518,8 @@ varImpact = function(Y, data, V = 2,
         nw = ncol(Wv)
 
         ###
-        # Skip if number covariates <= 10
-        # TODO: should this use ncov instead of adjust_cutoff?
-        if (nw <= 10) {
+        # Skip if number covariates <= adjust or if adjust_cutoff is set to NULL.
+        if (is.null(adjust_cutoff) || nw <= adjust_cutoff) {
           Wtsht = Wt
           Wvsht = Wv
         } else {
@@ -545,7 +543,7 @@ varImpact = function(Y, data, V = 2,
           # kmax = maximum number of children at each node in the tree.
           # khigh = max # of children at each node when computing mss, usually the same.
           hopach.1 = try(hopach::hopach(t(Wt), dmat = mydist, mss = "mean", verbose = T,
-                               K = 10, kmax = 3, khigh = 3),
+                               K = adjust_cutoff, kmax = 3, khigh = 3),
                          silent = !verbose)
           if (class(hopach.1) == "try-error") {
             if (verbose) {
@@ -585,7 +583,7 @@ varImpact = function(Y, data, V = 2,
             nlvls = nchar(max(hopach.1$final$labels))
             no = trunc(mean(log10(hopach.1$final$labels)))
 
-            # Find highest level of tree where minimum number of covariates is > ncov
+            # Find highest level of tree where minimum number of covariates is >= adjust_cutoff.
             lvl = 1:nlvls
             ncv = NULL
             for (ii in lvl) {
@@ -595,7 +593,7 @@ varImpact = function(Y, data, V = 2,
             # Suppress possible "no non-missing arguments to min; returning Inf" warning from min().
             # TODO: investigate more and confirm that this is ok.
             suppressWarnings({
-              lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= ncov]))
+              lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= adjust_cutoff]))
             })
             two.clust <- unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
             md <- hopach.1$final$medoids
@@ -922,7 +920,7 @@ varImpact = function(Y, data, V = 2,
             #if (class(hopach.1) != "try-error") {
               nlvls = nchar(max(hopach.1$final$labels))
               no = trunc(mean(log10(hopach.1$final$labels)))
-              # Find highest level of tree where minimum number of covariates is > ncov
+              # Find highest level of tree where minimum number of covariates is > adjust_cutoff
               lvl = 1:nlvls
               ncv = NULL
               for (ii in lvl) {
@@ -932,7 +930,7 @@ varImpact = function(Y, data, V = 2,
               # Suppress possible "no non-missing arguments to min; returning Inf" warning from min().
               # TODO: investigate more and confirm that this is ok.
               suppressWarnings({
-                lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= ncov]))
+                lev = min(min(nlvls, dim(Wt)[2]), min(lvl[ncv >= adjust_cutoff]))
               })
               two.clust = unique(trunc(hopach.1$final$labels/(10^(no - (lev - 1)))))
               md = hopach.1$final$medoids
