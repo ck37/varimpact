@@ -120,6 +120,9 @@ data-adaptive target parameters (pp. 439-452)}. In P. Bühlmann et al. (Ed.),
 \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca
 Raton, FL.
 
+van der Laan, M. J. (2006). Statistical inference for variable importance.
+The International Journal of Biostatistics, 2(1).
+
 van der Laan, M. J., & Pollard, K. S. (2003). \emph{A new algorithm for
 hybrid hierarchical clustering with visualization and the bootstrap}. Journal
 of Statistical Planning and Inference, 117(2), 275-303.

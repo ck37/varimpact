@@ -95,6 +95,8 @@ Hubbard, A., Munoz, I. D., Decker, A., Holcomb, J. B., Schreiber, M. A., Bulger,
 
 Hubbard, A. E., & van der Laan, M. J. (2016). Mining with inference: data-adaptive target parameters (pp. 439-452). In P. Bühlmann et al. (Ed.), Handbook of Big Data. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
 
+van der Laan, M. J. (2006). Statistical inference for variable importance. The International Journal of Biostatistics, 2(1).
+
 van der Laan, M. J., & Pollard, K. S. (2003). A new algorithm for hybrid hierarchical clustering with visualization and the bootstrap. Journal of Statistical Planning and Inference, 117(2), 275-303.
 
 van der Laan, M. J., Polley, E. C., & Hubbard, A. E. (2007). Super learner. Statistical applications in genetics and molecular biology, 6(1).
