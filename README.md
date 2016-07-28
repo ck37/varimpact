@@ -13,7 +13,7 @@ The results provide raw p-values as well as p-values adjusted for false discover
 
 varImpact is under active development so please submit any bug reports or feature requests to the [issue queue](https://github.com/ck37/varImpact/issues), or email Alan & Chris directly.
 
-## Installation
+# Installation
 
 ### Install varImpact from Github
 
@@ -23,7 +23,7 @@ if (!require("devtools")) install.packages("devtools")
 devtools::install_github("ck37/varImpact")
 ```
 
-## Examples
+# Examples
 
 ```{r}
 ####################################
@@ -81,11 +81,11 @@ vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 
 ```
 
-## Authors
+# Authors
 
 Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 
-## References
+# References
 
 Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a practical and powerful approach to multiple testing. Journal of the royal statistical society. Series B (Methodological), 289-300.
 
