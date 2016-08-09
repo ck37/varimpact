@@ -1,6 +1,7 @@
 # varImpact - variable importance through causal inference
 
 [![Build Status](https://travis-ci.org/ck37/varImpact.svg?branch=master)](https://travis-ci.org/ck37/varImpact)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ck37/varImpact?branch=master&svg=true)](https://ci.appveyor.com/project/ck37/varImpact)
 [![codecov](https://codecov.io/gh/ck37/varImpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varImpact)
 [//]: # ([![Downloads](http://cranlogs.r-pkg.org/badges/varImpact)](http://cran.rstudio.com/package=varImpact))
 [//]: # ([![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/varImpact)](http://cran.r-project.org/web/packages/varImpact))
