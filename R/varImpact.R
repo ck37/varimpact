@@ -842,9 +842,11 @@ varImpact = function(Y, data, V = 2,
             EY0V = c(EY0V, NA)
             EY1V = c(EY1V, NA)
             nV = c(nV, NA)
-          }
+            # Go to the next loop iteration.
+            next
+          } else {
           # CK TODO: this is not exactly the opposite of the IF above. Is that intentional?
-          if (length(unique(Yt)) > 2 || min(table(Avnew, Yv)) > minCell) {
+          #if (length(unique(Yt)) > 2 || min(table(Avnew, Yv)) > minCell) {
             labmin = NULL
             labmax = NULL
             errcnt = 0
@@ -900,7 +902,7 @@ varImpact = function(Y, data, V = 2,
               if (verbose) cat("Estimate on validation: ")
               res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
                                      g.lib = g.library), silent = T)
-              if (verbose) cat("min ")
+              if (verbose) cat("min")
               if (class(res) == "try-error") {
                 if (verbose) cat(" Failed :/\n")
                 thetaV = c(thetaV, NA)
@@ -914,6 +916,7 @@ varImpact = function(Y, data, V = 2,
                 # Estimate with the maximum level.
                 IC0 = res$IC
                 EY0 = res$theta
+                if (verbose) cat(" EY0 =", round(res$theta, 3), " ")
                 IA = as.numeric(Avnew == vals[maxj])
                 res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
                                         Q.lib = Q.library, g.lib = g.library), silent = TRUE)
@@ -928,9 +931,12 @@ varImpact = function(Y, data, V = 2,
                   nV = c(nV, NA)
                 }
                 if (class(res2) != "try-error") {
-                  if (verbose) cat(".\n")
+                  if (verbose) cat(" EY1 =", round(res2$theta, 3))
+                  if (verbose) cat("\n")
                   IC1 = res2$IC
                   EY1 = res2$theta
+
+
                   thetaV = c(thetaV, EY1 - EY0)
                   varICV = c(varICV, var(IC1 - IC0))
                   #labV = rbind(labV, round(c(labmin, labmax), digits = digits))
@@ -941,9 +947,23 @@ varImpact = function(Y, data, V = 2,
                 }
               }
             }
-          }
+          }# else {
+           # cat("ERROR: Should not get here.\n")
+          #}
         }
       }
+
+      # Check if we have the correct number of results for this variable.
+      if (verbose) {
+        non_missing = length(na.omit(EY1V))
+        cat("EY1V:", paste(round(EY1V, 3), collapse=", "), "\n")
+        if (non_missing == V) {
+          cat(nameA, "will be kept; we have", non_missing, "results as expected.\n")
+        } else {
+          cat("Will drop", nameA, "because", non_missing, "!=", V, "results.\n")
+        }
+      }
+
       list(EY1V, EY0V, thetaV, varICV, labV, nV, "numeric")
     } # end foreach loop.
 

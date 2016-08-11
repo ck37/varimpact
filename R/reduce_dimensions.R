@@ -23,7 +23,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
     Wtsht = data
     Wvsht = newX
   } else {
-    if (verbose) cat("Reducing dimensions via clustering.")
+    if (verbose) cat("Reducing dimensions via clustering.\n")
 
     #mydist = as.matrix(hopach::distancematrix(t(Wt), d = "cosangle", na.rm = T))
 
