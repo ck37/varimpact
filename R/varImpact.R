@@ -175,282 +175,282 @@ varImpact = function(Y, data, V = 2,
                      impute = "knn", miss.cut = 0.5, verbose=F, parallel = T,
                      digits = 4) {
 
-  # Time the full function execution
-  time = system.time({
+  # Time the full function execution.
+  time_start = proc.time()
 
-    # Ensure that Y is numeric; e.g. can't be a factor.
-    # (We also assume it's 0/1 but that isn't explictly checked yet.)
-    stopifnot(class(Y) %in% c("numeric", "integer"))
+  # Ensure that Y is numeric; e.g. can't be a factor.
+  # (We also assume it's 0/1 but that isn't explictly checked yet.)
+  stopifnot(class(Y) %in% c("numeric", "integer"))
 
-    if (family == "binomial" && (min(Y, na.rm = T) < 0 | max(Y, na.rm = T) > 1)) {
-      stop("With binomial family Y must be bounded by [0, 1]. Specify family=\"gaussian\" otherwise.")
+  if (family == "binomial" && (min(Y, na.rm = T) < 0 | max(Y, na.rm = T) > 1)) {
+    stop("With binomial family Y must be bounded by [0, 1]. Specify family=\"gaussian\" otherwise.")
+  }
+
+
+  # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
+  `%do_op%` = foreach::`%do%`
+  # Use parallelism if there is a backend registered, unless parallel == F.
+  if (foreach::getDoParRegistered() && parallel) {
+    `%do_op%` = foreach::`%dopar%`
+    if (verbose) cat("Parallel backend detected: using foreach parallelization.\n")
+  } else {
+    if (verbose) cat("No parallel backend detected. Operating sequentially.\n")
+  }
+
+
+  ########
+  # Applied to Explanatory (X) data frame
+  sna = apply(data, 2, sum_na)
+
+  n = nrow(data)
+
+  #######
+  # Missing proportion by variable.
+  mis.prop = sna / n
+
+  #######
+  # Cut-off for eliminating variable for proportion of obs missing.
+  data = data[, mis.prop < miss.cut]
+
+  # Function that counts # of unique values.
+  length_unique = function(x) {
+    length(unique(x))
+  }
+
+  # Vector of number of unique values by variable.
+  # TODO: run in parallel to support very wide/big datasets.
+  num.values = apply(data, 2, length_unique)
+
+  # Separate dataframe into factors-only and numerics-only.
+  # Also converts characters to factors automatically.
+  separated_data = separate_factors_numerics(data)
+
+  # Create a dataframe consisting only of columns that are factors.
+  data.fac = separated_data$df_factors
+  # And samesies for numerics.
+  data.num = separated_data$df_numerics
+
+  #####################
+  if (ncol(data.fac) > 0) {
+
+    if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
+
+    ######################################
+    # Replace blank factor values with NA's.
+
+    # We re-use this num_cols variable in the next section.
+    num_cols = ncol(data.fac)
+    for (i in 1:num_cols) {
+      new_factor = as.character(data.fac[, i])
+      # The exclude argument replaces any empty strings with NAs.
+      new_factor = factor(new_factor, exclude = "")
+      data.fac[, i] = new_factor
     }
 
+    ###################
+    # For each factor, apply function and get rid of those where
+    # 'true' data.fac is data frame of variables that are factors
 
-    # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
-    `%do_op%` = foreach::`%do%`
-    # Use parallelism if there is a backend registered, unless parallel == F.
-    if (foreach::getDoParRegistered() && parallel) {
-      `%do_op%` = foreach::`%dopar%`
-      if (verbose) cat("Parallel backend detected: using foreach parallelization.\n")
-    } else {
-      if (verbose) cat("No parallel backend detected. Operating sequentially.\n")
+    data.fac = restrict_by_quantiles(data.fac, quantile_probs = c(0.1, 0.9))
+
+    dropped_cols = num_cols - ncol(data.fac)
+
+    if (verbose) {
+      if (dropped_cols > 0) {
+        cat("Dropped", dropped_cols, "factors due to lack of variation.\n")
+      } else {
+        cat("No factors dropped due to lack of variation.\n")
+      }
     }
 
+    # We don't seem to use this yet.
+    num.cat = apply(data.fac, 2, length_unique)
 
-    ########
-    # Applied to Explanatory (X) data frame
-    sna = apply(data, 2, sum_na)
+    ######################
+    # Remove columns with missing data % greater than the threshold.
+    sum_nas = apply(data.fac, 2, sum_na)
 
-    n = nrow(data)
+    if (verbose) cat("Factors with missingness:", sum(sum_nas > 0), "\n")
 
-    #######
-    # Missing proportion by variable.
-    mis.prop = sna / n
+    miss_pct = sum_nas / nrow(data.fac)
 
-    #######
-    # Cut-off for eliminating variable for proportion of obs missing.
-    data = data[, mis.prop < miss.cut]
+    data.fac = data.fac[, miss_pct < miss.cut, drop = F]
 
-    # Function that counts # of unique values.
-    length_unique = function(x) {
-      length(unique(x))
+    if (verbose) {
+      cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
     }
 
-    # Vector of number of unique values by variable.
-    # TODO: run in parallel to support very wide/big datasets.
-    num.values = apply(data, 2, length_unique)
+    # Save how many separate factors we have in this dataframe.
+    num_factors = ncol(data.fac)
 
-    # Separate dataframe into factors-only and numerics-only.
-    # Also converts characters to factors automatically.
-    separated_data = separate_factors_numerics(data)
+    factor_results = factors_to_indicators(data.fac, verbose = verbose)
 
-    # Create a dataframe consisting only of columns that are factors.
-    data.fac = separated_data$df_factors
-    # And samesies for numerics.
-    data.num = separated_data$df_numerics
+    datafac.dum = factor_results$data
+    # Here 1 = defined, 0 = missing.
+    miss.fac = factor_results$missing_indicators
 
-    #####################
-    if (ncol(data.fac) > 0) {
+    if (verbose) {
+      cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
+          "Missing indicators:", ncol(miss.fac), "\n")
+    }
+  } else {
+    n.fac = 0
+    num_factors = 0
+    datafac.dumW = NULL
+    miss.fac = NULL
+    datafac.dum = NULL
+  }
 
-      if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
+  # Finished pre-processing factor variables.
+  ###########################################################
 
-      ######################################
-      # Replace blank factor values with NA's.
+  ###########################################################
+  # Pre-process numeric/continuous variables.
 
-      # We re-use this num_cols variable in the next section.
-      num_cols = ncol(data.fac)
-      for (i in 1:num_cols) {
-        new_factor = as.character(data.fac[, i])
-        # The exclude argument replaces any empty strings with NAs.
-        new_factor = factor(new_factor, exclude = "")
-        data.fac[, i] = new_factor
+  if (ncol(data.num) > 0) {
+    num_cols = ncol(data.num)
+
+    # Remove columns where the 0.1 and 0.9 quantiles have the same value, i.e. insufficent variation.
+    data.num = restrict_by_quantiles(data.num, quantile_probs = c(0.1, 0.9))
+
+    if (verbose) {
+      num_dropped = ncol(data.num) - num_cols
+      if (num_dropped > 0) {
+        cat("Dropped", num_dropped, "numerics due to lack of variation.\n")
+      } else {
+        cat("No numerics dropped due to lack of variation.\n")
       }
-
-      ###################
-      # For each factor, apply function and get rid of those where
-      # 'true' data.fac is data frame of variables that are factors
-
-      data.fac = restrict_by_quantiles(data.fac, quantile_probs = c(0.1, 0.9))
-
-      dropped_cols = num_cols - ncol(data.fac)
-
-      if (verbose) {
-        if (dropped_cols > 0) {
-          cat("Dropped", dropped_cols, "factors due to lack of variation.\n")
-        } else {
-          cat("No factors dropped due to lack of variation.\n")
-        }
-      }
-
-      # We don't seem to use this yet.
-      num.cat = apply(data.fac, 2, length_unique)
-
-      ######################
-      # Remove columns with missing data % greater than the threshold.
-      sum_nas = apply(data.fac, 2, sum_na)
-
-      if (verbose) cat("Factors with missingness:", sum(sum_nas > 0), "\n")
-
-      miss_pct = sum_nas / nrow(data.fac)
-
-      data.fac = data.fac[, miss_pct < miss.cut, drop = F]
-
-      if (verbose) {
-        cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
-      }
-
-      # Save how many separate factors we have in this dataframe.
-      num_factors = ncol(data.fac)
-
-      factor_results = factors_to_indicators(data.fac, verbose = verbose)
-
-      datafac.dum = factor_results$data
-      # Here 1 = defined, 0 = missing.
-      miss.fac = factor_results$missing_indicators
-
-      if (verbose) {
-        cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
-            "Missing indicators:", ncol(miss.fac), "\n")
-      }
-    } else {
-      n.fac = 0
-      num_factors = 0
-      datafac.dumW = NULL
-      miss.fac = NULL
-      datafac.dum = NULL
     }
 
-    # Finished pre-processing factor variables.
-    ###########################################################
+    # Save how many numeric variables we have in this dataframe.
+    num_numeric = ncol(data.num)
+  } else {
+    num_numeric = 0
+  }
 
-    ###########################################################
-    # Pre-process numeric/continuous variables.
+  if (num_numeric > 0) {
+    if (verbose) cat("Cleaning up", num_numeric, "numeric variables.\n")
+    # Make deciles for continuous variables
+    X = data.num
+    xc = dim(X)[2]
+    qt = apply(na.omit(X), 2, quantile, probs = seq(0.1, 0.9, 0.1))
+    newX = NULL
+    coln = NULL
+    varn = colnames(X)
 
-    if (ncol(data.num) > 0) {
-      num_cols = ncol(data.num)
+    num.cat = apply(X, 2, length_unique)
 
-      # Remove columns where the 0.1 and 0.9 quantiles have the same value, i.e. insufficent variation.
-      data.num = restrict_by_quantiles(data.num, quantile_probs = c(0.1, 0.9))
+    Xnew = NULL
 
-      if (verbose) {
-        num_dropped = ncol(data.num) - num_cols
-        if (num_dropped > 0) {
-          cat("Dropped", num_dropped, "numerics due to lack of variation.\n")
-        } else {
-          cat("No numerics dropped due to lack of variation.\n")
-        }
+    for (k in 1:num_numeric) {
+      Xt = X[, k]
+      # cat("Numeric", k, "", colnames(X)[k], "mean missing:", mean(is.na(Xt)), "\n")
+
+      # Suppress the warning that can occur when there are fewer than 10 bins.
+      # We should be able to see this as tst containing fewer than 10 columns.
+      # Warning is in .cut2(): min(xx[xx > upper])
+      # "no non-missing arguments to min; returning Inf"
+      suppressWarnings({
+        # Discretize into up to 10 deciles.
+        # TODO: number of bins should be a function argument.
+        tst = as.numeric(arules::discretize(Xt, method = "frequency", categories = 10,
+                                            ordered = T))
+      })
+      Xnew = cbind(Xnew, tst)
+    }
+    colnames(Xnew) = varn
+    data.cont.dist = Xnew
+
+    ###############
+    # Missing Basis for numeric variables, post-binning.
+    xp = ncol(data.cont.dist)
+    n.cont = nrow(data.cont.dist)
+
+    sna = apply(data.cont.dist, 2, sum_na)
+    nmesX = colnames(data.cont.dist)
+    miss.cont = NULL
+    nmesm = NULL
+
+    # Create imputed version of the numeric dataframe.
+    data.numW = data.num
+
+    # Loop over each binned numeric variable.
+    for (k in 1:xp) {
+      # Check if that variable has any missing values.
+      if (sna[k] > 0) {
+        # TODO: is this correct? shouldn't it be is.na() == T?
+        # The effect is that the basis is set to 1 if it exists and 0 if it's missing.
+        ix = as.numeric(is.na(data.cont.dist[, k]) == F)
+        miss.cont = cbind(miss.cont, ix)
+        nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
       }
+    }
+    # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
+    colnames(miss.cont) = nmesm
 
-      # Save how many numeric variables we have in this dataframe.
-      num_numeric = ncol(data.num)
-    } else {
-      num_numeric = 0
+    # Impute missing data in numeric columns.
+    if (impute == "zero") {
+      data.numW[is.na(data.num)] = 0
+      impute_info = 0
+    } else if (impute == "median") {
+      impute_info = caret::preProcess(data.num, method=c("medianImpute"))
+      data.numW = caret::predict.preProcess(impute_info, data.num)
+    } else if (impute == "mean") {
+      stop("Mean imputation not implemented yet. Please use another imputation method.")
+    } else if (impute == "knn") {
+      impute_info = caret::preProcess(data.num, method=c("knnImpute"))
+      data.numW = caret::predict.preProcess(impute_info, data.num)
     }
 
-    if (num_numeric > 0) {
-      if (verbose) cat("Cleaning up", num_numeric, "numeric variables.\n")
-      # Make deciles for continuous variables
-      X = data.num
-      xc = dim(X)[2]
-      qt = apply(na.omit(X), 2, quantile, probs = seq(0.1, 0.9, 0.1))
-      newX = NULL
-      coln = NULL
-      varn = colnames(X)
+    # Confirm that there are no missing values remaining in data.numW
+    stopifnot(sum(is.na(data.numW)) == 0)
+  } else {
+    impute_info = NULL
+    miss.cont = NULL
+  }
 
-      num.cat = apply(X, 2, length_unique)
+  cat("Finished pre-processing variables.\n")
 
-      Xnew = NULL
+  # Create cross-validation folds (2 by default).
+  folds = create_cv_folds(V, Y, verbose=verbose)
 
-      for (k in 1:num_numeric) {
-        Xt = X[, k]
-        # cat("Numeric", k, "", colnames(X)[k], "mean missing:", mean(is.na(Xt)), "\n")
+  n = length(Y)
 
-        # Suppress the warning that can occur when there are fewer than 10 bins.
-        # We should be able to see this as tst containing fewer than 10 columns.
-        # Warning is in .cut2(): min(xx[xx > upper])
-        # "no non-missing arguments to min; returning Inf"
-        suppressWarnings({
-          # Discretize into up to 10 deciles.
-          # TODO: number of bins should be a function argument.
-          tst = as.numeric(arules::discretize(Xt, method = "frequency", categories = 10,
-                                  ordered = T))
-        })
-        Xnew = cbind(Xnew, tst)
-      }
-      colnames(Xnew) = varn
-      data.cont.dist = Xnew
+  ###############################################################################
+  # VIM for Factors
+  # NOTE: we use && so that conditional will short-circuit if num_factors == 0.
+  if (num_factors > 0 && ncol(data.fac) > 0) {
+    cat("Estimating variable importance for", num_factors, "factors.\n")
 
-      ###############
-      # Missing Basis for numeric variables, post-binning.
-      xp = ncol(data.cont.dist)
-      n.cont = nrow(data.cont.dist)
+    # Find the level of covariate that has lowest risk
+    datafac.dumW = datafac.dum
+    # NOTE: can't we skip this line because we already imputed missing data to 0?
+    datafac.dumW[is.na(datafac.dum)] = 0
 
-      sna = apply(data.cont.dist, 2, sum_na)
-      nmesX = colnames(data.cont.dist)
-      miss.cont = NULL
-      nmesm = NULL
+    #############################
+    # Below is to get indexing vectors so that any basis functions related to current A
+    # that are in covariate matrix can be removed.
+    names.fac = colnames(data.fac)
+    nmes.facW = colnames(datafac.dumW)
+    nmes.mfacW = colnames(miss.fac)
+    nchar.facW = nchar(nmes.facW) + 1
+    nchar.mfacW = nchar(nmes.mfacW) + 1
 
-      # Create imputed version of the numeric dataframe.
-      data.numW = data.num
+    XXm = regexpr("XX", nmes.facW)
+    XXm[XXm < 0] = nchar.facW[XXm < 0]
 
-      # Loop over each binned numeric variable.
-      for (k in 1:xp) {
-        # Check if that variable has any missing values.
-        if (sna[k] > 0) {
-          # TODO: is this correct? shouldn't it be is.na() == T?
-          # The effect is that the basis is set to 1 if it exists and 0 if it's missing.
-          ix = as.numeric(is.na(data.cont.dist[, k]) == F)
-          miss.cont = cbind(miss.cont, ix)
-          nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
-        }
-      }
-      # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
-      colnames(miss.cont) = nmesm
+    XXm2 = regexpr("XX", nmes.mfacW)
+    XXm2[XXm2 < 0] = nchar.mfacW[XXm2 < 0]
 
-      # Impute missing data in numeric columns.
-      if (impute == "zero") {
-        data.numW[is.na(data.num)] = 0
-        impute_info = 0
-      } else if (impute == "median") {
-        impute_info = caret::preProcess(data.num, method=c("medianImpute"))
-        data.numW = caret::predict.preProcess(impute_info, data.num)
-      } else if (impute == "mean") {
-        stop("Mean imputation not implemented yet. Please use another imputation method.")
-      } else if (impute == "knn") {
-        impute_info = caret::preProcess(data.num, method=c("knnImpute"))
-        data.numW = caret::predict.preProcess(impute_info, data.num)
-      }
+    vars.facW = substr(nmes.facW, 1, XXm - 1)
+    vars.mfacW = substr(nmes.mfacW, 7, XXm2 - 1)
 
-      # Confirm that there are no missing values remaining in data.numW
-      stopifnot(sum(is.na(data.numW)) == 0)
-    } else {
-      impute_info = NULL
-      miss.cont = NULL
-    }
+    xc = ncol(data.fac)
+    n.fac = nrow(data.fac)
 
-    cat("Finished pre-processing variables.\n")
-
-    # Create cross-validation folds (2 by default).
-    folds = create_cv_folds(V, Y, verbose=verbose)
-
-    n = length(Y)
-
-    ###############################################################################
-    # VIM for Factors
-    # NOTE: we use && so that conditional will short-circuit if num_factors == 0.
-    if (num_factors > 0 && ncol(data.fac) > 0) {
-      cat("Estimating variable importance for", num_factors, "factors.\n")
-
-      # Find the level of covariate that has lowest risk
-      datafac.dumW = datafac.dum
-      # NOTE: can't we skip this line because we already imputed missing data to 0?
-      datafac.dumW[is.na(datafac.dum)] = 0
-
-      #############################
-      # Below is to get indexing vectors so that any basis functions related to current A
-      # that are in covariate matrix can be removed.
-      names.fac = colnames(data.fac)
-      nmes.facW = colnames(datafac.dumW)
-      nmes.mfacW = colnames(miss.fac)
-      nchar.facW = nchar(nmes.facW) + 1
-      nchar.mfacW = nchar(nmes.mfacW) + 1
-
-      XXm = regexpr("XX", nmes.facW)
-      XXm[XXm < 0] = nchar.facW[XXm < 0]
-
-      XXm2 = regexpr("XX", nmes.mfacW)
-      XXm2[XXm2 < 0] = nchar.mfacW[XXm2 < 0]
-
-      vars.facW = substr(nmes.facW, 1, XXm - 1)
-      vars.mfacW = substr(nmes.mfacW, 7, XXm2 - 1)
-
-      xc = ncol(data.fac)
-      n.fac = nrow(data.fac)
-
-      # vim_factor = lapply(1:xc, function(i) {
-      vim_factor = foreach::foreach(i = 1:xc, .verbose=verbose) %do_op% {
-        nameA = names.fac[i]
+    # vim_factor = lapply(1:xc, function(i) {
+    vim_factor = foreach::foreach(i = 1:xc, .verbose=verbose) %do_op% {
+      nameA = names.fac[i]
 
       if (verbose) cat("i =", i, "Var =", nameA, "out of", xc, "factor variables\n")
 
@@ -521,7 +521,7 @@ varImpact = function(Y, data, V = 2,
         Wtsht = reduced_results$data
         Wvsht = reduced_results$newX
 
-      # Finished with any needed clustering for variable reduction.
+        # Finished with any needed clustering for variable reduction.
 
         # cat(' time a = ',proc.time()-pp1,'\n') pp2=proc.time()
 
@@ -575,7 +575,7 @@ varImpact = function(Y, data, V = 2,
           EY1V = c(EY1V, NA)
           nV = c(nV, NA)
         } else {
-        # if (num.cat >= 2 & min(nYt, nYv) >= minYs) {
+          # if (num.cat >= 2 & min(nYt, nYv) >= minYs) {
           labmin = NULL
           labmax = NULL
           maxEY1 = -1e+05
@@ -591,7 +591,7 @@ varImpact = function(Y, data, V = 2,
             IA[is.na(IA)] = 0
             # if(min(table(IA,Yt))>=)
             res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
-                                   g.lib = g.library), silent = TRUE)
+                                    g.lib = g.library), silent = TRUE)
             if (class(res) == "try-error") {
               if (verbose) cat("X")
               errcnt = errcnt + 1
@@ -626,7 +626,7 @@ varImpact = function(Y, data, V = 2,
             IA = as.numeric(Av == vals[minj])
             IA[is.na(IA)] = 0
             res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                   g.lib = g.library), silent = TRUE)
+                                    g.lib = g.library), silent = TRUE)
             if (class(res) == "try-error") {
               if (verbose) cat("TMLE on validation failed.\n")
               thetaV = c(thetaV, NA)
@@ -643,7 +643,7 @@ varImpact = function(Y, data, V = 2,
               IA = as.numeric(Av == vals[maxj])
               IA[is.na(IA)] = 0
               res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                      g.lib = g.library), silent = TRUE)
+                                       g.lib = g.library), silent = TRUE)
               if (class(res2) == "try-error") {
                 thetaV = c(thetaV, NA)
                 varICV = c(varICV, NA)
@@ -673,45 +673,45 @@ varImpact = function(Y, data, V = 2,
       # print(data.frame(EY1V,EY0V,thetaV,varICV,labV,nV))
     } # End foreach loop.
 
-      if (verbose) cat("Factor VIMs:", length(vim_factor), "\n")
+    if (verbose) cat("Factor VIMs:", length(vim_factor), "\n")
 
-      # Confirm that we have the correct number of results, otherwise fail out.
-      stopifnot(length(vim_factor) == xc)
+    # Confirm that we have the correct number of results, otherwise fail out.
+    stopifnot(length(vim_factor) == xc)
 
-      colnames_factor = colnames(data.fac)
-    } else {
-      colnames_factor = NULL
-      vim_factor = NULL
-      cat("No factor variables - skip VIM estimation.\n")
-    }
+    colnames_factor = colnames(data.fac)
+  } else {
+    colnames_factor = NULL
+    vim_factor = NULL
+    cat("No factor variables - skip VIM estimation.\n")
+  }
 
-    ###############################################################################
-    # Repeat for Continuous Explanatory Variables
-    ###############################################################################
+  ###############################################################################
+  # Repeat for Continuous Explanatory Variables
+  ###############################################################################
 
-    cor.two = function(x, y) {
-      (cor(na.omit(cbind(x, y)))[1, 2])^2
-    }
+  cor.two = function(x, y) {
+    (cor(na.omit(cbind(x, y)))[1, 2])^2
+  }
 
-    ######################################################
-    # We use && so that the second check will be skipped when num_numeric == 0.
-    if (num_numeric > 0 && ncol(data.cont.dist) > 0) {
-      cat("Estimating variable importance for", num_numeric, "numerics.\n")
+  ######################################################
+  # We use && so that the second check will be skipped when num_numeric == 0.
+  if (num_numeric > 0 && ncol(data.cont.dist) > 0) {
+    cat("Estimating variable importance for", num_numeric, "numerics.\n")
 
-      xc = ncol(data.cont.dist)
-      names.cont = colnames(data.cont.dist)
-      n.cont = nrow(data.cont.dist)
+    xc = ncol(data.cont.dist)
+    names.cont = colnames(data.cont.dist)
+    n.cont = nrow(data.cont.dist)
 
-      numcat.cont = apply(data.cont.dist, 2, length_unique)
-      xc = length(numcat.cont)
+    numcat.cont = apply(data.cont.dist, 2, length_unique)
+    xc = length(numcat.cont)
 
-      cats.cont = lapply(1:xc, function(i) {
-        sort(unique(data.cont.dist[, i]))
-      })
+    cats.cont = lapply(1:xc, function(i) {
+      sort(unique(data.cont.dist[, i]))
+    })
 
-      ### Loop over each numeric variable.
-      #vim_numeric = lapply(1:xc, function(i) {
-      vim_numeric = foreach::foreach(i = 1:xc) %do_op% {
+    ### Loop over each numeric variable.
+    #vim_numeric = lapply(1:xc, function(i) {
+    vim_numeric = foreach::foreach(i = 1:xc) %do_op% {
       nameA = names.cont[i]
 
       if (verbose) cat("i =", i, "Var =", nameA, "out of", xc, "numeric variables\n")
@@ -764,7 +764,7 @@ varImpact = function(Y, data, V = 2,
           EY1V = c(EY1V, NA)
           nV = c(nV, NA)
         } else {
-        #if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) > 1) {
+          #if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) > 1) {
           labs = names(table(Atnew))
           Atnew = as.numeric(Atnew) - 1
           Avnew = as.numeric(Avnew) - 1
@@ -845,8 +845,8 @@ varImpact = function(Y, data, V = 2,
             # Go to the next loop iteration.
             next
           } else {
-          # CK TODO: this is not exactly the opposite of the IF above. Is that intentional?
-          #if (length(unique(Yt)) > 2 || min(table(Avnew, Yv)) > minCell) {
+            # CK TODO: this is not exactly the opposite of the IF above. Is that intentional?
+            #if (length(unique(Yt)) > 2 || min(table(Avnew, Yv)) > minCell) {
             labmin = NULL
             labmax = NULL
             errcnt = 0
@@ -855,14 +855,14 @@ varImpact = function(Y, data, V = 2,
               # cat(' i = ',i,' kk = ',kk,' j = ',j,'\n')
               IA = as.numeric(Atnew == vals[j])
               res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
-                                     g.lib = g.library), silent = T)
+                                      g.lib = g.library), silent = T)
               if (class(res) == "try-error") {
                 # Error.
                 if (verbose) cat("X")
                 errcnt = errcnt + 1
               } else {
                 if (verbose) cat(".")
-              #if (class(res) != "try-error") {
+                #if (class(res) != "try-error") {
                 EY1 = res$theta
                 if (EY1 < minEY1) {
                   minj = j
@@ -901,7 +901,7 @@ varImpact = function(Y, data, V = 2,
               IA = as.numeric(Avnew == vals[minj])
               if (verbose) cat("Estimate on validation: ")
               res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                     g.lib = g.library), silent = T)
+                                      g.lib = g.library), silent = T)
               if (verbose) cat("min")
               if (class(res) == "try-error") {
                 if (verbose) cat(" Failed :/\n")
@@ -919,7 +919,7 @@ varImpact = function(Y, data, V = 2,
                 if (verbose) cat(" EY0 =", round(res$theta, 3), " ")
                 IA = as.numeric(Avnew == vals[maxj])
                 res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
-                                        Q.lib = Q.library, g.lib = g.library), silent = TRUE)
+                                         Q.lib = Q.library, g.lib = g.library), silent = TRUE)
                 if (verbose) cat("max")
                 if (class(res2) == "try-error") {
                   if (verbose) cat(" Failed :/\n")
@@ -948,7 +948,7 @@ varImpact = function(Y, data, V = 2,
               }
             }
           }# else {
-           # cat("ERROR: Should not get here.\n")
+          # cat("ERROR: Should not get here.\n")
           #}
         }
       }
@@ -967,193 +967,194 @@ varImpact = function(Y, data, V = 2,
       list(EY1V, EY0V, thetaV, varICV, labV, nV, "numeric")
     } # end foreach loop.
 
-      if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
+    if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
 
-      # Confirm that we have the correct number of results, otherwise fail out.
-      stopifnot(length(vim_numeric) == xc)
+    # Confirm that we have the correct number of results, otherwise fail out.
+    stopifnot(length(vim_numeric) == xc)
 
-      colnames_numeric = colnames(data.cont.dist)
-    } else {
-      colnames_numeric = NULL
-      vim_numeric = NULL
-      data.numW = NULL
-      cat("No numeric variables for variable importance estimation.\n")
-    }
+    colnames_numeric = colnames(data.cont.dist)
+  } else {
+    colnames_numeric = NULL
+    vim_numeric = NULL
+    data.numW = NULL
+    cat("No numeric variables for variable importance estimation.\n")
+  }
 
-    if (verbose) cat("Completed numeric variable importance estimation.\n")
+  if (verbose) cat("Completed numeric variable importance estimation.\n")
 
 
-    #####################################################
-    # Combine the separate continuous and factor results.
+  #####################################################
+  # Combine the separate continuous and factor results.
 
-    num_numeric = length(colnames_numeric)
-    num_factor = length(colnames_factor)
+  num_numeric = length(colnames_numeric)
+  num_factor = length(colnames_factor)
 
-    factr = c(rep("ordered", num_numeric), rep("factor", num_factor))
-    vars = c(colnames_numeric, colnames_factor)
+  factr = c(rep("ordered", num_numeric), rep("factor", num_factor))
+  vars = c(colnames_numeric, colnames_factor)
 
-    vim_combined = c(vim_numeric, vim_factor)
-    names(vim_combined) = vars
+  vim_combined = c(vim_numeric, vim_factor)
+  names(vim_combined) = vars
 
-    lngth = sapply(vim_combined, function(x) length(x))
+  lngth = sapply(vim_combined, function(x) length(x))
 
-    # Restrict to vim results that have 7 elements.
-    vim_combined = vim_combined[lngth == 7]
-    vars = vars[lngth == 7]
-    factr = factr[lngth == 7]
+  # Restrict to vim results that have 7 elements.
+  vim_combined = vim_combined[lngth == 7]
+  vars = vars[lngth == 7]
+  factr = factr[lngth == 7]
 
-    # Set defaults for variables we want to return.
-    outres.all = outres.cons = outres.byV = NULL
+  # Set defaults for variables we want to return.
+  outres.all = outres.cons = outres.byV = NULL
 
-    # Get rid of any variables that have a validation sample with no
-    # estimates of variable importance.
-    if (length(vim_combined) == 0) {
-      error_msg = "No variable importance estimates could be calculated due to sample size, etc."
+  # Get rid of any variables that have a validation sample with no
+  # estimates of variable importance.
+  if (length(vim_combined) == 0) {
+    error_msg = "No variable importance estimates could be calculated due to sample size, etc."
+    if (verbose) cat(error_msg, "\n")
+    warning(error_msg)
+    # TODO: also write output to the file in a separate function call.
+    #write("No VIM's could be calculated due to sample size, etc",
+    #     file = "AllReslts.tex")
+  } else {
+    lngth2 = sapply(vim_combined, function(x) {
+      # In some cases class(x[[1]]) is NULL, so this avoids a warning.
+      if (class(x[[1]]) != "numeric") {
+        return(0)
+      }
+      element_one = na.omit(x[[1]])
+      length(element_one)
+    })
+    out.put = vim_combined[lngth2 == V]
+
+    if (length(out.put) == 0) {
+      error_msg = "No VIMs could be calculated due to sample size, etc."
       if (verbose) cat(error_msg, "\n")
       warning(error_msg)
-      # TODO: also write output to the file in a separate function call.
-      #write("No VIM's could be calculated due to sample size, etc",
-      #     file = "AllReslts.tex")
     } else {
-      lngth2 = sapply(vim_combined, function(x) {
-        # In some cases class(x[[1]]) is NULL, so this avoids a warning.
-        if (class(x[[1]]) != "numeric") {
-          return(0)
-        }
-        element_one = na.omit(x[[1]])
-        length(element_one)
-      })
-      out.put = vim_combined[lngth2 == V]
+      vars = vars[lngth2 == V]
+      factr = factr[lngth2 == V]
+      tst = lapply(out.put, function(x) x[[3]])
+      tst = do.call(rbind, tst)
+      if (verbose) cat("Dim tst:", paste(dim(tst)), "\n")
+      xx = apply(tst, 1, sum_na)
+      out.sht = out.put[xx == 0]
+      vars = vars[xx == 0]
+      factr = factr[xx == 0]
 
-      if (length(out.put) == 0) {
-        error_msg = "No VIMs could be calculated due to sample size, etc."
-        if (verbose) cat(error_msg, "\n")
-        warning(error_msg)
-      } else {
-        vars = vars[lngth2 == V]
-        factr = factr[lngth2 == V]
-        tst = lapply(out.put, function(x) x[[3]])
-        tst = do.call(rbind, tst)
-        if (verbose) cat("Dim tst:", paste(dim(tst)), "\n")
-        xx = apply(tst, 1, sum_na)
-        out.sht = out.put[xx == 0]
-        vars = vars[xx == 0]
-        factr = factr[xx == 0]
-
-        # names(out.sht)=vars[xx==0]
-        tst = lapply(out.sht, function(x) x[[1]])
-        EY1 = do.call(rbind, tst)
-        tst = lapply(out.sht, function(x) x[[2]])
-        EY0 = do.call(rbind, tst)
-        tst = lapply(out.sht, function(x) x[[3]])
-        theta = do.call(rbind, tst)
-        tst = lapply(out.sht, function(x) x[[4]])
-        varIC = do.call(rbind, tst)
-        tst = lapply(out.sht, function(x) x[[6]])
-        nV = do.call(rbind, tst)
-        n = sum(nV[1, ])
-        SEV = sqrt(varIC/nV)
-        ##### Get labels for each of the training sample
-        labs.get = function(x, fold) {
-          lbel = rep(1:fold, 2)
-          oo = order(lbel)
-          lbel = lbel[oo]
-          out = as.vector(t(x))
-          names(out) = paste("v.", lbel, rep(c("a_L", "a_H"), 2), sep = "")
-          out
-        }
-        tst = lapply(out.sht, function(x) x[[5]])
-        tst = lapply(tst, labs.get, fold = V)
-        lbs = do.call(rbind, tst)
-
-        meanvarIC = apply(varIC, 1, mean)
-        psi = apply(theta, 1, mean)
-        SE = sqrt(meanvarIC/n)
-
-        lower = psi - 1.96 * SE
-        upper = psi + 1.96 * SE
-        signdig = 3
-        CI95 = paste0("(", signif(lower, signdig), " - ", signif(upper, signdig), ")")
-
-        # 1-sided p-value
-        pvalue = 1 - pnorm(psi/SE)
-        ##### FOR THETA (generalize to chi-square test?)  TT =
-        ##### (theta[,1]-theta[,2])/sqrt(SEV[,1]^2+SEV[,2]^2)
-        ##### pval.comp=2*(1-pnorm(abs(TT))) FOR levels (just make sure in same
-        ##### order)
-        nc = sum(factr == "ordered")
-        n = length(factr)
-        ### Ordered variables first
-        length.uniq = function(x) {
-          length(unique(x))
-        }
-        cons = NULL
-        if (nc > 0) {
-          dir = NULL
-          for (i in 1:V) {
-            ltemp = lbs[1:nc, i * 2 - 1]
-            xx = regexpr(",", ltemp)
-            lwr = as.numeric(substr(ltemp, 2, xx - 1))
-            utemp = lbs[1:nc, i * 2]
-            xx = regexpr(",", utemp)
-            nx = nchar(utemp)
-            uwr = as.numeric(substr(utemp, xx + 1, nx - 1))
-            dir = cbind(dir, uwr > lwr)
-          }
-          cons = apply(dir, 1, length.uniq)
-        }
-        #### Factors
-        if (n - nc > 0) {
-          lwr = NULL
-          uwr = NULL
-          for (i in 1:V) {
-            lwr = cbind(lwr, lbs[(nc + 1):n, i * 2 - 1])
-            uwr = cbind(uwr, lbs[(nc + 1):n, i * 2 - 1])
-          }
-          conslwr = apply(lwr, 1, length.uniq)
-          consupr = apply(uwr, 1, length.uniq)
-          cons = c(cons, conslwr * consupr)
-        }
-        # consist= (cons==1 & pval.comp > 0.05)
-        signsum = function(x) {
-          sum(sign(x))
-        }
-        consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
-        procs = c("Holm", "BH")
-        if (n > 1) {
-          res = multtest::mt.rawp2adjp(pvalue, procs)
-          oo = res$index
-          outres = data.frame(factor = factr[oo], theta[oo, ],
-                              psi[oo], CI95[oo], res$adj, lbs[oo, ], consist[oo])
-        }
-        if (n == 1) {
-          outres = data.frame(factor = factr, theta, psi, CI95,
-                              rawp = pvalue, Holm = pvalue, BH = pvalue, lbs, consist)
-        }
-
-        # Restrict to variables that aren't missing their p-value.
-        outres = outres[!is.na(outres[, "rawp"]), , drop = F]
-
-        names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("psiV", 1:V), "AvePsi", "CI95")
-        names(outres)[(9 + 2 * V)] = "Consistent"
-
-        ### Get Consistency Measure and only significant Make BH cut-off flexible
-        ### in future versions (default at 0.05)
-        outres.cons = outres[outres[, "BH"] < 0.05, , drop = F]
-        outres.cons = outres.cons[outres.cons[, "Consistent"],
-                                  c("VarType", "AvePsi", "rawp"), drop = F]
-        colnames(outres.cons) = c("Type", "Estimate", "P-value")
-
-
-        # drops = c('VarType','description','Holm,')
-        # outres.all=outres[,!(names(outres) %in% drops)]
-        outres.byV = outres[, c(2:(2 + V - 1), 9:(9 + 2 * V)), drop = F]
-        outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH"), drop = F]
-        colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value")
+      # names(out.sht)=vars[xx==0]
+      tst = lapply(out.sht, function(x) x[[1]])
+      EY1 = do.call(rbind, tst)
+      tst = lapply(out.sht, function(x) x[[2]])
+      EY0 = do.call(rbind, tst)
+      tst = lapply(out.sht, function(x) x[[3]])
+      theta = do.call(rbind, tst)
+      tst = lapply(out.sht, function(x) x[[4]])
+      varIC = do.call(rbind, tst)
+      tst = lapply(out.sht, function(x) x[[6]])
+      nV = do.call(rbind, tst)
+      n = sum(nV[1, ])
+      SEV = sqrt(varIC/nV)
+      ##### Get labels for each of the training sample
+      labs.get = function(x, fold) {
+        lbel = rep(1:fold, 2)
+        oo = order(lbel)
+        lbel = lbel[oo]
+        out = as.vector(t(x))
+        names(out) = paste("v.", lbel, rep(c("a_L", "a_H"), 2), sep = "")
+        out
       }
-    }
+      tst = lapply(out.sht, function(x) x[[5]])
+      tst = lapply(tst, labs.get, fold = V)
+      lbs = do.call(rbind, tst)
 
-  }) # End timing the full execution.
+      meanvarIC = apply(varIC, 1, mean)
+      psi = apply(theta, 1, mean)
+      SE = sqrt(meanvarIC/n)
+
+      lower = psi - 1.96 * SE
+      upper = psi + 1.96 * SE
+      signdig = 3
+      CI95 = paste0("(", signif(lower, signdig), " - ", signif(upper, signdig), ")")
+
+      # 1-sided p-value
+      pvalue = 1 - pnorm(psi/SE)
+      ##### FOR THETA (generalize to chi-square test?)  TT =
+      ##### (theta[,1]-theta[,2])/sqrt(SEV[,1]^2+SEV[,2]^2)
+      ##### pval.comp=2*(1-pnorm(abs(TT))) FOR levels (just make sure in same
+      ##### order)
+      nc = sum(factr == "ordered")
+      n = length(factr)
+      ### Ordered variables first
+      length.uniq = function(x) {
+        length(unique(x))
+      }
+      cons = NULL
+      if (nc > 0) {
+        dir = NULL
+        for (i in 1:V) {
+          ltemp = lbs[1:nc, i * 2 - 1]
+          xx = regexpr(",", ltemp)
+          lwr = as.numeric(substr(ltemp, 2, xx - 1))
+          utemp = lbs[1:nc, i * 2]
+          xx = regexpr(",", utemp)
+          nx = nchar(utemp)
+          uwr = as.numeric(substr(utemp, xx + 1, nx - 1))
+          dir = cbind(dir, uwr > lwr)
+        }
+        cons = apply(dir, 1, length.uniq)
+      }
+      #### Factors
+      if (n - nc > 0) {
+        lwr = NULL
+        uwr = NULL
+        for (i in 1:V) {
+          lwr = cbind(lwr, lbs[(nc + 1):n, i * 2 - 1])
+          uwr = cbind(uwr, lbs[(nc + 1):n, i * 2 - 1])
+        }
+        conslwr = apply(lwr, 1, length.uniq)
+        consupr = apply(uwr, 1, length.uniq)
+        cons = c(cons, conslwr * consupr)
+      }
+      # consist= (cons==1 & pval.comp > 0.05)
+      signsum = function(x) {
+        sum(sign(x))
+      }
+      consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
+      procs = c("Holm", "BH")
+      if (n > 1) {
+        res = multtest::mt.rawp2adjp(pvalue, procs)
+        oo = res$index
+        outres = data.frame(factor = factr[oo], theta[oo, ],
+                            psi[oo], CI95[oo], res$adj, lbs[oo, ], consist[oo])
+      }
+      if (n == 1) {
+        outres = data.frame(factor = factr, theta, psi, CI95,
+                            rawp = pvalue, Holm = pvalue, BH = pvalue, lbs, consist)
+      }
+
+      # Restrict to variables that aren't missing their p-value.
+      outres = outres[!is.na(outres[, "rawp"]), , drop = F]
+
+      names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("psiV", 1:V), "AvePsi", "CI95")
+      names(outres)[(9 + 2 * V)] = "Consistent"
+
+      ### Get Consistency Measure and only significant Make BH cut-off flexible
+      ### in future versions (default at 0.05)
+      outres.cons = outres[outres[, "BH"] < 0.05, , drop = F]
+      outres.cons = outres.cons[outres.cons[, "Consistent"],
+                                c("VarType", "AvePsi", "rawp"), drop = F]
+      colnames(outres.cons) = c("Type", "Estimate", "P-value")
+
+
+      # drops = c('VarType','description','Holm,')
+      # outres.all=outres[,!(names(outres) %in% drops)]
+      outres.byV = outres[, c(2:(2 + V - 1), 9:(9 + 2 * V)), drop = F]
+      outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH"), drop = F]
+      colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value")
+    }
+  }
+
+  # End timing the full execution.
+  time_end = proc.time()
 
   # Return results.
   results = list(results_consistent = outres.cons,
@@ -1164,7 +1165,7 @@ varImpact = function(Y, data, V = 2,
                  family=family,  datafac.dumW  = datafac.dumW,
                  miss.fac = miss.fac,
                  data.numW = data.numW, impute_info = impute_info,
-                 time = time)
+                 time = time_end - time_start)
   # Set a custom class so that we can override print and summary.
   class(results) = "varImpact"
   invisible(results)
