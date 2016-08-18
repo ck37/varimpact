@@ -9,21 +9,25 @@ context("Dataset A: continuous variables")
 # Set multicore-compatible seed.
 set.seed(1, "L'Ecuyer-CMRG")
 N = 100
+num_normal = 5
+X = data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 
-num_normal = 7
-X = as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
+# Systematic Y generation.
+Y = .2 * X[, 1] + .1 * X[, 2] - .2 * X[, 3] + .1 * X[, 3] * X[, 4] - .2 * abs(X[, 4])
 
 # Binary distribution via the binomial.
-Y_bin = rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
+Y_bin = rbinom(N, 1, plogis(Y))
+
 # Gaussian distribution.
-Y_gaus = .2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4]) + rnorm(N, 0, 1)
+Y_gaus = Y + rnorm(N, 0, 1)
 
 # Add some missing data to X.
 miss_num = 10
 for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test - binary outcome.
-vim = varImpact(Y = Y_bin, data = X[, 1:4], V = 2, verbose=T)
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose=T)
+vim$time
 # Be explict about printing for code coverage of tests.
 print(vim)
 vim$results_all
@@ -85,7 +89,8 @@ context("Dataset B: factor variables")
 # Set a new multicore-compatible seed.
 set.seed(2, "L'Ecuyer-CMRG")
 
-X_fac = data.frame(lapply(1:ncol(X), FUN=function(col_i) as.factor(floor(abs(pmin(pmax(X[, col_i], -1), 1)*3)))))
+X_fac = data.frame(lapply(1:ncol(X), FUN=function(col_i)
+  as.factor(floor(abs(pmin(pmax(X[, col_i], -1), 1)*3)))))
 dim(X_fac)
 colnames(X_fac) = paste0("fac_", 1:ncol(X_fac))
 colnames(X_fac)
@@ -113,7 +118,7 @@ context("Dataset C: numeric and factor variables")
 
 #################################
 # Combined numeric and factor test.
-X_combined = cbind(X[1:3], X_fac[5:7])
+X_combined = cbind(X[1:3], X_fac[4:5])
 
 # Basic combined test.
 vim = varImpact(Y = Y_bin, data = X_combined, V = 2, verbose=T)
@@ -135,12 +140,15 @@ data = data[sample(nrow(data), 100), ]
 data$Y = as.numeric(data$Class == "malignant")
 table(data$Y)
 
+X = subset(data, select=-c(Y, Class, Id))
+dim(X)
+
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
   # Use multicore parallelization to speed up processing.
   doMC::registerDoMC()
 }
-# This takes 1-3 minutes.
-vim = varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+# This takes 1-2 minutes.
+vim = varImpact(Y = data$Y, X)
 vim$time
 vim
