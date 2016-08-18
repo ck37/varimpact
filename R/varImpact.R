@@ -164,8 +164,8 @@
 #' # Use multicore parallelization to speed up processing.
 #' \dontrun{
 #' doMC::registerDoMC()
-#' }
 #' vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+#' }
 #'
 #' @export
 varImpact = function(Y, data, V = 2,

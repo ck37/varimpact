@@ -185,8 +185,8 @@ data$Y <- as.numeric(data$Class == "malignant")
 # Use multicore parallelization to speed up processing.
 \dontrun{
 doMC::registerDoMC()
-}
 vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+}
 
 }
 \seealso{
