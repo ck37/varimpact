@@ -27,16 +27,23 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4) {
         type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpByV.tex"),
         caption.placement = "top", include.rownames = T)
 
-  print(xtable::xtable(impact_results$results_all,
+  table_all = cbind("Rank"=1:nrow(impact_results$results_all),
+                    "Variable"=rownames(impact_results$results_all),
+                    impact_results$results_all)
+
+  print(xtable::xtable(table_all,
                        caption = "Variable Importance Results for Combined Estimates",
                        label = "allRes", digits = digits),
         type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpAll.tex"),
-        caption.placement = "top", include.rownames = T)
+        caption.placement = "top", include.rownames = F)
 
+  consistent_table = cbind("Rank"=1:nrow(impact_results$results_consistent),
+                           "Variable"=rownames(impact_results$results_consistent),
+                           impact_results$results_consistent)
 
-  print(xtable::xtable(impact_results$results_consistent,
+  print(xtable::xtable(consistent_table,
                        caption = "Subset of of Significant and ``Consistent'' Results",
                        label = "consisRes", digits = digits),
         type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpConsistent.tex"),
-        caption.placement = "top", include.rownames = T)
+        caption.placement = "top", include.rownames = F)
 }
