@@ -34,8 +34,14 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
 
 
   # Use hline.after to add a line after the p = 0.05 cut-off.
-  signif_row = min(which(impact_results$results_all[, "Adj. p-value"] > 0.05)) - 1
-  hline.after = c(-1,0, signif_row, nrow(impact_results$results_all))
+  signif_cutoff = which(impact_results$results_all[, "Adj. p-value"] > 0.05)
+  if (length(signif_cutoff) > 0) {
+    signif_row = min(signif_cutoff) - 1
+    hline.after = c(-1,0, signif_row, nrow(impact_results$results_all))
+  } else {
+    # All variables are important.
+    hline.after = NULL
+  }
   table_all = cbind("Rank"=1:nrow(impact_results$results_all),
                     "Variable"=rownames(impact_results$results_all),
                     impact_results$results_all)
