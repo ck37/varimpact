@@ -42,9 +42,11 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
     # All variables are important.
     hline.after = NULL
   }
+
   table_all = cbind("Rank"=1:nrow(impact_results$results_all),
                     "Variable"=rownames(impact_results$results_all),
                     impact_results$results_all)
+
   print(xtable::xtable(table_all,
                   caption = "Variable Importance Results for Combined Estimates",
                   label = "allRes",
@@ -56,17 +58,29 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
           hline.after = hline.after,
           ...)
 
-  consistent_table = cbind("Rank"=1:nrow(impact_results$results_consistent),
+  if (nrow(impact_results$results_consistent) > 0) {
+    consistent_table = cbind("Rank"=1:nrow(impact_results$results_consistent),
                            "Variable"=rownames(impact_results$results_consistent),
                            impact_results$results_consistent)
-
-  print(xtable::xtable(consistent_table,
+    consistent_xtable = xtable::xtable(consistent_table,
               caption = "Subset of of Significant and ``Consistent'' Results",
               label = "consisRes",
-              digits = digits),
+              digits = digits)
+  } else {
+    # Create a blank dataframe.
+    consistent_table = data.frame()
+    # Create a blank xtable.
+    consistent_xtable = NULL
+  }
+
+  print(consistent_xtable,
         type = "latex",
         file = paste0(paste(dir, outname, sep="/"), "varimpConsistent.tex"),
         caption.placement = "top",
         include.rownames = F,
         ...)
+
+  # Give a default return value, silently.
+  # TODO: return a list with the output results.
+  invisible(T)
 }

@@ -157,7 +157,7 @@ context("Dataset D: basic example")
 
 ####################################
 # Create test dataset.
-set.seed(1)
+set.seed(1, "L'Ecuyer-CMRG")
 N <- 100
 num_normal <- 7
 X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
