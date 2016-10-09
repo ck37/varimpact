@@ -179,13 +179,15 @@ varImpact = function(Y, data, V = 2,
   time_start = proc.time()
 
   # Ensure that Y is numeric; e.g. can't be a factor.
-  # (We also assume it's 0/1 but that isn't explictly checked yet.)
   stopifnot(class(Y) %in% c("numeric", "integer"))
 
-  if (family == "binomial" && (min(Y, na.rm = T) < 0 | max(Y, na.rm = T) > 1)) {
+  if (family == "binomial" && (min(Y, na.rm = T) < 0 || max(Y, na.rm = T) > 1)) {
     stop("With binomial family Y must be bounded by [0, 1]. Specify family=\"gaussian\" otherwise.")
   }
 
+  if (!family %in% c("binomial", "gaussian")) {
+    stop('Family must be either "binomial" or "gaussian".')
+  }
 
   # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
   `%do_op%` = foreach::`%do%`
@@ -211,6 +213,9 @@ varImpact = function(Y, data, V = 2,
   #######
   # Cut-off for eliminating variable for proportion of obs missing.
   data = data[, mis.prop < miss.cut]
+
+  if (verbose) cat("Removed", sum(mis.prop >= miss.cut), "variables due to high",
+                   "missing value proportion.\n")
 
   # Function that counts # of unique values.
   length_unique = function(x) {
@@ -309,12 +314,14 @@ varImpact = function(Y, data, V = 2,
 
   if (ncol(data.num) > 0) {
     num_cols = ncol(data.num)
+    if (verbose) cat("Processing numerics. Start count:", num_cols, "\n")
 
     # Remove columns where the 0.1 and 0.9 quantiles have the same value, i.e. insufficent variation.
+    # TODO: set this is a configurable setting?
     data.num = restrict_by_quantiles(data.num, quantile_probs = c(0.1, 0.9))
 
     if (verbose) {
-      num_dropped = ncol(data.num) - num_cols
+      num_dropped = num_cols - ncol(data.num)
       if (num_dropped > 0) {
         cat("Dropped", num_dropped, "numerics due to lack of variation.\n")
       } else {
@@ -590,8 +597,10 @@ varImpact = function(Y, data, V = 2,
             IA = as.numeric(At == vals[j])
             IA[is.na(IA)] = 0
             # if(min(table(IA,Yt))>=)
-            res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
-                                    g.lib = g.library), silent = TRUE)
+            res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat,
+                                    Q.lib = Q.library,
+                                    g.lib = g.library, verbose = verbose),
+                      silent = TRUE)
             if (class(res) == "try-error") {
               if (verbose) cat("X")
               errcnt = errcnt + 1
@@ -625,8 +634,10 @@ varImpact = function(Y, data, V = 2,
           if (errcnt != num.cat & minj != maxj) {
             IA = as.numeric(Av == vals[minj])
             IA[is.na(IA)] = 0
-            res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                    g.lib = g.library), silent = TRUE)
+            res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
+                                    Q.lib = Q.library,
+                                    g.lib = g.library, verbose = verbose),
+                      silent = T)
             if (class(res) == "try-error") {
               if (verbose) cat("TMLE on validation failed.\n")
               thetaV = c(thetaV, NA)
@@ -642,8 +653,10 @@ varImpact = function(Y, data, V = 2,
               EY0 = res$theta
               IA = as.numeric(Av == vals[maxj])
               IA[is.na(IA)] = 0
-              res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                       g.lib = g.library), silent = TRUE)
+              res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
+                                       Q.lib = Q.library,
+                                       g.lib = g.library, verbose = verbose),
+                         silent = T)
               if (class(res2) == "try-error") {
                 thetaV = c(thetaV, NA)
                 varICV = c(varICV, NA)
@@ -702,8 +715,11 @@ varImpact = function(Y, data, V = 2,
     names.cont = colnames(data.cont.dist)
     n.cont = nrow(data.cont.dist)
 
+    # TODO: describe this stpe.
     numcat.cont = apply(data.cont.dist, 2, length_unique)
-    xc = length(numcat.cont)
+    # CK: I think we can comment out this line:
+    #xc = length(numcat.cont)
+    cat("xc is", xc, "and length numcat.cont is", length(numcat.cont), "\n")
 
     cats.cont = lapply(1:xc, function(i) {
       sort(unique(data.cont.dist[, i]))
@@ -711,7 +727,7 @@ varImpact = function(Y, data, V = 2,
 
     ### Loop over each numeric variable.
     #vim_numeric = lapply(1:xc, function(i) {
-    vim_numeric = foreach::foreach(i = 1:xc) %do_op% {
+    vim_numeric = foreach::foreach(i = 1:num_numeric) %do_op% {
       nameA = names.cont[i]
 
       if (verbose) cat("i =", i, "Var =", nameA, "out of", xc, "numeric variables\n")
@@ -850,7 +866,7 @@ varImpact = function(Y, data, V = 2,
             labmin = NULL
             labmax = NULL
             errcnt = 0
-            if (verbose) cat("Estimating training TMLEs", paste0("(", numcat.cont[i], ")"))
+            if (verbose) cat("Estimating training TMLEs", paste0("(", numcat.cont[i], " bins)"))
             for (j in 1:numcat.cont[i]) {
               # cat(' i = ',i,' kk = ',kk,' j = ',j,'\n')
               IA = as.numeric(Atnew == vals[j])
@@ -901,7 +917,7 @@ varImpact = function(Y, data, V = 2,
               IA = as.numeric(Avnew == vals[minj])
               if (verbose) cat("Estimate on validation: ")
               res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                      g.lib = g.library), silent = T)
+                                      g.lib = g.library, verbose = verbose), silent = T)
               if (verbose) cat("min")
               if (class(res) == "try-error") {
                 if (verbose) cat(" Failed :/\n")
@@ -919,7 +935,9 @@ varImpact = function(Y, data, V = 2,
                 if (verbose) cat(" EY0 =", round(res$theta, 3), " ")
                 IA = as.numeric(Avnew == vals[maxj])
                 res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
-                                         Q.lib = Q.library, g.lib = g.library), silent = TRUE)
+                                         Q.lib = Q.library, g.lib = g.library,
+                                         verbose = verbose),
+                           silent = TRUE)
                 if (verbose) cat("max")
                 if (class(res2) == "try-error") {
                   if (verbose) cat(" Failed :/\n")
@@ -964,13 +982,18 @@ varImpact = function(Y, data, V = 2,
         }
       }
 
-      list(EY1V, EY0V, thetaV, varICV, labV, nV, "numeric")
+      list(EY1V, EY0V, thetaV, varICV, labV, nV, "numeric", name = nameA)
     } # end foreach loop.
 
     if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
 
     # Confirm that we have the correct number of results, otherwise fail out.
-    stopifnot(length(vim_numeric) == xc)
+    if (length(vim_numeric) != num_numeric) {
+      save(vim_numeric, file="varimpact.RData")
+      # TEMP remove this:
+      stop(paste("We have", num_numeric, "continuous variables but only",
+                 length(vim_numeric), "results."))
+    }
 
     colnames_numeric = colnames(data.cont.dist)
   } else {
@@ -995,12 +1018,15 @@ varImpact = function(Y, data, V = 2,
   vim_combined = c(vim_numeric, vim_factor)
   names(vim_combined) = vars
 
-  lngth = sapply(vim_combined, function(x) length(x))
+  lngth = sapply(vim_combined, length)
 
-  # Restrict to vim results that have 7 elements.
-  vim_combined = vim_combined[lngth == 7]
-  vars = vars[lngth == 7]
-  factr = factr[lngth == 7]
+  # May increase this to 8, hence >= operator in following lines.
+  expected_length = 7
+
+  # Restrict to vim results that have at least 7 elements.
+  vim_combined = vim_combined[lngth >= expected_length]
+  vars = vars[lngth >= expected_length]
+  factr = factr[lngth >= expected_length]
 
   # Set defaults for variables we want to return.
   outres.all = outres.cons = outres.byV = NULL
@@ -1141,15 +1167,15 @@ varImpact = function(Y, data, V = 2,
       ### in future versions (default at 0.05)
       outres.cons = outres[outres[, "BH"] < 0.05, , drop = F]
       outres.cons = outres.cons[outres.cons[, "Consistent"],
-                                c("VarType", "AvePsi", "rawp"), drop = F]
-      colnames(outres.cons) = c("Type", "Estimate", "P-value")
+                                c("VarType", "AvePsi", "rawp", "BH", "CI95"), drop = F]
+      colnames(outres.cons) = c("Type", "Estimate", "P-value", "Adj. P-value", "CI 95")
 
 
       # drops = c('VarType','description','Holm,')
       # outres.all=outres[,!(names(outres) %in% drops)]
       outres.byV = outres[, c(2:(2 + V - 1), 9:(9 + 2 * V)), drop = F]
-      outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH"), drop = F]
-      colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value")
+      outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH", "Consistent"), drop = F]
+      colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value", "Consistent")
     }
   }
 
@@ -1160,9 +1186,10 @@ varImpact = function(Y, data, V = 2,
   results = list(results_consistent = outres.cons,
                  results_all = outres.all,
                  results_by_fold = outres.byV,
-                 V=V, g.library = g.library, Q.library = Q.library,
+                 results_raw = outres,
+                 V = V, g.library = g.library, Q.library = Q.library,
                  minCell = minCell, minYs = minYs,
-                 family=family,  datafac.dumW  = datafac.dumW,
+                 family = family,  datafac.dumW  = datafac.dumW,
                  miss.fac = miss.fac,
                  data.numW = data.numW, impute_info = impute_info,
                  time = time_end - time_start)
