@@ -15,35 +15,52 @@
 #' @param outname (Optional) String that is prepended to filenames.
 #' @param dir (Optional) Directory to save the results, defaults to current directory.
 #' @param digits Digits to round numbers, passed through to xtable.
+#' @param ... Additional parameters passed to print.xtable().
 #'
 #' @seealso
 #' \code{\link[varImpact]{varImpact}}
 #'
 #' @export
-exportLatex = function(impact_results, outname = "", dir = ".", digits = 4) {
+exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...) {
   print(xtable::xtable(impact_results$results_by_fold,
-                       caption = "Variable Importance Results By Estimation Sample",
-                       label = "byV", digits = digits),
-        type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpByV.tex"),
-        caption.placement = "top", include.rownames = T)
+            caption = "Variable Importance Results By Estimation Sample",
+            label = "byV",
+            digits = digits),
+        type = "latex",
+        file = paste0(paste(dir, outname, sep="/"), "varimpByV.tex"),
+        #caption.placement = "top",
+        include.rownames = F,
+        ...)
 
+
+  # Use hline.after to add a line after the p = 0.05 cut-off.
+  signif_row = min(which(impact_results$results_all[, "Adj. p-value"] > 0.05)) - 1
+  hline.after = c(-1,0, signif_row, nrow(impact_results$results_all))
   table_all = cbind("Rank"=1:nrow(impact_results$results_all),
                     "Variable"=rownames(impact_results$results_all),
                     impact_results$results_all)
-
   print(xtable::xtable(table_all,
-                       caption = "Variable Importance Results for Combined Estimates",
-                       label = "allRes", digits = digits),
-        type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpAll.tex"),
-        caption.placement = "top", include.rownames = F)
+                  caption = "Variable Importance Results for Combined Estimates",
+                  label = "allRes",
+                  digits = digits),
+          type = "latex",
+          file = paste0(paste(dir, outname, sep="/"), "varimpAll.tex"),
+          caption.placement = "top",
+          include.rownames = F,
+          hline.after = hline.after,
+          ...)
 
   consistent_table = cbind("Rank"=1:nrow(impact_results$results_consistent),
                            "Variable"=rownames(impact_results$results_consistent),
                            impact_results$results_consistent)
 
   print(xtable::xtable(consistent_table,
-                       caption = "Subset of of Significant and ``Consistent'' Results",
-                       label = "consisRes", digits = digits),
-        type = "latex", file = paste0(paste(dir, outname, sep="/"), "varimpConsistent.tex"),
-        caption.placement = "top", include.rownames = F)
+              caption = "Subset of of Significant and ``Consistent'' Results",
+              label = "consisRes",
+              digits = digits),
+        type = "latex",
+        file = paste0(paste(dir, outname, sep="/"), "varimpConsistent.tex"),
+        caption.placement = "top",
+        include.rownames = F,
+        ...)
 }
