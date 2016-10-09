@@ -4,7 +4,7 @@
 \alias{estimate_tmle}
 \title{Get TMLE estimate.}
 \usage{
-estimate_tmle(Y, A, W, family, delta = NULL, Q.lib, g.lib)
+estimate_tmle(Y, A, W, family, delta = NULL, Q.lib, g.lib, verbose = F)
 }
 \arguments{
 \item{Y}{Outcome variable}
@@ -20,6 +20,8 @@ estimate_tmle(Y, A, W, family, delta = NULL, Q.lib, g.lib)
 \item{Q.lib}{SuperLearner library for estimating Q (potential outcome)}
 
 \item{g.lib}{SuperLearner library for estimating g (propensity score)}
+
+\item{verbose}{If true output extra information during execution.}
 }
 \description{
 Get TMLE estimate.
