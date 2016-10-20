@@ -1,7 +1,7 @@
 VarImpact TODOs
 
 Alan priorities:
-- Add CV-TMLE
+- HIGHEST: Add CV-TMLE (also Mark priority!)
 - Unadjusted difference in means estimate (t-test) to compare to TMLE estimate
 - Cell sizes in the groups that it chooses (A = 0 and A = 1)
 - Option of ratios (delta method), rather than differences
@@ -19,6 +19,7 @@ Chris items:
   - Sort consistent results by p-value then estimate size?
   - Support summary()
 * Quality
+  - Warn/error if there are character columns in the data, as a bonus check.
   - Figure out how to reduce the number of potential failures in various steps.
   - Count and report how many variables are skipped due to minCell constraint.
   - Automatically handle rows that are all NAs?
@@ -32,6 +33,8 @@ Chris items:
   - Improve varImpact() roxygen description.
   - Document the return object
   - Vignette
+* Examples
+  - Use doParallel instead of doMC so that it works on Windows.
 * Benchmarking
   - Benchmark to random forest, lasso, OLS and SL-perturbation algorithms.
 * BUGS/ERRORS
@@ -47,6 +50,12 @@ Chris items:
   - Error in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  :
   one multinomial or binomial class has 1 or 0 observations; not allowed
      -- Can happen with BreastCancer dataset, seems to depend on seed.
+     -- Happens in parkinson's competition dataset.
+     -- Seems to occur when a variable has value with a small number of obs.
+      Then when estimating the treatment propensity score for a given fold
+      there may be only a single value for all observations.
+  - Error in y %*% rep(1, nc) : non-conformable arguments
+     -- When estimating TMLE
 * WARNINGS
   - Warning in collap(data, level, d, dmat, newmed) (conducting HOPACH, at least on factors):
   Not enough medoids to use newmed='medsil' in collap() -
