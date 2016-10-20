@@ -543,11 +543,21 @@ varImpact = function(Y, data, V = 2,
           Wtsht = Wtsht[deltat == 1, ]
           deltat = deltat[deltat == 1]
         }
+
         levA = levels(At)
-        minc = apply(table(Av, Yv), 1, min)
-        minc2 = apply(table(At, Yt), 1, min)
+
         if (length(unique(Yt)) == 2) {
           # Binary outcome.
+
+          # Minimum numer of observations in validation fold.
+          minc = apply(table(Av, Yv), 1, min)
+
+          # Minimum numer of observations in training fold.
+          minc2 = apply(table(At, Yt), 1, min)
+
+          # Restrict analysis to levels of this variable in which
+          # there are sufficient observations in each fold
+          # across each treatment and outcome combination.
           vals = levA[pmin(minc, minc2) > minCell]
         } else {
           # Continuous outcome.
@@ -555,10 +565,12 @@ varImpact = function(Y, data, V = 2,
         }
         num.cat = length(vals)
 
-        # CK 6/6: don't assume that positive outcome is the rare outcome. (e.g. via table)
+        # CK TODO 6/6: don't assume that positive outcome is the rare
+        #  outcome. (e.g. via table)
 
         # Number of positive outcomes in training data.
         nYt = sum(Yt[!is.na(At)])
+
         # Number of positive outcomes in validation data.
         nYv = sum(Yv[!is.na(Av)])
 
@@ -592,20 +604,32 @@ varImpact = function(Y, data, V = 2,
           ICmin = NULL
           ICmax = NULL
           errcnt = 0
+
           if (verbose) cat("Estimating TMLE on training", paste0("(", num.cat, ")"))
+
           for (j in 1:num.cat) {
+
+            # Create a treatment indicator, where 1 = obs in this bin
+            # and 0 = obs not in this bin.
             IA = as.numeric(At == vals[j])
+
+            # Any observations missing At are assigned to control group.
             IA[is.na(IA)] = 0
+
             # if(min(table(IA,Yt))>=)
+
+            # CV-TMLE: update this to estimate only Q and g on training data.
             res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat,
                                     Q.lib = Q.library,
                                     g.lib = g.library, verbose = verbose),
                       silent = TRUE)
+
             if (class(res) == "try-error") {
+              # TMLE estimation failed.
               if (verbose) cat("X")
               errcnt = errcnt + 1
-            }
-            if (class(res) != "try-error") {
+            } else {
+            #if (class(res) != "try-error") {
               if (verbose) cat(".")
               EY1 = res$theta
               if (EY1 < minEY1) {
@@ -621,8 +645,10 @@ varImpact = function(Y, data, V = 2,
             }
           }
           if (verbose) cat(" done.\n")
-          # cat(' time b = ',proc.time()-pp2,'\n') pp3=proc.time() Now, estimate
-          # on validation sample
+          # cat(' time b = ',proc.time()-pp2,'\n') pp3=proc.time()
+
+          # This fold failed if we got an error for each category
+          # Or if the minimum and maximum bin is the same.
           if (errcnt == num.cat | minj == maxj) {
             thetaV = c(thetaV, NA)
             varICV = c(varICV, NA)
@@ -630,10 +656,15 @@ varImpact = function(Y, data, V = 2,
             EY0V = c(EY0V, NA)
             EY1V = c(EY1V, NA)
             nV = c(nV, NA)
-          }
-          if (errcnt != num.cat & minj != maxj) {
+          } else {
+          #if (errcnt != num.cat & minj != maxj) {
+
+            # Indicator for having the desired control bin on validation
             IA = as.numeric(Av == vals[minj])
+
             IA[is.na(IA)] = 0
+
+            # CV-TMLE: not sure we would do this part at all.
             res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
                                     Q.lib = Q.library,
                                     g.lib = g.library, verbose = verbose),
@@ -651,8 +682,11 @@ varImpact = function(Y, data, V = 2,
             if (class(res) != "try-error") {
               IC0 = res$IC
               EY0 = res$theta
+
+              # Indicator for having the desired treatment bin on validation
               IA = as.numeric(Av == vals[maxj])
               IA[is.na(IA)] = 0
+
               res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
                                        Q.lib = Q.library,
                                        g.lib = g.library, verbose = verbose),
