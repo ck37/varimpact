@@ -78,13 +78,14 @@ tmle_estimate_q <-
       type="glm, user-supplied model"
     } else {
       if(cvQinit){
-        m <- try(tmle::.estQcvSL(Y,X=cbind(Z,A,W),SL.library, family=family,
-                           Delta=Delta, Qbounds=Qbounds,id=id, verbose=verbose))
-        if(!(identical(class(m), "try-error"))){
-          type <- "cross-validated SL"
-          Qinit <- m
-          Q <- Qinit$Q
-        }
+        stop("cvQinit = T not supported sadly.")
+        #m <- try(tmle::.estQcvSL(Y,X=cbind(Z,A,W),SL.library, family=family,
+        #                   Delta=Delta, Qbounds=Qbounds,id=id, verbose=verbose))
+        #if(!(identical(class(m), "try-error"))){
+        #  type <- "cross-validated SL"
+        #  Qinit <- m
+        #  Q <- Qinit$Q
+        #}
       } else {
         if(verbose) {cat("\t using SuperLearner\n")}
         n <- length(Y)
