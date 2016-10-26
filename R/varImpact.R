@@ -400,12 +400,12 @@ varImpact = function(Y, data, V = 2,
       data.numW[is.na(data.num)] = 0
       impute_info = 0
     } else if (impute == "median") {
-      impute_info = caret::preProcess(data.num, method=c("medianImpute"))
+      impute_info = caret::preProcess(data.num, method = "medianImpute")
       data.numW = caret::predict.preProcess(impute_info, data.num)
     } else if (impute == "mean") {
       stop("Mean imputation not implemented yet. Please use another imputation method.")
     } else if (impute == "knn") {
-      impute_info = caret::preProcess(data.num, method=c("knnImpute"))
+      impute_info = caret::preProcess(data.num, method = "knnImpute")
       data.numW = caret::predict.preProcess(impute_info, data.num)
     }
 
@@ -456,11 +456,13 @@ varImpact = function(Y, data, V = 2,
     n.fac = nrow(data.fac)
 
     # vim_factor = lapply(1:xc, function(i) {
-    vim_factor = foreach::foreach(i = 1:xc, .verbose=verbose) %do_op% {
-      nameA = names.fac[i]
+    vim_factor = foreach::foreach(var_i = 1:xc, .verbose = verbose) %do_op% {
+      nameA = names.fac[var_i]
 
-      if (verbose) cat("i =", i, "Var =", nameA, "out of", xc, "factor variables\n")
+      if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "factor variables\n")
 
+      # Initialize the set of results to keep for each variable.
+      # These will be vectors with a result for each fold.
       thetaV = NULL
       varICV = NULL
       labV = NULL
@@ -469,13 +471,16 @@ varImpact = function(Y, data, V = 2,
       nV = NULL
 
       # Loop over each fold.
-      for (kk in 1:V) {
-        if (verbose) cat("i =", i, "V =", kk, "\n")
+      for (fold_k in 1:V) {
+        if (verbose) cat("i =", var_i, "V =", fold_k, "\n")
 
-        At = data.fac[folds != kk, i]
-        Av = data.fac[folds == kk, i]
-        Yt = Y[folds != kk]
-        Yv = Y[folds == kk]
+        # All data not in this fold is the training data.
+        At = data.fac[folds != fold_k, var_i]
+        # All data in this fold is the validation data.
+        Av = data.fac[folds == fold_k, var_i]
+
+        Yt = Y[folds != fold_k]
+        Yv = Y[folds == fold_k]
 
         ### acit.numW is just same as acit.cont.dist except with NA's replaced by
         ### 0's.
@@ -501,9 +506,10 @@ varImpact = function(Y, data, V = 2,
         W = data.frame(data.numW, miss.cont, dumW, missdumW)
         # TODO: what is this doing?
         W = W[, !apply(is.na(W), 2, all), drop = F]
-        Wt = W[folds != kk, , drop = F]
-        Wv = W[folds == kk, , drop = F]
-        Adum = data.frame(Adum[folds != kk, ])
+        Wt = W[folds != fold_k, , drop = F]
+        Wv = W[folds == fold_k, , drop = F]
+
+        Adum = data.frame(Adum[folds != fold_k, ])
 
         ###
         # Pull out any variables that are overly correlated with At (corr coef < corthes)
@@ -587,6 +593,7 @@ varImpact = function(Y, data, V = 2,
           }
           if (verbose) cat(error_msg, "\n")
 
+          # Add NAs to the vectors of results.
           thetaV = c(thetaV, NA)
           varICV = c(varICV, NA)
           labV = rbind(labV, c(NA, NA))
@@ -595,6 +602,7 @@ varImpact = function(Y, data, V = 2,
           nV = c(nV, NA)
         } else {
           # if (num.cat >= 2 & min(nYt, nYv) >= minYs) {
+
           labmin = NULL
           labmax = NULL
           maxEY1 = -1e+05
@@ -618,11 +626,11 @@ varImpact = function(Y, data, V = 2,
 
             # if(min(table(IA,Yt))>=)
 
-            # CV-TMLE: update this to estimate only Q and g on training data.
-            res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat,
+            # CV-TMLE: update this to estimate Q and g on training data.
+            res = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
                                     Q.lib = Q.library,
                                     g.lib = g.library, verbose = verbose),
-                      silent = TRUE)
+                      silent = !verbose)
 
             if (class(res) == "try-error") {
               # TMLE estimation failed.
@@ -690,7 +698,7 @@ varImpact = function(Y, data, V = 2,
               res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
                                        Q.lib = Q.library,
                                        g.lib = g.library, verbose = verbose),
-                         silent = T)
+                         silent = !verbose)
               if (class(res2) == "try-error") {
                 thetaV = c(thetaV, NA)
                 varICV = c(varICV, NA)
@@ -716,6 +724,8 @@ varImpact = function(Y, data, V = 2,
 
       }
 
+
+      # Return results for this factor variable.
       list(EY1V, EY0V, thetaV, varICV, labV, nV, "factor")
       # print(data.frame(EY1V,EY0V,thetaV,varICV,labV,nV))
     } # End foreach loop.
@@ -904,8 +914,8 @@ varImpact = function(Y, data, V = 2,
             for (j in 1:numcat.cont[i]) {
               # cat(' i = ',i,' kk = ',kk,' j = ',j,'\n')
               IA = as.numeric(Atnew == vals[j])
-              res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
-                                      g.lib = g.library), silent = T)
+              res = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
+                                      g.lib = g.library, verbose = verbose), silent = T)
               if (class(res) == "try-error") {
                 # Error.
                 if (verbose) cat("X")

@@ -38,6 +38,7 @@ file.remove(c("varimpByV.tex", "varImpAll.tex", "varimpConsistent.tex"))
 
 # And try a gaussian outcome.
 vim = varImpact(Y = Y_gaus, data = X[, 1:4], V = 2, verbose=T, family="gaussian")
+vim
 
 # Test imputation
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T, impute="zero")
