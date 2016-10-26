@@ -46,7 +46,7 @@ tmle_estimate_g <- function (d,g1W = NULL, gform = NULL,SL.library, id=1:nrow(d)
           arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE], family="binomial", SL.library=SL.library, cvControl=list(V=5), id=id)
         }
         suppressWarnings({
-          m <- try(do.call(SuperLearner,arglist))
+          m <- try(do.call(SuperLearner::SuperLearner, arglist))
           # Set call to null because do.call() messes up that element.
           m$call = NULL
         })
