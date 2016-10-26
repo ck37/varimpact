@@ -32,7 +32,7 @@
 #		coef, NA, unless Q is estimated using a parametric model
 # 		type, estimation method for Q
 #----------------------------------------
-#' @importFrom stats packageDescription
+#' @importFrom utils packageDescription
 #' @export
 tmle_estimate_q <-
   function(Y,

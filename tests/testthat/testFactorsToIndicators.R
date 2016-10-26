@@ -5,7 +5,7 @@ context("factorsToIndicators")
 
 # Create test dataset.
 
-set.seed(1)
+set.seed(1, "L'Ecuyer-CMRG")
 N = 200
 
 num_normal = 7
@@ -26,7 +26,7 @@ summary(X_fac)
 table(X_fac[, 1], useNA="ifany")
 
 # Test a single factor.
-results = factors_to_indicators(X_fac[, 1, drop=F], verbose=T)
+results = factors_to_indicators(X_fac[, 1, drop = F], verbose = T)
 dim(results$data)
 # We should have indicators for 1, 2, 3.
 colnames(results$data)
@@ -34,14 +34,14 @@ colnames(results$data)
 dim(results$missing_indicators)
 colnames(results$missing_indicators)
 
-# We should have 1 missing data indicator, with 2 0s and the rest 1s.
+# We should have 1 missing data indicator, with 3 0s and the rest 1s.
 table(results$missing_indicators[, 1])
-expect_equal(min(table(results$missing_indicators[, 1])), 2)
+expect_equal(min(table(results$missing_indicators[, 1])), 3)
 
 expect_gt(ncol(results$missing_indicators), 0)
 
 # Test multiple factors.
-results = factors_to_indicators(X_fac[, 1:2, drop=F], verbose=T)
+results = factors_to_indicators(X_fac[, 1:2, drop = F], verbose = T)
 
 dim(results$data)
 colnames(results$data)
@@ -55,7 +55,7 @@ table(results$missing_indicators[, 1])
 expect_is(results$missing_indicators, "matrix")
 
 # Test the full factor dataframe.
-results = factors_to_indicators(X_fac, verbose=T)
+results = factors_to_indicators(X_fac, verbose = T)
 dim(results$data)
 colnames(results$data)
 

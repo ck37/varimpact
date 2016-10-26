@@ -4,7 +4,7 @@ library(varImpact)
 library(testthat)
 
 # Create test dataset.
-context("Dataset A: continuous variables")
+context("varImpact(). Dataset A: continuous variables")
 
 # Set multicore-compatible seed.
 set.seed(1, "L'Ecuyer-CMRG")
@@ -85,7 +85,7 @@ if (.Platform$GUI == "RStudio") {
   foreach::registerDoSEQ()
 }
 
-context("Dataset B: factor variables")
+context("varImpact(). Dataset B: factor variables")
 
 # Set a new multicore-compatible seed.
 set.seed(2, "L'Ecuyer-CMRG")
@@ -115,7 +115,7 @@ if (.Platform$GUI == "RStudio") {
 vim = varImpact(Y = Y_bin, data = X_fac[, 1:4], verbose=T)
 vim
 
-context("Dataset C: numeric and factor variables")
+context("varImpact(). Dataset C: numeric and factor variables")
 
 #################################
 # Combined numeric and factor test.
@@ -154,7 +154,7 @@ vim = varImpact(Y = data$Y, X)
 vim$time
 vim
 
-context("Dataset D: basic example")
+context("varImpact() .Dataset D: basic example")
 
 ####################################
 # Create test dataset.

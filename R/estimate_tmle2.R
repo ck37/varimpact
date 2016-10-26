@@ -9,7 +9,8 @@
 #' @param g.lib SuperLearner library for estimating g (propensity score)
 #' @param verbose If true output extra information during execution.
 #' @importFrom tmle tmle
-#' @importFrom stats as.formula binomial coef glm plogis poisson predict qlogis packageDescription
+#' @importFrom stats as.formula binomial coef glm plogis poisson predict qlogis
+#' @importFrom utils packageDescription
 #' @export
 estimate_tmle2 = function(Y,
                         A,

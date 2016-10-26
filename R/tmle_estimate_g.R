@@ -20,7 +20,7 @@
 # d = [Z,A,W] for intermediate
 # d = [Delta, Z,A,W for missingness]
 #----------------------------------------
-#' @importFrom stats packageDescription
+#' @importFrom utils packageDescription
 tmle_estimate_g <- function (d,g1W = NULL, gform = NULL,SL.library, id=1:nrow(d), verbose = F, message = "", outcome="A", newdata=d)  {
   SL.version <- 2
   SL.ok <- FALSE
