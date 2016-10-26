@@ -6,26 +6,28 @@
 #  - add default for cvQinit (false),
 #  - add NULL default for Z, Q, QForm arguments.
 #-----------estimateQ----------------
-# purpose: estimate Q=E(Y |Z, A,W) data-adaptively,
-# unless super learner not available, or user specifies
-# initial values or a regression formula
-# arguments:
-# 	Y - outcome
-# 	Z - intermediate variable between A and Y (default= 0 when no int. var.)
-#	A - treatment indicator (1=treatment, 0=control)
-# 	W - baseline covariates
-#	Delta - missingness indicator
-#	Q - optional externally estimated values for Q
-#	Qbounds - bounds for predicted values
-#  	Qform - optional regression formula to use for glm if
+#' purpose: estimate Q=E(Y |Z, A,W) data-adaptively,
+#'
+#' unless super learner not available, or user specifies
+#' initial values or a regression formula
+#' arguments:
+#' @param Y outcome
+#' @param Z intermediate variable between A and Y (default= 0 when no int. var.)
+#' @param A treatment indicator (1=treatment, 0=control)
+#' @param W baseline covariates
+#' @param	Delta missingness indicator
+#' @param	Q optional externally estimated values for Q
+#' @param	Qbounds bounds for predicted values
+#' @param	Qform optional regression formula to use for glm if
 #	        non-data adaptive estimation specified
-# 	maptoYstar - if TRUE, using logistic fluctuation for bounded, continuous outcomes
+#' @param maptoYstar if TRUE, using logistic fluctuation for bounded, continuous outcomes
 # 		estimation inital Q on linear scale, bounded by (0,1),and return on logit scale
 #		(will work if family=poisson)
-#	SL.library - library of prediction algorithms for Super Learner
-#   cvQinit - flag, if TRUE, cross-validate SL.
-# 	family - regression family
-#	id - subject identifier
+#' @param	SL.library library of prediction algorithms for Super Learner
+#' @param cvQinit flag, if TRUE, cross-validate SL.
+#' @param family regression family
+#' @param	id subject identifier
+#' @param verbose Set T for extra output
 # returns matrix of linear predictors for Q(A,W), Q(0,W), Q(1,W),
 #   (for controlled direct effect, 2 additional columns: Q(Z=1,A=0,W), Q(Z=1,A=1,W))
 #		family for stage 2 targeting
