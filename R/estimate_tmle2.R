@@ -7,6 +7,11 @@
 #' @param delta Indicator of missing outcome or treatment assignment. 1 - observed, 0 - missing.
 #' @param Q.lib SuperLearner library for estimating Q (potential outcome)
 #' @param g.lib SuperLearner library for estimating g (propensity score)
+#' @param id Optional subject-level identifier.
+#' @param Qbounds Bounds on Q
+#' @param gbound Bounds on G
+#' @param alpha TBD, from TMLE package
+#' @param fluctuation Only logistic is currently supported.
 #' @param verbose If true output extra information during execution.
 #' @importFrom tmle tmle
 #' @importFrom stats as.formula binomial coef glm plogis poisson predict qlogis

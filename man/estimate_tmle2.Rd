@@ -23,6 +23,16 @@ estimate_tmle2(Y, A, W, family, delta = rep(1, length(Y)), Q.lib, g.lib,
 
 \item{g.lib}{SuperLearner library for estimating g (propensity score)}
 
+\item{id}{Optional subject-level identifier.}
+
+\item{Qbounds}{Bounds on Q}
+
+\item{gbound}{Bounds on G}
+
+\item{alpha}{TBD, from TMLE package}
+
+\item{fluctuation}{Only logistic is currently supported.}
+
 \item{verbose}{If true output extra information during execution.}
 }
 \description{

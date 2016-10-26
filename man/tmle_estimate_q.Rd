@@ -34,6 +34,8 @@ tmle_estimate_q(Y, Z = rep(0, length(Y)), A, W, Delta, Q = NULL, Qbounds,
 \item{family}{regression family}
 
 \item{id}{subject identifier}
+
+\item{verbose}{Set T for extra output}
 }
 \description{
 unless super learner not available, or user specifies
