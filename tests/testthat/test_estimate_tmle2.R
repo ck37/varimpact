@@ -67,7 +67,7 @@ simObsSCM <- function(n){
 data = simObsSCM(100)
 summary(data)
 
-sl_lib = c("SL.glmnet", "SL.glm", "SL.rpart", "SL.mean")
+sl_lib = c("SL.glmnet", "SL.glm", "SL.mean")
 
 # Estimate g and Q
 result = varImpact::estimate_tmle2(Y = data$Y, A = data$A,
