@@ -1,5 +1,6 @@
 # CK:
 # Edits:
+#  - SuperLearner needs to have saveFitLibrary = T. (critical tweak)
 #  - return Q model.
 #  - Stop if Qbounds is null.
 #  - add default for id argument.
@@ -103,10 +104,10 @@ tmle_estimate_q <-
         }
         if(packageDescription("SuperLearner")$Version < SL.version){
           arglist <- list(Y=Y[Delta==1],X=X[Delta==1,], newX=newX, SL.library=SL.library,
-                          V=5, family=family, save.fit.library=FALSE, id=id[Delta==1])
+                          V=5, family=family, save.fit.library=T, id=id[Delta==1])
         } else {
           arglist <- list(Y=Y[Delta==1],X=X[Delta==1,], newX=newX, SL.library=SL.library,
-                          cvControl=list(V=5), family=family, control = list(saveFitLibrary=FALSE), id=id[Delta==1])
+                          cvControl=list(V=5), family=family, control = list(saveFitLibrary=T), id=id[Delta==1])
         }
         suppressWarnings({
           m <- try(do.call(SuperLearner::SuperLearner, arglist))

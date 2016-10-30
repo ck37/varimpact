@@ -40,7 +40,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
     # K = number of variables to choose.
     # kmax = maximum number of children at each node in the tree.
     # khigh = max # of children at each node when computing mss, usually the same.
-    hopach.1 = try(hopach::hopach(t(data), dmat = mydist, mss = "mean", verbose = T,
+    hopach.1 = try(hopach::hopach(t(data), dmat = mydist, mss = "mean", verbose = verbose,
                                   K = max_variables, kmax = 3, khigh = 3),
                    silent = !verbose)
     if (class(hopach.1) == "try-error") {
@@ -51,7 +51,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
 
       # Attempt #2.
       # We transpose Wt to cluster the columns rather than rows.
-      hopach.1 <- try(hopach::hopach(t(data), dmat = mydist, mss = "med", verbose = T,
+      hopach.1 <- try(hopach::hopach(t(data), dmat = mydist, mss = "med", verbose = verbose,
                                      K = max_variables, kmax = 3, khigh = 3),
                       silent = !verbose)
     }

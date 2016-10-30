@@ -67,15 +67,16 @@ estimate_tmle2 = function(Y,
   # Estimate g
   # Using modified version of tmle::estimateG
   #g_model = SuperLearner::SuperLearner(Y = A, X = W, SL.library = g.lib,
-  g = tmle_estimate_g(d = cbind(A, W), SL.library = g.lib, verbose = verbose,
+  g = tmle_estimate_g(d = cbind(A, W), SL.library = g.lib, verbose = F,
                       outcome = "A")
 
   # Handle gBounds - code from tmle::tmle().
-  if(length(gbound)==1){
-    if(length(unique(A))==1){  # EY1 only, no controlled direct effect
-      gbound <- c(gbound,1)
+  if (length(gbound) == 1) {
+    if (length(unique(A)) == 1) {
+      # EY1 only, no controlled direct effect
+      gbound = c(gbound, 1)
     } else {
-      gbound <- c(gbound, 1-gbound)
+      gbound = c(gbound, 1 - gbound)
     }
   }
   g$bound = gbound
@@ -89,14 +90,14 @@ estimate_tmle2 = function(Y,
     # This will generate a warning of SD is zero for either vector.
     # If this is the case we'll see an NA here.
     suppressWarnings(cat("Correlation of custom g to tmle-based g:",
-        cor(tmle.1$g$g1W, g1), "\n"))
+        stats::cor(tmle.1$g$g1W, g1), "\n"))
   }
 
   # This is copied from within tmle::tmle()
   map_to_ystar = fluctuation == "logistic"
 
   # Run tmle stage 1
-  stage1 <- tmle_init_stage1(Y = Y, Q = NULL,
+  stage1 = tmle_init_stage1(Y = Y, Q = NULL,
                              A = A,
                              Delta = delta,
                              alpha = alpha,
@@ -112,7 +113,8 @@ estimate_tmle2 = function(Y,
                       Q = stage1$Q,
                       Delta = delta,
                       SL.library = Q.lib,
-                      family = family, verbose = verbose,
+                      family = family,
+                      verbose = F,
                       maptoYstar = map_to_ystar,
                       Qbounds = stage1$Qbounds)
 
@@ -136,8 +138,13 @@ estimate_tmle2 = function(Y,
   g.z$type="No intermediate variable"
   g.z$coef=NA
   g.Delta <- suppressWarnings({
-    tmle_estimate_g(d=data.frame(delta, Z=1, A, W), pDelta1, g.Deltaform,
-                          g.lib, id, verbose = verbose, "missingness mechanism",
+    tmle_estimate_g(d = data.frame(delta, Z=1, A, W),
+                    pDelta1,
+                    g.Deltaform,
+                    g.lib,
+                    id,
+                    verbose = F,
+                    "missingness mechanism",
                     outcome="D")
   })
   g1W.total <- .bound(g$g1W*g.Delta$g1W[,"Z0A1"], gbound)
@@ -188,7 +195,11 @@ estimate_tmle2 = function(Y,
 
   # Compile results.
   result = list(theta = theta, IC = IC, g_model = g$model, q_model = q$model,
-                tmle = tmle.1)
+                tmle = tmle.1, alpha = alpha,
+                Qbounds = Qbounds,
+                stage1_Qbounds = stage1$Qbounds,
+                gbounds = g$bound,
+                map_to_ystar = map_to_ystar, ab = stage1$ab)
 
   return(result)
 }

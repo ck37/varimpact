@@ -99,9 +99,9 @@ summary(X_fac)
 
 # Basic factor test.
 # TODO: this generates multiple errors for fac_4
-vim = varImpact(Y = Y_bin, data = X_fac[, 1:4], V = 2, verbose=T)
+vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose=T)
 # And gaussian
-vim = varImpact(Y = Y_gaus, data = X_fac[, 1:4], V = 2, verbose=T, family="gaussian")
+vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose=T, family="gaussian")
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {

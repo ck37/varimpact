@@ -419,7 +419,7 @@ varImpact = function(Y, data, V = 2,
   cat("Finished pre-processing variables.\n")
 
   # Create cross-validation folds (2 by default).
-  folds = create_cv_folds(V, Y, verbose=verbose)
+  folds = create_cv_folds(V, Y, verbose = verbose)
 
   n = length(Y)
 
@@ -456,26 +456,24 @@ varImpact = function(Y, data, V = 2,
     n.fac = nrow(data.fac)
 
     # vim_factor = lapply(1:xc, function(i) {
-    vim_factor = foreach::foreach(var_i = 1:xc, .verbose = verbose) %do_op% {
+
+    # vim_factor will be a list of results, one element per factor variable.
+    vim_factor = foreach::foreach(var_i = 1:xc, .verbose = F) %do_op% {
       nameA = names.fac[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "factor variables\n")
 
-      # Initialize the set of results to keep for each variable.
-      # These will be vectors with a result for each fold.
-      thetaV = NULL
-      varICV = NULL
-      labV = NULL
-      EY0V = NULL
-      EY1V = NULL
-      nV = NULL
-
       # Loop over each fold.
-      for (fold_k in 1:V) {
+      # TODO: incorporate this loop into parallelization.
+      # for (fold_k in 1:V) {
+
+      # This is looping sequentially for now.
+      fold_results = foreach::foreach(fold_k = 1:V) %do% {
         if (verbose) cat("i =", var_i, "V =", fold_k, "\n")
 
         # All data not in this fold is the training data.
         At = data.fac[folds != fold_k, var_i]
+
         # All data in this fold is the validation data.
         Av = data.fac[folds == fold_k, var_i]
 
@@ -504,8 +502,11 @@ varImpact = function(Y, data, V = 2,
         }
 
         W = data.frame(data.numW, miss.cont, dumW, missdumW)
-        # TODO: what is this doing?
+
+        # Restrict to Ws in which there is less than 100% missingness.
         W = W[, !apply(is.na(W), 2, all), drop = F]
+
+        # Divide into training and validation subsets.
         Wt = W[folds != fold_k, , drop = F]
         Wv = W[folds == fold_k, , drop = F]
 
@@ -517,10 +518,10 @@ varImpact = function(Y, data, V = 2,
         #  if (verbose) cat("Warning: sd of Adum = 0.\n")
         #}
 
-        # Supress possible "the standard deviation is zero" warning from cor().
+        # Suppress possible "the standard deviation is zero" warning from cor().
         # TODO: investigate more and confirm that this is ok.
         suppressWarnings({
-          corAt = apply(cor(Adum, Wt, use = "complete.obs"), 2, max_sqr)
+          corAt = apply(stats::cor(Adum, Wt, use = "complete.obs"), 2, max_sqr)
         })
         corAt[corAt < -1] = 0
         # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
@@ -529,7 +530,7 @@ varImpact = function(Y, data, V = 2,
         Wt = Wt[, incc, drop = F]
 
         # Use HOPACH to reduce dimension of W to some level of tree
-        reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose)
+        reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
 
         Wtsht = reduced_results$data
         Wvsht = reduced_results$newX
@@ -580,6 +581,29 @@ varImpact = function(Y, data, V = 2,
         # Number of positive outcomes in validation data.
         nYv = sum(Yv[!is.na(Av)])
 
+        # Create a list to hold the results we calculate in this fold.
+        # Set them to default values and update as they are calculated.
+        fold_result = list(
+          # Message should report on the status for this fold.
+          message = "",
+          obs_training = length(Yt),
+          obs_validation = length(Yv),
+          error_count = 0,
+          # Results for estimating the maximum level / treatment.
+          level_max = list(
+            # Level is which bin was chosen.
+            level = NULL,
+            # Label is the description of that bin.
+            label = NULL,
+            # val_preds contains the g, Q, and H predictions on the validation data.
+            val_preds = NULL,
+            # Estimate of EY on the training data.
+            estimate_training = NULL
+          )
+        )
+        # Copy the blank result to a second element for the minimum level/bin.
+        fold_result$level_min = fold_result$level_max
+
         ############################
         # Don't do if 1) no more than one category of A left or
         # 2) if missingness pattern for A is such that there are few death events left
@@ -593,28 +617,18 @@ varImpact = function(Y, data, V = 2,
           }
           if (verbose) cat(error_msg, "\n")
 
-          # Add NAs to the vectors of results.
-          thetaV = c(thetaV, NA)
-          varICV = c(varICV, NA)
-          labV = rbind(labV, c(NA, NA))
-          EY0V = c(EY0V, NA)
-          EY1V = c(EY1V, NA)
-          nV = c(nV, NA)
+          fold_result$message = error_msg
+          # At this point here we are skipping to the end of the loop.
+
         } else {
-          # if (num.cat >= 2 & min(nYt, nYv) >= minYs) {
-
-          labmin = NULL
-          labmax = NULL
-          maxEY1 = -1e+05
-          minEY1 = 1e+06
-          minj = 0
-          maxj = 0
-          ICmin = NULL
-          ICmax = NULL
-          errcnt = 0
-
           if (verbose) cat("Estimating TMLE on training", paste0("(", num.cat, ")"))
 
+          error_count = 0
+
+          training_estimates = list()
+
+          # Estimate Y_a, Q hat and g hat for each level of our current variable,
+          # on the training data.
           for (j in 1:num.cat) {
 
             # Create a treatment indicator, where 1 = obs in this bin
@@ -626,109 +640,204 @@ varImpact = function(Y, data, V = 2,
 
             # if(min(table(IA,Yt))>=)
 
-            # CV-TMLE: update this to estimate Q and g on training data.
-            res = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
+            # CV-TMLE: we are using this for three reasons:
+            # 1. Estimate Y_a on training data.
+            # 2. Estimate Q on training data.
+            # 3. Estimate g on training data.
+            tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
                                     Q.lib = Q.library,
-                                    g.lib = g.library, verbose = verbose),
+                                    g.lib = g.library, verbose = F),
                       silent = !verbose)
 
-            if (class(res) == "try-error") {
+            # Save label
+            tmle_result$label = vals[j]
+
+            training_estimates[[j]] = tmle_result
+
+            if (class(tmle_result) == "try-error") {
               # TMLE estimation failed.
               if (verbose) cat("X")
-              errcnt = errcnt + 1
+              error_count = error_count + 1
             } else {
-            #if (class(res) != "try-error") {
+              # TMLE estimation successed.
               if (verbose) cat(".")
-              EY1 = res$theta
-              if (EY1 < minEY1) {
-                minj = j
-                minEY1 = EY1
-                labmin = vals[j]
-              }
-              if (EY1 > maxEY1) {
-                maxj = j
-                maxEY1 = EY1
-                labmax = vals[j]
-              }
             }
           }
+          # Finished looping over each level of the assignment variable.
           if (verbose) cat(" done.\n")
-          # cat(' time b = ',proc.time()-pp2,'\n') pp3=proc.time()
+
+          fold_result$error_count = error_count
+
+          # Extract theta estimates.
+          theta_estimates = sapply(training_estimates, function(result) {
+            # Handle errors in the tmle estimation by returning NA.
+            ifelse("theta" %in% names(result), result$theta, NA)
+          })
+
+          # Identify maximum EY1 (theta)
+          maxj = which.max(theta_estimates)
+          # Save that estimate.
+          maxEY1 = training_estimates[[maxj]]$theta
+          labmax = vals[maxj]
+
+          # Save these items into the fold_result list.
+          fold_result$level_max$level = maxj
+          fold_result$level_max$estimate_training = maxEY1
+          fold_result$level_max$label = labmax
+
+          # Identify minimum EY1 (theta)
+          minj = which.min(theta_estimates)
+          minEY1 = training_estimates[[minj]]$theta
+          labmin = vals[minj]
+
+          # Save these items into the fold_result list.
+          fold_result$level_min$level = minj
+          fold_result$level_min$estimate_training = minEY1
+          fold_result$level_min$label = labmin
 
           # This fold failed if we got an error for each category
           # Or if the minimum and maximum bin is the same.
-          if (errcnt == num.cat | minj == maxj) {
-            thetaV = c(thetaV, NA)
-            varICV = c(varICV, NA)
-            labV = rbind(labV, c(NA, NA))
-            EY0V = c(EY0V, NA)
-            EY1V = c(EY1V, NA)
-            nV = c(nV, NA)
-          } else {
-          #if (errcnt != num.cat & minj != maxj) {
+          if (error_count == num.cat | minj == maxj) {
+            message = paste("Fold", fold_k, "failed,")
+            if (error_count == num.cat) {
+              message = paste(message, "all", num.cat, "levels had errors.")
+            } else {
+              message = paste(message, "min and max level are the same. (j = ", minj,
+                              "label = ", training_estimates[[minj]]$label, ")")
+            }
+            fold_result$message = message
 
-            # Indicator for having the desired control bin on validation
+            if (verbose) {
+              cat(message, "\n")
+            }
+          } else {
+
+            # Turn to validation data.
+
+            # Estimate minimum level (control).
+
+            # Indicator for having the desired control bin on validation.
             IA = as.numeric(Av == vals[minj])
 
+            # Missing values are not taken to be in this level.
             IA[is.na(IA)] = 0
 
-            # CV-TMLE: not sure we would do this part at all.
-            res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
-                                    Q.lib = Q.library,
-                                    g.lib = g.library, verbose = verbose),
-                      silent = T)
-            if (class(res) == "try-error") {
-              if (verbose) cat("TMLE on validation failed.\n")
-              thetaV = c(thetaV, NA)
-              varICV = c(varICV, NA)
-              labV = rbind(labV, c(NA, NA))
-              EY0V = c(EY0V, NA)
-              EY1V = c(EY1V, NA)
-              nV = c(nV, NA)
-            }
-            # cat(' time c = ',proc.time()-pp3,'\n') pp4=proc.time()
-            if (class(res) != "try-error") {
-              IC0 = res$IC
-              EY0 = res$theta
+            # CV-TMLE: predict g, Q, and clever covariate on validation data.
+            min_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
+                                     deltav, training_estimates[[minj]],
+                                     verbose = verbose))
+
+            # Old version:
+            #res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
+            #                        Q.lib = Q.library,
+            #                        g.lib = g.library, verbose = verbose),
+            #          silent = T)
+
+            if (class(min_preds) == "try-error") {
+              message = paste("CV-TMLE prediction on validation failed during",
+                            "low/control level.")
+              fold_result$message = message
+              if (verbose) cat(message, "\n")
+            } else {
+              # Save the result.
+              fold_result$level_min$val_preds = min_preds
+
+              # Switch to maximum level (treatment).
 
               # Indicator for having the desired treatment bin on validation
               IA = as.numeric(Av == vals[maxj])
+
+              # Missing values are not taken to be in this level.
               IA[is.na(IA)] = 0
 
-              res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
-                                       Q.lib = Q.library,
-                                       g.lib = g.library, verbose = verbose),
-                         silent = !verbose)
-              if (class(res2) == "try-error") {
-                thetaV = c(thetaV, NA)
-                varICV = c(varICV, NA)
-                labV = rbind(labV, c(NA, NA))
-                EY0V = c(EY0V, NA)
-                EY1V = c(EY1V, NA)
-                nV = c(nV, NA)
-              }
-              if (class(res2) != "try-error") {
-                IC1 = res2$IC
-                EY1 = res2$theta
-                thetaV = c(thetaV, EY1 - EY0)
-                varICV = c(varICV, var(IC1 - IC0))
-                # Don't round these labels, because they are factor values.
-                labV = rbind(labV, c(labmin, labmax))
-                EY0V = c(EY0V, EY0)
-                EY1V = c(EY1V, EY1)
-                nV = c(nV, length(Yv))
+              # CV-TMLE: predict g, Q, and clever covariate on validation data.
+
+              max_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
+                                        deltav, training_estimates[[maxj]],
+                                        verbose = verbose))
+             # Old code:
+              #res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
+              #                         Q.lib = Q.library,
+              #                         g.lib = g.library, verbose = verbose),
+              #           silent = !verbose)
+
+
+              if (class(max_preds) == "try-error") {
+                message = paste("CV-TMLE prediction on validation failed",
+                      "during high/treatment level.")
+                fold_result$message = message
+                if (verbose) cat(message, "\n")
+              } else {
+                # Save the result.
+                fold_result$level_max$val_preds = max_preds
               }
             }
           }
         }
+        cat("Completed fold", fold_k, "\n")
+        fold_result$message = "Succcess"
 
+        # Return results for this fold.
+        fold_result
+      }
+      # Done looping over each fold.
+
+      # Create list to save results for this variable.
+      var_results = list(
+        EY1V = NULL,
+        EY0V = NULL,
+        thetaV = NULL,
+        varICV = NULL,
+        labV = NULL,
+        nV = NULL,
+        fold_results = fold_results,
+        type = "factor"
+      )
+
+      # TODO: compile results into the new estimate.
+
+      # if (verbose) cat("Estimating pooled min.\n")
+      pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
+                                           verbose = verbose)
+      # if (verbose) cat("Estimating pooled max.\n")
+      pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
+                                           verbose = verbose)
+
+      var_results$EY0V = pooled_min$thetas
+      var_results$EY1V = pooled_max$thetas
+      var_results$thetaV = var_results$EY1V - var_results$EY0V
+
+      # Influence_curves here is a matrix, with one column per fold.
+      var_results$varICV = sapply(1:V, function(index) {
+        var(pooled_max$influence_curves[, index] - pooled_min$influence_curves[, index])
+      })
+
+      # Save how many observations were in each validation fold.
+      var_results$nV = sapply(fold_results, function(x) x$obs_validation)
+
+      # Combine labels into a two-column matrix.
+      # First column is min and second is max.
+      # TODO: not sure if data structure for this part is correct.
+      labels = do.call(rbind,
+                 lapply(fold_results, function(x) c(x$level_min$label, x$level_max$label)))
+
+      var_results$labV = labels
+
+      if (verbose) {
+        signif_digits = 4
+        cat("[Min] EY0:", signif(mean(pooled_min$thetas), signif_digits),
+          "Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
+        cat("[Max] EY1:", signif(mean(pooled_max$thetas), signif_digits),
+          "Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
+        cat("ATEs:", signif(var_results$thetaV, signif_digits), "\n")
+        cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
+        cat("Labels:\n")
+        print(labels)
       }
 
-
       # Return results for this factor variable.
-      list(EY1V, EY0V, thetaV, varICV, labV, nV, "factor")
-      # print(data.frame(EY1V,EY0V,thetaV,varICV,labV,nV))
-    } # End foreach loop.
+      var_results
+    } # End foreach loop over all variables.
 
     if (verbose) cat("Factor VIMs:", length(vim_factor), "\n")
 
@@ -747,7 +856,7 @@ varImpact = function(Y, data, V = 2,
   ###############################################################################
 
   cor.two = function(x, y) {
-    (cor(na.omit(cbind(x, y)))[1, 2])^2
+    (stats::cor(na.omit(cbind(x, y)))[1, 2])^2
   }
 
   ######################################################
@@ -867,7 +976,7 @@ varImpact = function(Y, data, V = 2,
           Wt = Wt[, incc, drop = F]
 
           # Use HOPACH to reduce dimension of W to some level of tree
-          reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose)
+          reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
 
           Wtsht = reduced_results$data
           Wvsht = reduced_results$newX
@@ -961,7 +1070,7 @@ varImpact = function(Y, data, V = 2,
               IA = as.numeric(Avnew == vals[minj])
               if (verbose) cat("Estimate on validation: ")
               res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                      g.lib = g.library, verbose = verbose), silent = T)
+                                      g.lib = g.library, verbose = F), silent = T)
               if (verbose) cat("min")
               if (class(res) == "try-error") {
                 if (verbose) cat(" Failed :/\n")
@@ -980,7 +1089,7 @@ varImpact = function(Y, data, V = 2,
                 IA = as.numeric(Avnew == vals[maxj])
                 res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
                                          Q.lib = Q.library, g.lib = g.library,
-                                         verbose = verbose),
+                                         verbose = F),
                            silent = TRUE)
                 if (verbose) cat("max")
                 if (class(res2) == "try-error") {
@@ -1017,8 +1126,9 @@ varImpact = function(Y, data, V = 2,
 
       # Check if we have the correct number of results for this variable.
       if (verbose) {
+        # Count non-missing estimates of EY1.
         non_missing = length(na.omit(EY1V))
-        cat("EY1V:", paste(round(EY1V, 3), collapse=", "), "\n")
+        cat("EY1V:", paste(round(EY1V, 3), collapse = ", "), "\n")
         if (non_missing == V) {
           cat(nameA, "will be kept; we have", non_missing, "results as expected.\n")
         } else {
@@ -1026,7 +1136,16 @@ varImpact = function(Y, data, V = 2,
         }
       }
 
-      list(EY1V, EY0V, thetaV, varICV, labV, nV, "numeric", name = nameA)
+      # Compile results for this variable.
+      var_result = list(EY1V = EY1V,
+                    EY0V = EY0V,
+                    thetaV = thetaV,
+                    varICV = varICV,
+                    labV = labV,
+                    nV = nV,
+                    type = "numeric",
+                    name = nameA)
+      var_result
     } # end foreach loop.
 
     if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
@@ -1056,129 +1175,154 @@ varImpact = function(Y, data, V = 2,
   num_numeric = length(colnames_numeric)
   num_factor = length(colnames_factor)
 
-  factr = c(rep("ordered", num_numeric), rep("factor", num_factor))
-  vars = c(colnames_numeric, colnames_factor)
+  variable_types = c(rep("ordered", num_numeric), rep("factor", num_factor))
+  variable_names = c(colnames_numeric, colnames_factor)
 
   vim_combined = c(vim_numeric, vim_factor)
-  names(vim_combined) = vars
+  names(vim_combined) = variable_names
 
-  lngth = sapply(vim_combined, length)
+  element_length = sapply(vim_combined, length)
 
   # May increase this to 8, hence >= operator in following lines.
   expected_length = 7
 
   # Restrict to vim results that have at least 7 elements.
-  vim_combined = vim_combined[lngth >= expected_length]
-  vars = vars[lngth >= expected_length]
-  factr = factr[lngth >= expected_length]
+  vim_combined = vim_combined[element_length >= expected_length]
+  variable_names = variable_names[element_length >= expected_length]
+  variable_types = variable_types[element_length >= expected_length]
 
   # Set defaults for variables we want to return.
-  outres.all = outres.cons = outres.byV = NULL
+  outres = outres.all = outres.cons = outres.byV = NULL
 
   # Get rid of any variables that have a validation sample with no
   # estimates of variable importance.
   if (length(vim_combined) == 0) {
     error_msg = "No variable importance estimates could be calculated due to sample size, etc."
-    if (verbose) cat(error_msg, "\n")
+    if (verbose) {
+      cat(error_msg, "\n")
+      cat("Lengths:", element_length, "\n")
+    }
     warning(error_msg)
     # TODO: also write output to the file in a separate function call.
     #write("No VIM's could be calculated due to sample size, etc",
     #     file = "AllReslts.tex")
   } else {
-    lngth2 = sapply(vim_combined, function(x) {
-      # In some cases class(x[[1]]) is NULL, so this avoids a warning.
-      if (class(x[[1]]) != "numeric") {
+    length_ey1 = sapply(vim_combined, function(x) {
+      # In some cases class(x$EY1) is NULL, so this avoids a warning.
+      if (is.null(x$EY1V)) {
         return(0)
       }
-      element_one = na.omit(x[[1]])
-      length(element_one)
+      ey1_vector = na.omit(x$EY1V)
+      length(ey1_vector)
     })
-    out.put = vim_combined[lngth2 == V]
 
-    if (length(out.put) == 0) {
+    valid_results = vim_combined[length_ey1 == V]
+    variable_names = variable_names[length_ey1 == V]
+    variable_types = variable_types[length_ey1 == V]
+
+
+    if (length(valid_results) == 0) {
       error_msg = "No VIMs could be calculated due to sample size, etc."
-      if (verbose) cat(error_msg, "\n")
+      if (verbose) {
+        cat(error_msg, "\n")
+        cat("EY1 lengths:", length_ey1, "\n")
+      }
       warning(error_msg)
     } else {
-      vars = vars[lngth2 == V]
-      factr = factr[lngth2 == V]
-      tst = lapply(out.put, function(x) x[[3]])
-      tst = do.call(rbind, tst)
-      if (verbose) cat("Dim tst:", paste(dim(tst)), "\n")
-      xx = apply(tst, 1, sum_na)
-      out.sht = out.put[xx == 0]
-      vars = vars[xx == 0]
-      factr = factr[xx == 0]
 
-      # names(out.sht)=vars[xx==0]
-      tst = lapply(out.sht, function(x) x[[1]])
-      EY1 = do.call(rbind, tst)
-      tst = lapply(out.sht, function(x) x[[2]])
-      EY0 = do.call(rbind, tst)
-      tst = lapply(out.sht, function(x) x[[3]])
-      theta = do.call(rbind, tst)
-      tst = lapply(out.sht, function(x) x[[4]])
-      varIC = do.call(rbind, tst)
-      tst = lapply(out.sht, function(x) x[[6]])
-      nV = do.call(rbind, tst)
+      # Order of results:
+      # 1. EY1V, #2. EY0V, #3. thetaV, #4. varICV, #5, labV
+      # #6. nV, #7. type, #8. name.
+
+      theta = do.call(rbind, lapply(valid_results, function(x) x$thetaV))
+
+      theta_sum_na = apply(theta, 1, sum_na)
+      results_no_na = valid_results[theta_sum_na == 0]
+      variable_names = variable_names[theta_sum_na == 0]
+      variable_types = variable_types[theta_sum_na == 0]
+
+      # Extact the various components of the results.
+      EY1 = do.call(rbind, lapply(results_no_na, function(x) x$EY1))
+      EY0 = do.call(rbind, lapply(results_no_na, function(x) x$EY0))
+      theta = do.call(rbind, lapply(results_no_na, function(x) x$thetaV))
+      varIC = do.call(rbind, lapply(results_no_na, function(x) x$varICV))
+      nV = do.call(rbind, lapply(results_no_na, function(x) x$nV))
       n = sum(nV[1, ])
-      SEV = sqrt(varIC/nV)
-      ##### Get labels for each of the training sample
-      labs.get = function(x, fold) {
-        lbel = rep(1:fold, 2)
-        oo = order(lbel)
-        lbel = lbel[oo]
+
+      SEV = sqrt(varIC / nV)
+
+      # Get labels for each of the training sample
+      extract_labels = function(x, total_folds) {
+        labels = rep(1:total_folds, 2)
+        oo = order(labels)
+        labels = labels[oo]
         out = as.vector(t(x))
-        names(out) = paste("v.", lbel, rep(c("a_L", "a_H"), 2), sep = "")
+        names(out) = paste0("v.", labels, rep(c("a_L", "a_H"), total_folds))
         out
       }
-      tst = lapply(out.sht, function(x) x[[5]])
-      tst = lapply(tst, labs.get, fold = V)
-      lbs = do.call(rbind, tst)
+
+      # labV is result element 5.
+      tst = lapply(results_no_na, function(x) x$labV)
+      tst = lapply(tst, extract_labels, total_folds = V)
+      labels = do.call(rbind, tst)
 
       meanvarIC = apply(varIC, 1, mean)
+
       psi = apply(theta, 1, mean)
       SE = sqrt(meanvarIC/n)
 
-      lower = psi - 1.96 * SE
-      upper = psi + 1.96 * SE
-      signdig = 3
-      CI95 = paste0("(", signif(lower, signdig), " - ", signif(upper, signdig), ")")
+      ci_lower = psi - 1.96 * SE
+      ci_upper = psi + 1.96 * SE
+
+      # Number of significant digits.
+      signif_digits = 3
+
+      CI95 = paste0("(", signif(ci_lower, signif_digits), " - ", signif(ci_upper, signif_digits), ")")
 
       # 1-sided p-value
-      pvalue = 1 - pnorm(psi/SE)
-      ##### FOR THETA (generalize to chi-square test?)  TT =
-      ##### (theta[,1]-theta[,2])/sqrt(SEV[,1]^2+SEV[,2]^2)
-      ##### pval.comp=2*(1-pnorm(abs(TT))) FOR levels (just make sure in same
-      ##### order)
-      nc = sum(factr == "ordered")
-      n = length(factr)
-      ### Ordered variables first
+      pvalue = 1 - pnorm(psi / SE)
+
+      ##### FOR THETA (generalize to chi-square test?)
+      # TT = (theta[,1] - theta[,2]) / sqrt(SEV[,1]^2 + SEV[,2]^2)
+      # pval.comp=2*(1-pnorm(abs(TT))) FOR levels
+      # (just make sure in same order)
+
+      num_continuous = sum(variable_types == "ordered")
+      num_vars = length(variable_types)
+
       length.uniq = function(x) {
         length(unique(x))
       }
+
+      ##################
+      # Ordered variables first
       cons = NULL
-      if (nc > 0) {
+      if (num_continuous > 0) {
         dir = NULL
         for (i in 1:V) {
-          ltemp = lbs[1:nc, i * 2 - 1]
-          xx = regexpr(",", ltemp)
-          lwr = as.numeric(substr(ltemp, 2, xx - 1))
-          utemp = lbs[1:nc, i * 2]
-          xx = regexpr(",", utemp)
-          nx = nchar(utemp)
-          uwr = as.numeric(substr(utemp, xx + 1, nx - 1))
+          lower_temp = labels[1:num_continuous, i * 2 - 1]
+          xx = regexpr(",", lower_temp)
+          lwr = as.numeric(substr(lower_temp, 2, xx - 1))
+
+          upper_temp = labels[1:num_continuous, i * 2]
+          xx = regexpr(",", upper_temp)
+          nx = nchar(upper_temp)
+          uwr = as.numeric(substr(upper_temp, xx + 1, nx - 1))
+
           dir = cbind(dir, uwr > lwr)
         }
+
         cons = apply(dir, 1, length.uniq)
       }
-      #### Factors
-      if (n - nc > 0) {
+
+      ##################
+      # Factors
+      if (num_vars - num_continuous > 0) {
         lwr = NULL
         uwr = NULL
         for (i in 1:V) {
-          lwr = cbind(lwr, lbs[(nc + 1):n, i * 2 - 1])
-          uwr = cbind(uwr, lbs[(nc + 1):n, i * 2 - 1])
+          lwr = cbind(lwr, labels[(num_continuous + 1):num_vars, i * 2 - 1])
+          uwr = cbind(uwr, labels[(num_continuous + 1):num_vars, i * 2 - 1])
         }
         conslwr = apply(lwr, 1, length.uniq)
         consupr = apply(uwr, 1, length.uniq)
@@ -1188,18 +1332,41 @@ varImpact = function(Y, data, V = 2,
       signsum = function(x) {
         sum(sign(x))
       }
+
+      # Consistent results need to have all positive or all negative thetas.
+      # CK: but really, shouldn't they all be positive?
       consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
-      procs = c("Holm", "BH")
-      if (n > 1) {
-        res = multtest::mt.rawp2adjp(pvalue, procs)
-        oo = res$index
-        outres = data.frame(factor = factr[oo], theta[oo, ],
-                            psi[oo], CI95[oo], res$adj, lbs[oo, ], consist[oo])
+
+      procedures = c("Holm", "BH")
+      if (num_vars > 1) {
+        # Adjust p-values for multiple testing.
+        res = multtest::mt.rawp2adjp(pvalue, procedures)
+        sorted_rows = res$index
+        # This indexing sorts the results in ascending order of unadjusted p-value.
+        outres = data.frame(var_type = variable_types[sorted_rows],
+                            theta[sorted_rows, , drop = F],
+                            psi[sorted_rows],
+                            CI95[sorted_rows],
+                            res$adj,
+                            labels[sorted_rows, , drop = F],
+                            consist[sorted_rows])
+      } else if (num_vars == 1) {
+        # No need for multiple testing adjustment.
+        # TODO: just integrate into previous part?
+        outres = data.frame(var_type = variable_types,
+                            theta,
+                            psi,
+                            CI95,
+                            rawp = pvalue,
+                            Holm = pvalue,
+                            BH = pvalue,
+                            lbs,
+                            consist)
+      } else {
+        outres = NULL
       }
-      if (n == 1) {
-        outres = data.frame(factor = factr, theta, psi, CI95,
-                            rawp = pvalue, Holm = pvalue, BH = pvalue, lbs, consist)
-      }
+
+      # TODO: this will give an error if we have no results.
 
       # Restrict to variables that aren't missing their p-value.
       outres = outres[!is.na(outres[, "rawp"]), , drop = F]
@@ -1207,8 +1374,9 @@ varImpact = function(Y, data, V = 2,
       names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("psiV", 1:V), "AvePsi", "CI95")
       names(outres)[(9 + 2 * V)] = "Consistent"
 
-      ### Get Consistency Measure and only significant Make BH cut-off flexible
-      ### in future versions (default at 0.05)
+      ################
+      # Get Consistency Measure and only significant
+      # TODO: Make BH cut-off flexible in future versions (default at 0.05)
       outres.cons = outres[outres[, "BH"] < 0.05, , drop = F]
       outres.cons = outres.cons[outres.cons[, "Consistent"],
                                 c("VarType", "AvePsi", "rawp", "BH", "CI95"), drop = F]
