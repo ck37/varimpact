@@ -1,14 +1,18 @@
-estimate_pooled_results = function(fold_results, verbose = F) {
+estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbose = F) {
   # Fold results is a list with results from each fold.
 
   # Each fold result should have at least this element:
-  # val_preds dataframe, with Y, g, Q, H.
+  # val_preds dataframe, with Y_star, g, Q, H.
 
   data = do.call(rbind, lapply(1:length(fold_results), function(i) {
     fold = fold_results[[i]]
     # Save the fold number so we can use it to generate fold-specific estimates.
-    df = cbind(fold$val_preds, fold_num = i)
-    df
+    if (is.null(fold$val_preds)) {
+      NULL
+    } else {
+      df = cbind(fold$val_preds, fold_num = i)
+      df
+    }
   }))
 
   n = nrow(data)
@@ -19,7 +23,11 @@ estimate_pooled_results = function(fold_results, verbose = F) {
   }
 
   # Estimate epsilon
-  epsilon = coef(glm(Y ~ -1 + offset(Q_hat) + H1W, data = data, family = "binomial"))
+  if (fluctuation == "logistic") {
+    epsilon = coef(glm(Y_star ~ -1 + offset(Q_hat) + H1W, data = data, family = "binomial"))
+  } else {
+    # TBD.
+  }
 
   # Fluctuate Q to get Q_star
   Q_star = data$Q_hat + epsilon * data$H1W

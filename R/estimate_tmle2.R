@@ -199,6 +199,7 @@ estimate_tmle2 = function(Y,
                 Qbounds = Qbounds,
                 stage1_Qbounds = stage1$Qbounds,
                 gbounds = g$bound,
+                fluctuation = fluctuation,
                 map_to_ystar = map_to_ystar, ab = stage1$ab)
 
   return(result)

@@ -458,7 +458,8 @@ varImpact = function(Y, data, V = 2,
     # vim_factor = lapply(1:xc, function(i) {
 
     # vim_factor will be a list of results, one element per factor variable.
-    vim_factor = foreach::foreach(var_i = 1:xc, .verbose = F) %do_op% {
+    vim_factor = foreach::foreach(var_i = 1:xc, .verbose = F, .errorhandling = "stop") %do_op% {
+    #vim_factor = lapply(1:xc, function(var_i) {
       nameA = names.fac[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "factor variables\n")
@@ -684,6 +685,7 @@ varImpact = function(Y, data, V = 2,
           fold_result$level_max$level = maxj
           fold_result$level_max$estimate_training = maxEY1
           fold_result$level_max$label = labmax
+          #fold_result$level_max$tmle = training_estimates[[maxj]]
 
           # Identify minimum EY1 (theta)
           minj = which.min(theta_estimates)
@@ -694,6 +696,7 @@ varImpact = function(Y, data, V = 2,
           fold_result$level_min$level = minj
           fold_result$level_min$estimate_training = minEY1
           fold_result$level_min$label = labmin
+          #fold_result$level_min$tmle = training_estimates[[minj]]
 
           # This fold failed if we got an error for each category
           # Or if the minimum and maximum bin is the same.
@@ -838,6 +841,7 @@ varImpact = function(Y, data, V = 2,
       # Return results for this factor variable.
       var_results
     } # End foreach loop over all variables.
+    #) # End lapply if we're not using foreach. (temporary tweak)
 
     if (verbose) cat("Factor VIMs:", length(vim_factor), "\n")
 
@@ -880,25 +884,45 @@ varImpact = function(Y, data, V = 2,
 
     ### Loop over each numeric variable.
     #vim_numeric = lapply(1:xc, function(i) {
-    vim_numeric = foreach::foreach(i = 1:num_numeric) %do_op% {
-      nameA = names.cont[i]
+    vim_numeric = foreach::foreach(var_i = 1:num_numeric) %do_op% {
+    #vim_numeric = lapply(1:num_numeric, function(var_i) {
+      nameA = names.cont[var_i]
 
-      if (verbose) cat("i =", i, "Var =", nameA, "out of", xc, "numeric variables\n")
+      if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "numeric variables\n")
 
-      thetaV = NULL
-      varICV = NULL
-      labV = NULL
-      EY0V = NULL
-      EY1V = NULL
-      nV = NULL
+      #for (fold_k in 1:V) {
+      # This is looping sequentially for now.
+      #fold_results = foreach (fold_k = 1:V) %do% {
+      fold_results = lapply(1:V, function(fold_k) {
+        if (verbose) cat("v =", fold_k, "out of V =", V, "\n")
 
-      for (kk in 1:V) {
-        if (verbose) cat("v =", kk, "out of V =", V, "\n")
+        At = data.cont.dist[folds != fold_k, var_i]
+        Av = data.cont.dist[folds == fold_k, var_i]
+        Yt = Y[folds != fold_k]
+        Yv = Y[folds == fold_k]
 
-        At = data.cont.dist[folds != kk, i]
-        Av = data.cont.dist[folds == kk, i]
-        Yt = Y[folds != kk]
-        Yv = Y[folds == kk]
+        # Create a list to hold the results we calculate in this fold.
+        # Set them to default values and update as they are calculated.
+        fold_result = list(
+          # Message should report on the status for this fold.
+          message = "",
+          obs_training = length(Yt),
+          obs_validation = length(Yv),
+          error_count = 0,
+          # Results for estimating the maximum level / treatment.
+          level_max = list(
+            # Level is which bin was chosen.
+            level = NULL,
+            # Label is the description of that bin.
+            label = NULL,
+            # val_preds contains the g, Q, and H predictions on the validation data.
+            val_preds = NULL,
+            # Estimate of EY on the training data.
+            estimate_training = NULL
+          )
+        )
+        # Copy the blank result to a second element for the minimum level/bin.
+        fold_result$level_min = fold_result$level_max
 
         if (length(unique(Yt)) == 2) {
           # Binary outcome.
@@ -925,13 +949,8 @@ varImpact = function(Y, data, V = 2,
         if (singleAY1 || length(na.omit(unique(Atnew))) <= 1 || length(na.omit(unique(Avnew))) <= 1) {
           error_msg = paste("Skipping", nameA, "in this fold because there is no variation.")
           if (verbose) cat(error_msg, "\n")
+          fold_result$message = error_msg
           #warning(error_msg)
-          thetaV = c(thetaV, NA)
-          varICV = c(varICV, NA)
-          labV = rbind(labV, c(NA, NA))
-          EY0V = c(EY0V, NA)
-          EY1V = c(EY1V, NA)
-          nV = c(nV, NA)
         } else {
           #if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) > 1) {
           labs = names(table(Atnew))
@@ -955,10 +974,10 @@ varImpact = function(Y, data, V = 2,
           if (!exists("data.numW") || is.null(data.numW)) {
             data.numW = rep(NA, n.cont)
           }
-          W = data.frame(data.numW[, -i, drop = F], miss.cont, datafac.dumW, miss.fac)
+          W = data.frame(data.numW[, -var_i, drop = F], miss.cont, datafac.dumW, miss.fac)
           W = W[, !apply(is.na(W), 2, all), drop = F]
-          Wt = W[folds != kk, , drop = F]
-          Wv = W[folds == kk, , drop = F]
+          Wt = W[folds != fold_k, , drop = F]
+          Wv = W[folds == fold_k, , drop = F]
 
           nmesW = names(Wt)
           mtch = match(nmesW, paste0("Imiss_", nameA))
@@ -992,161 +1011,243 @@ varImpact = function(Y, data, V = 2,
           }
 
           vals = cats.cont[[i]]
-          maxEY1 = -1e+05
-          minEY1 = 1e+06
-          minj = 0
-          maxj = 0
-          ICmin = NULL
-          ICmax = NULL
           Atnew[is.na(Atnew)] = -1
           Avnew[is.na(Avnew)] = -1
+
           # Only applies to binary outcomes.
           if (length(unique(Yt)) == 2 && min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell) {
             error_msg = paste("Skipping", nameA, "due to minCell constraint.\n")
             if (T || verbose) cat(error_msg)
+            fold_result$message = error_msg
             # warning(error_msg)
-            thetaV = c(thetaV, NA)
-            varICV = c(varICV, NA)
-            labV = rbind(labV, c(NA, NA))
-            EY0V = c(EY0V, NA)
-            EY1V = c(EY1V, NA)
-            nV = c(nV, NA)
             # Go to the next loop iteration.
-            next
+            #next
           } else {
             # CK TODO: this is not exactly the opposite of the IF above. Is that intentional?
             #if (length(unique(Yt)) > 2 || min(table(Avnew, Yv)) > minCell) {
-            labmin = NULL
-            labmax = NULL
-            errcnt = 0
+
+            # Tally how many bins fail with an error.
+            error_count = 0
+
             if (verbose) cat("Estimating training TMLEs", paste0("(", numcat.cont[i], " bins)"))
+
+            training_estimates = list()
+
             for (j in 1:numcat.cont[i]) {
-              # cat(' i = ',i,' kk = ',kk,' j = ',j,'\n')
+              # Create a treatment indicator, where 1 = obs in this bin
+              # and 0 = obs not in this bin.
+
               IA = as.numeric(Atnew == vals[j])
-              res = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
-                                      g.lib = g.library, verbose = verbose), silent = T)
-              if (class(res) == "try-error") {
+
+              # CV-TMLE: we are using this for three reasons:
+              # 1. Estimate Y_a on training data.
+              # 2. Estimate Q on training data.
+              # 3. Estimate g on training data.
+              tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
+                                               Q.lib = Q.library,
+                                               g.lib = g.library, verbose = verbose),
+                                silent = !verbose)
+
+              # Save bin
+              tmle_result$label = labs[j]
+
+              training_estimates[[j]] = tmle_result
+
+              # Old way:
+              #res = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
+              #                        g.lib = g.library, verbose = verbose), silent = T)
+
+              if (class(tmle_result) == "try-error") {
                 # Error.
                 if (verbose) cat("X")
-                errcnt = errcnt + 1
+                error_count = error_count + 1
               } else {
                 if (verbose) cat(".")
-                #if (class(res) != "try-error") {
-                EY1 = res$theta
-                if (EY1 < minEY1) {
-                  minj = j
-                  minEY1 = EY1
-                  labmin = labs[j]
-                }
-                # CK 6/6: convert to else? But what about equality?
-                if (EY1 > maxEY1) {
-                  maxj = j
-                  maxEY1 = EY1
-                  labmax = labs[j]
-                }
               }
             }
-            if (verbose) cat("done.\n")
+            # Finished looping over each level of the assignment variable.
+            if (verbose) cat(" done.\n")
 
-            #####
-            # Now, estimate on validation sample
-            if (errcnt == numcat.cont[i] | minj == maxj) {
+            fold_result$error_count = error_count
+
+            # Extract theta estimates.
+            theta_estimates = sapply(training_estimates, function(result) {
+              # Handle errors in the tmle estimation by returning NA.
+              ifelse("theta" %in% names(result), result$theta, NA)
+            })
+
+            # Identify maximum EY1 (theta)
+            maxj = which.max(theta_estimates)
+            # Save that estimate.
+            maxEY1 = training_estimates[[maxj]]$theta
+            labmax = vals[maxj]
+
+            # Save these items into the fold_result list.
+            fold_result$level_max$level = maxj
+            fold_result$level_max$estimate_training = maxEY1
+            fold_result$level_max$label = labmax
+
+            # Identify minimum EY1 (theta)
+            minj = which.min(theta_estimates)
+            minEY1 = training_estimates[[minj]]$theta
+            labmin = vals[minj]
+
+            # Save these items into the fold_result list.
+            fold_result$level_min$level = minj
+            fold_result$level_min$estimate_training = minEY1
+            fold_result$level_min$label = labmin
+
+            # This fold failed if we got an error for each category
+            # Or if the minimum and maximum bin is the same.
+            if (error_count == numcat.cont[i] | minj == maxj) {
+              message = paste("Fold", fold_k, "failed,")
+              if (error_count == num.cat) {
+                message = paste(message, "all", num.cat, "levels had errors.")
+              } else {
+                message = paste(message, "min and max level are the same. (j = ", minj,
+                                "label = ", training_estimates[[minj]]$label, ")")
+              }
+              fold_result$message = message
+
               if (verbose) {
-                if (minj == maxj) {
-                  cat("Skipping", nameA, "because min level = max level =", minj, "\n")
-                } else {
-                  cat("Skipping", nameA, "because no level succeeded\n")
-                }
+                cat(message, "\n")
               }
-              thetaV = c(thetaV, NA)
-              varICV = c(varICV, NA)
-              labV = rbind(labV, c(NA, NA))
-              EY0V = c(EY0V, NA)
-              EY1V = c(EY1V, NA)
-              nV = c(nV, NA)
-            }
-            if (errcnt != numcat.cont[i] & minj != maxj) {
-              # Estimate with the minimum level.
+            } else {
+
+              # Turn to validation data.
+
+              # Estimate minimum level (control).
+
+              # Indicator for having the desired control bin on validation.
               IA = as.numeric(Avnew == vals[minj])
-              if (verbose) cat("Estimate on validation: ")
-              res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav, Q.lib = Q.library,
-                                      g.lib = g.library, verbose = F), silent = T)
-              if (verbose) cat("min")
-              if (class(res) == "try-error") {
-                if (verbose) cat(" Failed :/\n")
-                thetaV = c(thetaV, NA)
-                varICV = c(varICV, NA)
-                labV = rbind(labV, c(NA, NA))
-                EY0V = c(EY0V, NA)
-                EY1V = c(EY1V, NA)
-                nV = c(nV, NA)
-              }
-              if (class(res) != "try-error") {
-                # Estimate with the maximum level.
-                IC0 = res$IC
-                EY0 = res$theta
-                if (verbose) cat(" EY0 =", round(res$theta, 3), " ")
+
+              # Missing values are not taken to be in this level.
+              IA[is.na(IA)] = 0
+
+              # CV-TMLE: predict g, Q, and clever covariate on validation data.
+              min_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
+                                                       deltav, training_estimates[[minj]],
+                                                       verbose = verbose))
+
+              # Old version:
+              #res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
+              #                        Q.lib = Q.library,
+              #                        g.lib = g.library, verbose = verbose),
+              #          silent = T)
+
+              if (class(min_preds) == "try-error") {
+                message = paste("CV-TMLE prediction on validation failed during",
+                                "low/control level.")
+                fold_result$message = message
+                if (verbose) cat(message, "\n")
+              } else {
+                # Save the result.
+                fold_result$level_min$val_preds = min_preds
+
+                # Switch to maximum level (treatment).
+
+                # Indicator for having the desired treatment bin on validation
                 IA = as.numeric(Avnew == vals[maxj])
-                res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
-                                         Q.lib = Q.library, g.lib = g.library,
-                                         verbose = F),
-                           silent = TRUE)
-                if (verbose) cat("max")
-                if (class(res2) == "try-error") {
-                  if (verbose) cat(" Failed :/\n")
-                  thetaV = c(thetaV, NA)
-                  varICV = c(varICV, NA)
-                  labV = rbind(labV, c(NA, NA))
-                  EY0V = c(EY0V, NA)
-                  EY1V = c(EY1V, NA)
-                  nV = c(nV, NA)
-                }
-                if (class(res2) != "try-error") {
-                  if (verbose) cat(" EY1 =", round(res2$theta, 3))
-                  if (verbose) cat("\n")
-                  IC1 = res2$IC
-                  EY1 = res2$theta
+
+                # Missing values are not taken to be in this level.
+                IA[is.na(IA)] = 0
+
+                # CV-TMLE: predict g, Q, and clever covariate on validation data.
+
+                max_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
+                                                         deltav, training_estimates[[maxj]],
+                                                         verbose = verbose))
+                # Old code:
+                #res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
+                #                         Q.lib = Q.library,
+                #                         g.lib = g.library, verbose = verbose),
+                #           silent = !verbose)
 
 
-                  thetaV = c(thetaV, EY1 - EY0)
-                  varICV = c(varICV, var(IC1 - IC0))
-                  #labV = rbind(labV, round(c(labmin, labmax), digits = digits))
-                  labV = rbind(labV, c(labmin, labmax))
-                  EY0V = c(EY0V, EY0)
-                  EY1V = c(EY1V, EY1)
-                  nV = c(nV, length(Yv))
+                if (class(max_preds) == "try-error") {
+                  message = paste("CV-TMLE prediction on validation failed",
+                                  "during high/treatment level.")
+                  fold_result$message = message
+                  if (verbose) cat(message, "\n")
+                } else {
+                  # Save the result.
+                  fold_result$level_max$val_preds = max_preds
                 }
               }
             }
-          }# else {
-          # cat("ERROR: Should not get here.\n")
-          #}
+          }
         }
-      }
+        cat("Completed fold", fold_k, "\n")
+        fold_result$message = "Succcess"
 
-      # Check if we have the correct number of results for this variable.
-      if (verbose) {
-        # Count non-missing estimates of EY1.
-        non_missing = length(na.omit(EY1V))
-        cat("EY1V:", paste(round(EY1V, 3), collapse = ", "), "\n")
-        if (non_missing == V) {
-          cat(nameA, "will be kept; we have", non_missing, "results as expected.\n")
+        # Return results for this fold.
+        fold_result
+      }) # End lapply
+      # Done looping over each fold.
+
+
+      # Create list to save results for this variable.
+      var_results = list(
+        EY1V = NULL,
+        EY0V = NULL,
+        thetaV = NULL,
+        varICV = NULL,
+        labV = NULL,
+        nV = NULL,
+        fold_results = fold_results,
+        type = "factor",
+        name = nameA
+      )
+
+      # TODO: compile results into the new estimate.
+
+      # if (verbose) cat("Estimating pooled min.\n")
+      pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
+                                           verbose = verbose)
+      # if (verbose) cat("Estimating pooled max.\n")
+      pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
+                                           verbose = verbose)
+
+      var_results$EY0V = pooled_min$thetas
+      var_results$EY1V = pooled_max$thetas
+      var_results$thetaV = var_results$EY1V - var_results$EY0V
+
+      # Influence_curves here is a matrix, with one column per fold.
+      var_results$varICV = sapply(1:V, function(index) {
+        if (ncol(pooled_max$influence_curves) >= index) {
+          var(pooled_max$influence_curves[, index] - pooled_min$influence_curves[, index])
         } else {
-          cat("Will drop", nameA, "because", non_missing, "!=", V, "results.\n")
+          NA
         }
+      })
+
+      # Save how many observations were in each validation fold.
+      var_results$nV = sapply(fold_results, function(x) x$obs_validation)
+
+      # Combine labels into a two-column matrix.
+      # First column is min and second is max.
+      # TODO: not sure if data structure for this part is correct.
+      labels = do.call(rbind,
+                       lapply(fold_results, function(x) c(x$level_min$label, x$level_max$label)))
+
+      var_results$labV = labels
+
+      if (verbose) {
+        signif_digits = 4
+        cat("[Min] EY0:", signif(mean(pooled_min$thetas), signif_digits),
+            "Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
+        cat("[Max] EY1:", signif(mean(pooled_max$thetas), signif_digits),
+            "Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
+        cat("ATEs:", signif(var_results$thetaV, signif_digits), "\n")
+        cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
+        cat("Labels:\n")
+        print(labels)
       }
 
-      # Compile results for this variable.
-      var_result = list(EY1V = EY1V,
-                    EY0V = EY0V,
-                    thetaV = thetaV,
-                    varICV = varICV,
-                    labV = labV,
-                    nV = nV,
-                    type = "numeric",
-                    name = nameA)
-      var_result
+      # Return results for this factor variable.
+      var_results
     } # end foreach loop.
+    #) # End lapply if we're not using foreach
 
     if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
 

@@ -8,12 +8,22 @@ apply_tmle_to_validation = function(Y,
                                     verbose = F) {
 
   ###########
-  # CK: actually, I think we don't even need to use Y
-  # Transform Y to Y_star
-  #Y_star = Y
-  #if (tmle$map_to_ystar) {
-  #  Y_star = (Y_star - tmle$ab[1]) / diff(tmle$ab)
-  #}
+  # Transform Y to Y_star, needed for later fluctuation step.
+  Y_star = Y
+  if (tmle$map_to_ystar) {
+    Y_star = (Y_star - tmle$ab[1]) / diff(tmle$ab)
+  }
+
+  if (max(Y_star) > 1 | min(Y_star) < 0) {
+    cat("Error on Y_star's range for logistic fluctuation\n")
+    cat("Y_star distribution:\n")
+    print(summary(Y_star))
+    cat("Qbounds:", tmle$Qbounds, "\n")
+    cat("Stage1 Qbounds:", tmle$stage1_Qbounds, "\n")
+    cat("Stage1 ab:", tmle$ab, "\n")
+    cat("Validation Y range:", range(Y), "\n")
+    stop("Y values must be 0 <= y <= 1")
+  }
 
   # We only include this because TMLE functions use Z.
   Z = rep(0, length(Y))
@@ -37,8 +47,8 @@ apply_tmle_to_validation = function(Y,
 
   # Return results
 
-  # TODO: return Y_star rather than Y, for use in fluctuation step?
-  data = data.frame(Y = Y, A = A, Q_hat = Q_hat,
+  # We return Y_star rather than Y, for use in pooled fluctuation step.
+  data = data.frame(Y_star = Y_star, A = A, Q_hat = Q_hat,
                     g1W_hat = g1W_hat,
                     H1W = H1W)
 
