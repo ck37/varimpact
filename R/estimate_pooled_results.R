@@ -55,7 +55,7 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
     # Influence_curves here is a matrix, with one column per fold.
     influence_curves = simplify2array(base::by(data, data$fold_num, function(fold_data) {
       #with(fold_data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)
-      with(fold_data, (A / g1W_hat) * (Y - Q_star) + Q_star - mean(Q_star, na.rm=T))
+      with(fold_data, (A / g1W_hat) * (Y_star - Q_star) + Q_star - mean(Q_star, na.rm=T))
     }))
 
     # Old version:
