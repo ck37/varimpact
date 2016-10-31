@@ -1,7 +1,7 @@
 VarImpact TODOs
 
 Alan priorities:
-- HIGHEST: Add CV-TMLE (also Mark priority!)
+- HIGHEST: Add CV-TMLE (also Mark priority!) - IN PROGRESS, largely working.
 - Unadjusted difference in means estimate (t-test) to compare to TMLE estimate
 - Cell sizes in the groups that it chooses (A = 0 and A = 1)
 - Option of ratios (delta method), rather than differences
@@ -62,9 +62,8 @@ Chris items:
  using newmed='nn' instead
 
 From existing documentation:
-- Implementing CV-TMLE
 - Allow reporting of results that randomly do not have estimates for some of validation samples.
 
 Wishlist
 - Support clustering or variable reduction algorithms other than HOPACH.
-- Support more than 2 external folds.
+- Support more than 2 external (CV-TMLE) folds.

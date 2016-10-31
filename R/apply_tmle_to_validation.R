@@ -11,7 +11,10 @@ apply_tmle_to_validation = function(Y,
   # Transform Y to Y_star, needed for later fluctuation step.
   Y_star = Y
   if (tmle$map_to_ystar) {
-    Y_star = (Y_star - tmle$ab[1]) / diff(tmle$ab)
+    # Use the Qbounds from the full range of Y,
+    # not the tmle$ab that is based only on training data.
+    # Y_star = (Y_star - tmle$ab[1]) / diff(tmle$ab)
+    Y_star = (Y_star - tmle$Qbounds[1]) / diff(tmle$Qbounds)
   }
 
   if (max(Y_star) > 1 | min(Y_star) < 0) {

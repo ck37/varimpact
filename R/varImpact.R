@@ -648,6 +648,7 @@ varImpact = function(Y, data, V = 2,
             # 3. Estimate g on training data.
             tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
                                     Q.lib = Q.library,
+                                    Qbounds = range(Y),
                                     g.lib = g.library, verbose = F),
                       silent = !verbose)
 
@@ -811,10 +812,6 @@ varImpact = function(Y, data, V = 2,
       var_results$EY1V = pooled_max$thetas
       var_results$thetaV = var_results$EY1V - var_results$EY0V
 
-      # Influence_curves here is a matrix, with one column per fold.
-      var_results$varICV = sapply(1:V, function(index) {
-        var(pooled_max$influence_curves[, index] - pooled_min$influence_curves[, index])
-      })
 
       # Save how many observations were in each validation fold.
       var_results$nV = sapply(fold_results, function(x) x$obs_validation)
@@ -827,16 +824,25 @@ varImpact = function(Y, data, V = 2,
 
       var_results$labV = labels
 
-      if (verbose) {
-        signif_digits = 4
-        cat("[Min] EY0:", signif(mean(pooled_min$thetas), signif_digits),
-          "Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
-        cat("[Max] EY1:", signif(mean(pooled_max$thetas), signif_digits),
-          "Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
-        cat("ATEs:", signif(var_results$thetaV, signif_digits), "\n")
-        cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
-        cat("Labels:\n")
-        print(labels)
+      # If either of the thetas is null it means that all CV-TMLE folds failed.
+      if (!is.null(pooled_min$thetas)) {
+
+        # Influence_curves here is a matrix, with one column per fold.
+        var_results$varICV = sapply(1:V, function(index) {
+          var(pooled_max$influence_curves[, index] - pooled_min$influence_curves[, index])
+        })
+
+        if (verbose) {
+          signif_digits = 4
+          cat("[Min] EY0:", signif(mean(pooled_min$thetas), signif_digits),
+              "Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
+          cat("[Max] EY1:", signif(mean(pooled_max$thetas), signif_digits),
+              "Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
+          cat("ATEs:", signif(var_results$thetaV, signif_digits), "\n")
+          cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
+          cat("Labels:\n")
+          print(labels)
+        }
       }
 
       # Return results for this factor variable.
@@ -957,10 +963,10 @@ varImpact = function(Y, data, V = 2,
           labs = names(table(Atnew))
           Atnew = as.numeric(Atnew) - 1
           Avnew = as.numeric(Avnew) - 1
-          numcat.cont[i] = length(labs)
+          numcat.cont[var_i] = length(labs)
           # change this to match what was done for factors - once
           # cats.cont[[i]]=as.numeric(na.omit(unique(Atnew)))
-          cats.cont[[i]] = as.numeric(names(table(Atnew)))
+          cats.cont[[var_i]] = as.numeric(names(table(Atnew)))
           ### acit.numW is just same as data.cont.dist except with NA's replaced by
           ### 0's.
           if (!exists("miss.cont") || is.null(miss.cont)) {
@@ -1011,7 +1017,7 @@ varImpact = function(Y, data, V = 2,
             deltat = deltat[deltat == 1]
           }
 
-          vals = cats.cont[[i]]
+          vals = cats.cont[[var_i]]
           Atnew[is.na(Atnew)] = -1
           Avnew[is.na(Avnew)] = -1
 
@@ -1030,11 +1036,11 @@ varImpact = function(Y, data, V = 2,
             # Tally how many bins fail with an error.
             error_count = 0
 
-            if (verbose) cat("Estimating training TMLEs", paste0("(", numcat.cont[i], " bins)"))
+            if (verbose) cat("Estimating training TMLEs", paste0("(", numcat.cont[var_i], " bins)"))
 
             training_estimates = list()
 
-            for (j in 1:numcat.cont[i]) {
+            for (j in 1:numcat.cont[var_i]) {
               # Create a treatment indicator, where 1 = obs in this bin
               # and 0 = obs not in this bin.
 
@@ -1046,6 +1052,9 @@ varImpact = function(Y, data, V = 2,
               # 3. Estimate g on training data.
               tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
                                                Q.lib = Q.library,
+                                               # Pass in Q bounds from the full
+                                               # range of Y (training & test).
+                                               Qbounds = range(Y),
                                                g.lib = g.library, verbose = verbose),
                                 silent = !verbose)
 
@@ -1055,7 +1064,7 @@ varImpact = function(Y, data, V = 2,
               training_estimates[[j]] = tmle_result
 
               # Old way:
-              #res = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
+              #res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
               #                        g.lib = g.library, verbose = verbose), silent = T)
 
               if (class(tmle_result) == "try-error") {
@@ -1100,7 +1109,7 @@ varImpact = function(Y, data, V = 2,
 
             # This fold failed if we got an error for each category
             # Or if the minimum and maximum bin is the same.
-            if (error_count == numcat.cont[i] | minj == maxj) {
+            if (error_count == numcat.cont[var_i] | minj == maxj) {
               message = paste("Fold", fold_k, "failed,")
               if (error_count == num.cat) {
                 message = paste(message, "all", num.cat, "levels had errors.")
@@ -1213,14 +1222,6 @@ varImpact = function(Y, data, V = 2,
       var_results$EY1V = pooled_max$thetas
       var_results$thetaV = var_results$EY1V - var_results$EY0V
 
-      # Influence_curves here is a matrix, with one column per fold.
-      var_results$varICV = sapply(1:V, function(index) {
-        if (ncol(pooled_max$influence_curves) >= index) {
-          var(pooled_max$influence_curves[, index] - pooled_min$influence_curves[, index])
-        } else {
-          NA
-        }
-      })
 
       # Save how many observations were in each validation fold.
       var_results$nV = sapply(fold_results, function(x) x$obs_validation)
@@ -1233,16 +1234,31 @@ varImpact = function(Y, data, V = 2,
 
       var_results$labV = labels
 
-      if (verbose) {
-        signif_digits = 4
-        cat("[Min] EY0:", signif(mean(pooled_min$thetas), signif_digits),
-            "Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
-        cat("[Max] EY1:", signif(mean(pooled_max$thetas), signif_digits),
-            "Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
-        cat("ATEs:", signif(var_results$thetaV, signif_digits), "\n")
-        cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
-        cat("Labels:\n")
-        print(labels)
+      # If either of the thetas is null it means that all CV-TMLE folds failed.
+      if (!is.null(pooled_min$thetas)) {
+
+        # Influence_curves here is a matrix, with one column per fold.
+        var_results$varICV = sapply(1:V, function(index) {
+          if (ncol(pooled_max$influence_curves) >= index) {
+            var(pooled_max$influence_curves[, index] - pooled_min$influence_curves[, index])
+          } else {
+            NA
+          }
+        })
+
+
+        if (verbose) {
+          signif_digits = 4
+          cat("[Min] EY0:", signif(mean(pooled_min$thetas), signif_digits),
+              "Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
+          cat("[Max] EY1:", signif(mean(pooled_max$thetas), signif_digits),
+              "Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
+          cat("ATEs:", signif(var_results$thetaV, signif_digits), "\n")
+          cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
+          cat("Labels:\n")
+          print(labels)
+        }
+
       }
 
       # Return results for this factor variable.

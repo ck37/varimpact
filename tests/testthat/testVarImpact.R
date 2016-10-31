@@ -129,6 +129,9 @@ vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose=T, family="gaussia
 
 #################################
 # mlbench BreastCancer dataset.
+
+context("BreastCancer dataset")
+
 data(BreastCancer, package="mlbench")
 data = BreastCancer
 
@@ -150,7 +153,7 @@ if (.Platform$GUI == "RStudio") {
   doMC::registerDoMC()
 }
 # This takes 1-2 minutes.
-vim = varImpact(Y = data$Y, X)
+vim = varImpact(Y = data$Y, X, verbose = T)
 vim$time
 vim
 
@@ -169,7 +172,7 @@ for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
 
 ####################################
 # Basic example
-vim <- varImpact(Y = Y, data = X)
+vim <- varImpact(Y = Y, data = X, verbose = T)
 vim
 vim$results_all
 # In this test all variables are significant, which is rare.

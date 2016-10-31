@@ -25,8 +25,9 @@ estimate_tmle2 = function(Y,
                         Q.lib,
                         g.lib,
                         id = 1:length(Y),
-                        Qbounds=NULL,
-                        gbound=0.025, alpha = 0.995,
+                        Qbounds = NULL,
+                        gbound = 0.025,
+                        alpha = 0.995,
                         fluctuation="logistic",
                         verbose = F) {
 
@@ -101,7 +102,7 @@ estimate_tmle2 = function(Y,
                              A = A,
                              Delta = delta,
                              alpha = alpha,
-                             Qbounds = NULL,
+                             Qbounds = Qbounds,
                              maptoYstar = map_to_ystar,
                              family = family)
 
