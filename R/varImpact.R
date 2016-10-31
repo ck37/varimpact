@@ -354,16 +354,18 @@ varImpact = function(Y, data, V = 2,
       # cat("Numeric", k, "", colnames(X)[k], "mean missing:", mean(is.na(Xt)), "\n")
 
       # Suppress the warning that can occur when there are fewer than 10 bins.
-      # We should be able to see this as tst containing fewer than 10 columns.
+      # We should be able to see this as var_binned containing fewer than 10 columns.
       # Warning is in .cut2(): min(xx[xx > upper])
       # "no non-missing arguments to min; returning Inf"
       suppressWarnings({
         # Discretize into up to 10 deciles.
         # TODO: number of bins should be a function argument.
-        tst = as.numeric(arules::discretize(Xt, method = "frequency", categories = 10,
-                                            ordered = T))
+        var_binned = as.numeric(arules::discretize(Xt,
+                                                   method = "frequency",
+                                                   categories = 10,
+                                                   ordered = T))
       })
-      Xnew = cbind(Xnew, tst)
+      Xnew = cbind(Xnew, var_binned)
     }
     colnames(Xnew) = varn
     data.cont.dist = Xnew
@@ -373,7 +375,7 @@ varImpact = function(Y, data, V = 2,
     xp = ncol(data.cont.dist)
     n.cont = nrow(data.cont.dist)
 
-    sna = apply(data.cont.dist, 2, sum_na)
+    sum_nas = apply(data.cont.dist, 2, sum_na)
     nmesX = colnames(data.cont.dist)
     miss.cont = NULL
     nmesm = NULL
@@ -384,10 +386,9 @@ varImpact = function(Y, data, V = 2,
     # Loop over each binned numeric variable.
     for (k in 1:xp) {
       # Check if that variable has any missing values.
-      if (sna[k] > 0) {
-        # TODO: is this correct? shouldn't it be is.na() == T?
+      if (sum_nas[k] > 0) {
         # The effect is that the basis is set to 1 if it exists and 0 if it's missing.
-        ix = as.numeric(is.na(data.cont.dist[, k]) == F)
+        ix = as.numeric(!is.na(data.cont.dist[, k]))
         miss.cont = cbind(miss.cont, ix)
         nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
       }
