@@ -24,8 +24,15 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
 
   # Estimate epsilon
   if (fluctuation == "logistic") {
-    epsilon = coef(glm(Y_star ~ -1 + offset(Q_hat) + H1W, data = data, family = "binomial"))
+    #epsilon = coef(glm(Y_star ~ -1 + offset(Q_hat) + H1W, data = data, family = "binomial"))
+    # Use more stable version where clever covariate is the weight, and now we
+    # have an intercept. Causal 2, Lecture 3, slide 51.
+    # We have to suppressWarnings about "non-integrate #successes in binomial glm".
+    suppressWarnings({
+      epsilon = coef(glm(Y_star ~ offset(Q_hat), weights = H1W, data = data, family = "binomial"))
+    })
   } else {
+    stop("Only support logistic fluctuation currently.")
     # TBD.
   }
 
