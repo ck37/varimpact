@@ -470,7 +470,8 @@ varImpact = function(Y, data, V = 2,
       # for (fold_k in 1:V) {
 
       # This is looping sequentially for now.
-      fold_results = foreach::foreach(fold_k = 1:V) %do% {
+      #fold_results = foreach::foreach(fold_k = 1:V) foreach::`%do%` {
+      fold_results = lapply(1:V, function(fold_k) {
         if (verbose) cat("i =", var_i, "V =", fold_k, "\n")
 
         # All data not in this fold is the training data.
@@ -785,6 +786,7 @@ varImpact = function(Y, data, V = 2,
         # Return results for this fold.
         fold_result
       }
+      ) # End lapply if we're not using foreach.
       # Done looping over each fold.
 
       # Create list to save results for this variable.
