@@ -31,19 +31,22 @@ vim$time
 # Be explict about printing for code coverage of tests.
 print(vim)
 vim$results_all
+vim$results_by_fold
 # names(vim)
 exportLatex(vim)
-# Clean up
-file.remove(c("varimpByV.tex", "varImpAll.tex", "varimpConsistent.tex"))
+# Clean up - will get a warning if there were no consistent results.
+suppressWarnings({
+  file.remove(c("varimpByV.tex", "varImpAll.tex", "varimpConsistent.tex"))
+})
 
 # And try a gaussian outcome.
 vim = varImpact(Y = Y_gaus, data = X[, 1:4], V = 2, verbose=T, family="gaussian")
 vim
 
 # Test imputation
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T, impute="zero")
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T, impute="median")
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T, impute="knn")
+vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "zero")
+vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "median")
+vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "knn")
 
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
@@ -52,12 +55,12 @@ if (.Platform$GUI == "RStudio") {
   doMC::registerDoMC()
   # Check how many cores we're using.
   foreach::getDoParWorkers()
+  vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T)
 }
 
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T)
-
 # Test disabling parallelization.
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T, parallel = F)
+vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, parallel = F)
+
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
   # Return to single core usage.
@@ -73,10 +76,10 @@ if (.Platform$GUI == "RStudio") {
   # Check that we're using the snow cluster.
   expect_equal(foreach::getDoParName(), "doSNOW")
   expect_equal(foreach::getDoParWorkers(), 2)
-}
 
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T)
-vim
+  vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T)
+  vim
+}
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
@@ -100,8 +103,10 @@ summary(X_fac)
 # Basic factor test.
 # TODO: this generates multiple errors for fac_4
 vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose=T)
+vim
 # And gaussian
 vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose=T, family="gaussian")
+vim
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
@@ -109,11 +114,11 @@ if (.Platform$GUI == "RStudio") {
   doMC::registerDoMC()
   # Check how many cores we're using.
   foreach::getDoParWorkers()
-}
 
-# Factor variables with parallelization.
-vim = varImpact(Y = Y_bin, data = X_fac[, 1:4], verbose=T)
-vim
+  # Factor variables with parallelization.
+  vim = varImpact(Y = Y_bin, data = X_fac[, 1:4], verbose=T)
+  vim
+}
 
 context("varImpact(). Dataset C: numeric and factor variables")
 
@@ -124,8 +129,10 @@ X_combined = cbind(X[1:3], X_fac[4:5])
 # Basic combined test.
 vim = varImpact(Y = Y_bin, data = X_combined, V = 2, verbose=T)
 vim
+
 # And gaussian
 vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose=T, family="gaussian")
+vim
 
 #################################
 # mlbench BreastCancer dataset.
@@ -172,9 +179,11 @@ for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
 
 ####################################
 # Basic example
+# TODO: fix warnings here, due to failed folds.
 vim <- varImpact(Y = Y, data = X, verbose = T)
 vim
 vim$results_all
+vim$results_by_fold
 # In this test all variables are significant, which is rare.
 exportLatex(vim)
 # Clean up
