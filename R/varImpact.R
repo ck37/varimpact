@@ -166,11 +166,20 @@
 #' vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 #'
 #' @export
-varImpact = function(Y, data, V = 2,
+varImpact = function(Y,
+                     data,
+                     V = 2,
                      Q.library = c("SL.glmnet", "SL.mean"),
-                     g.library = c("SL.stepAIC"), family = "binomial",
-                     minYs = 15, minCell = 0, adjust_cutoff = 10, corthres = 0.8,
-                     impute = "knn", miss.cut = 0.5, verbose=F, parallel = T,
+                     g.library = c("SL.stepAIC"),
+                     family = "binomial",
+                     minYs = 15,
+                     minCell = 0,
+                     adjust_cutoff = 10,
+                     corthres = 0.8,
+                     impute = "knn",
+                     miss.cut = 0.5,
+                     verbose = F,
+                     parallel = T,
                      digits = 4) {
 
   # Time the full function execution.
