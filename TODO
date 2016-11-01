@@ -1,12 +1,15 @@
 VarImpact TODOs
 
 Alan priorities:
-- HIGHEST: Add CV-TMLE (also Mark priority!) - IN PROGRESS, largely working.
+- HIGHEST: Add CV-TMLE (also Mark priority!)
+  * IN PROGRESS, largely working.
+  * Needs more testing with non-binary outcomes. E.g. transform theta?
 - Unadjusted difference in means estimate (t-test) to compare to TMLE estimate
 - Cell sizes in the groups that it chooses (A = 0 and A = 1)
 - Option of ratios (delta method), rather than differences
    - Alan will email Minh, maybe Jeremy too. (may be embedded in TMLE)
 - In ByV table, use the labels of the quantiles to show the actual range.
+- Specify names of variables to use for variable importance
 
 Chris items:
 * Arguments
@@ -56,10 +59,12 @@ Chris items:
       there may be only a single value for all observations.
   - Error in y %*% rep(1, nc) : non-conformable arguments
      -- When estimating TMLE
+  - "Missing value(s) in medoidsdata in collap()"
 * WARNINGS
   - Warning in collap(data, level, d, dmat, newmed) (conducting HOPACH, at least on factors):
   Not enough medoids to use newmed='medsil' in collap() -
  using newmed='nn' instead
+   (CK: suppressing warnings currently to avoid this one.)
 
 From existing documentation:
 - Allow reporting of results that randomly do not have estimates for some of validation samples.
