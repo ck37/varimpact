@@ -80,7 +80,8 @@ estimate_tmle2 = function(Y,
   # Estimate g
   # Using modified version of tmle::estimateG
   #g_model = SuperLearner::SuperLearner(Y = A, X = W, SL.library = g.lib,
-  g = tmle_estimate_g(d = cbind(A[delta == 1], W[delta == 1, ]),
+  #g = tmle_estimate_g(d = cbind(A[delta == 1], W[delta == 1, ]),
+  g = tmle_estimate_g(d = cbind(A, W),
                       SL.library = g.lib,
                       verbose = F,
                       outcome = "A")
