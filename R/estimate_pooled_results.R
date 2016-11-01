@@ -25,6 +25,7 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
     #}
 
     # Estimate epsilon
+    if (verbose) cat("Estimating epsilon\n")
     if (fluctuation == "logistic") {
       #epsilon = coef(glm(Y_star ~ -1 + offset(Q_hat) + H1W, data = data, family = "binomial"))
       # Use more stable version where clever covariate is the weight, and now we
@@ -38,25 +39,45 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
       # TBD.
     }
 
+    if (verbose) cat("Fluctuating Q_star\n")
+
     # Fluctuate Q to get Q_star
     Q_star = data$Q_hat + epsilon * data$H1W
 
+    if (verbose) cat("Transforming Q_star\n")
     #if (length(unique(data$Y)) == 2) {
     Q_star = plogis(Q_star)
     #}
 
+    if (verbose) cat("Estimating thetas\n")
     # Estimate parameter on every validation fold.
     thetas = tapply(Q_star, data$fold_num, mean, na.rm = T)
 
     # Take average across folds to get final estimate.
     #theta = mean(thetas)
 
+    # Move Q_star into the data so that it can be analyzed per-fold.
+    data$Q_star = Q_star
+    rm(Q_star)
+
+    if (verbose) cat("Calculating influence curves\n")
     # Get influence curve per fold.
-    # Influence_curves here is a matrix, with one column per fold.
-    influence_curves = simplify2array(base::by(data, data$fold_num, function(fold_data) {
+    # Influence_curves here is a list, where each element is a result.
+    # We can't convert to a matrix because lengths are different.
+    # simplify2array(
+    influence_curves = base::by(data, data$fold_num, function(fold_data) {
+      if (F && verbose) {
+        with(fold_data,
+             cat("A:", length(A), "g1W_hat:", length(g1W_hat), "Y_star:", length(Y_star),
+            "Q_star:", length(Q_star), "\n"))
+      }
       #with(fold_data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)
-      with(fold_data, (A / g1W_hat) * (Y_star - Q_star) + Q_star - mean(Q_star, na.rm=T))
-    }))
+      result = with(fold_data, (A / g1W_hat) * (Y_star - Q_star) + Q_star - mean(Q_star, na.rm=T))
+      #if (verbose) cat("Result:", class(result), "Length:", length(result), "\n")
+      result
+    })
+
+    #if (verbose) cat("IC class:", class(influence_curves), "\n")
 
     # Old version:
     #influence_curve = with(data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)

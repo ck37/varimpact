@@ -53,6 +53,17 @@ estimate_tmle2 = function(Y,
 
   delta = delta[inc]
 
+  # Check for any remaining missing data.
+  missing_vals = sum(is.na(A[delta]))
+  if (missing_vals != 0) {
+    cat("Warning: found", missing_vals, "NAs in A.\n")
+  }
+
+  missing_vals = sum(is.na(W[delta, ]))
+  if (missing_vals != 0) {
+    cat("Warning: found", missing_vals, "NAs in W.\n")
+  }
+
 
   # Here we are using tmle but not using the treatment effect estimate.
   # We're actually using the underlying variables to estimate Y_a.
@@ -65,10 +76,13 @@ estimate_tmle2 = function(Y,
     tmle.1 = NULL
   }
 
+  if (verbose) cat("Estimating g\n")
   # Estimate g
   # Using modified version of tmle::estimateG
   #g_model = SuperLearner::SuperLearner(Y = A, X = W, SL.library = g.lib,
-  g = tmle_estimate_g(d = cbind(A, W), SL.library = g.lib, verbose = F,
+  g = tmle_estimate_g(d = cbind(A[delta == 1], W[delta == 1, ]),
+                      SL.library = g.lib,
+                      verbose = F,
                       outcome = "A")
 
   # Handle gBounds - code from tmle::tmle().
@@ -97,6 +111,8 @@ estimate_tmle2 = function(Y,
   # This is copied from within tmle::tmle()
   map_to_ystar = fluctuation == "logistic"
 
+  if (verbose) cat("TMLE init stage1\n")
+
   # Run tmle stage 1
   stage1 = tmle_init_stage1(Y = Y, Q = NULL,
                              A = A,
@@ -105,6 +121,8 @@ estimate_tmle2 = function(Y,
                              Qbounds = Qbounds,
                              maptoYstar = map_to_ystar,
                              family = family)
+
+  if (verbose) cat("TMLE q\n")
 
   # Estimate Qinit
   # cvQinit = F by default, meaning that we don't need CV.SuperLearner.
@@ -115,7 +133,7 @@ estimate_tmle2 = function(Y,
                       Delta = delta,
                       SL.library = Q.lib,
                       family = family,
-                      verbose = F,
+                      verbose = verbose,
                       maptoYstar = map_to_ystar,
                       Qbounds = stage1$Qbounds)
 
@@ -144,7 +162,7 @@ estimate_tmle2 = function(Y,
                     g.Deltaform,
                     g.lib,
                     id,
-                    verbose = F,
+                    verbose = verbose,
                     "missingness mechanism",
                     outcome="D")
   })
@@ -154,6 +172,8 @@ estimate_tmle2 = function(Y,
   if(all(g0W.total==0)){g0W.total <- rep(10^-9, length(g0W.total))}
   H1W <- A/g1W.total
   H0W <- (1-A)/g0W.total
+
+  if (verbose) cat("Estimating epsilon\n")
 
   suppressWarnings(
     epsilon <- coef(glm(stage1$Ystar~-1 + offset(q$Q[,"QAW"]) + H0W + H1W, family=q$family, subset=delta==1))
@@ -170,6 +190,8 @@ estimate_tmle2 = function(Y,
   }
   colnames(q$Q) <- c("QAW", "Q0W", "Q1W")
   q$Q <- q$Q[,-1]
+
+  if (verbose) cat("tmle::calcParameters\n")
   res <- tmle::calcParameters(Ystar, A, I.Z=rep(1, length(Ystar)), delta, g1W.total, g0W.total, Qstar,
                         mu1=mean(Qstar[,"Q1W"]), mu0=mean(Qstar[,"Q0W"]), id, family)
 
