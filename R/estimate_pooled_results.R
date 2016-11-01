@@ -20,9 +20,9 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
     n = nrow(data)
 
     # If Y is binary, take logit of Q.
-    if (length(unique(data$Y)) == 2) {
-      data$Q_hat = qlogis(data$Q_hat)
-    }
+    #if (length(unique(data$Y)) == 2) {
+    data$Q_hat = qlogis(data$Q_hat)
+    #}
 
     # Estimate epsilon
     if (fluctuation == "logistic") {
@@ -41,9 +41,9 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
     # Fluctuate Q to get Q_star
     Q_star = data$Q_hat + epsilon * data$H1W
 
-    if (length(unique(data$Y)) == 2) {
-      Q_star = plogis(Q_star)
-    }
+    #if (length(unique(data$Y)) == 2) {
+    Q_star = plogis(Q_star)
+    #}
 
     # Estimate parameter on every validation fold.
     thetas = tapply(Q_star, data$fold_num, mean, na.rm = T)
