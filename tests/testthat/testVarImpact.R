@@ -187,4 +187,6 @@ vim$results_by_fold
 # In this test all variables are significant, which is rare.
 exportLatex(vim)
 # Clean up
-file.remove(c("varimpByV.tex", "varImpAll.tex", "varimpConsistent.tex"))
+suppressWarnings({ # Suppress a warning when no results are consistent.
+  file.remove(c("varimpByV.tex", "varImpAll.tex", "varimpConsistent.tex"))
+})
