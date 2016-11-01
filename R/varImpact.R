@@ -402,12 +402,12 @@ varImpact = function(Y, data, V = 2,
       impute_info = 0
     } else if (impute == "median") {
       impute_info = caret::preProcess(data.num, method = "medianImpute")
-      data.numW = caret::predict.preProcess(impute_info, data.num)
+      data.numW = predict(impute_info, data.num)
     } else if (impute == "mean") {
       stop("Mean imputation not implemented yet. Please use another imputation method.")
     } else if (impute == "knn") {
       impute_info = caret::preProcess(data.num, method = "knnImpute")
-      data.numW = caret::predict.preProcess(impute_info, data.num)
+      data.numW = predict(impute_info, data.num)
     }
 
     # Confirm that there are no missing values remaining in data.numW
