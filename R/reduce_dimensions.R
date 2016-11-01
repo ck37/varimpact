@@ -40,9 +40,11 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
     # K = number of variables to choose.
     # kmax = maximum number of children at each node in the tree.
     # khigh = max # of children at each node when computing mss, usually the same.
+    suppressWarnings({ # Suppress warnings about newmed = "medsil" in collap().
     hopach.1 = try(hopach::hopach(t(data), dmat = mydist, mss = "mean", verbose = verbose,
                                   K = max_variables, kmax = 3, khigh = 3),
                    silent = !verbose)
+    })
     if (class(hopach.1) == "try-error") {
       if (verbose) {
         cat("Hopach attempt 1 fail.\n")
@@ -51,9 +53,12 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
 
       # Attempt #2.
       # We transpose Wt to cluster the columns rather than rows.
-      hopach.1 <- try(hopach::hopach(t(data), dmat = mydist, mss = "med", verbose = verbose,
-                                     K = max_variables, kmax = 3, khigh = 3),
+      suppressWarnings({ # Suppress warnings about newmed = "medsil" in collap().
+        hopach.1 <- try(hopach::hopach(t(data), dmat = mydist, mss = "med",
+                                       verbose = verbose,
+                                       K = max_variables, kmax = 3, khigh = 3),
                       silent = !verbose)
+      })
     }
     if (class(hopach.1) == "try-error") {
       if (verbose) {
@@ -63,9 +68,13 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
 
       # Attempt #3. Last try!
       # We transpose Wt to cluster the columns rather than rows.
-      hopach.1 <- try(hopach::hopach(t(data), dmat = mydist, mss = "med", verbose = F,
-                                     K = max_variables, kmax = 3, khigh = 3, newmed="nn"),
+      suppressWarnings({ # Suppress warnings about newmed = "medsil" in collap().
+        hopach.1 <- try(hopach::hopach(t(data), dmat = mydist, mss = "med",
+                                       verbose = F,
+                                       K = max_variables, kmax = 3, khigh = 3,
+                                       newmed="nn"),
                       silent = !verbose)
+      })
     }
     if (class(hopach.1) == "try-error") {
       if (verbose) {
