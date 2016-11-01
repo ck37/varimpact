@@ -829,9 +829,9 @@ varImpact = function(Y, data, V = 2,
       # If either of the thetas is null it means that all CV-TMLE folds failed.
       if (!is.null(pooled_min$thetas)) {
 
-        # Influence_curves here is a matrix, with one column per fold.
+        # Influence_curves here is a list, with an element for each fold.
         var_results$varICV = sapply(1:V, function(index) {
-          var(pooled_max$influence_curves[, index] - pooled_min$influence_curves[, index])
+          var(pooled_max$influence_curves[[index]] - pooled_min$influence_curves[[index]])
         })
 
         if (verbose) {
