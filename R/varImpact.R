@@ -29,9 +29,7 @@
 #'  basis for W, that uses specified minimum number of adjustment variables.
 #'  \item Finds min and max estimate of E(Ya) w.r.t. a. after looping through
 #'  all values of A* (after processed by histogram)
-#'  \item Returns estimate of E(Ya(max)-Ya(min)) with SE
-#'  \item Things to do include implementing CV-TMLE and allow reporting of
-#'  results that randomly do not have estimates for some of validation samples.
+#'  \item Returns estimate of E(Ya(max)-Ya(min)) with SE using CV-TMLE.
 #' }
 #' *HOPACH is "Hierarchical Ordered Partitioning and Collapsing Hybrid"
 #'
@@ -164,8 +162,8 @@
 #' # Use multicore parallelization to speed up processing.
 #' \dontrun{
 #' doMC::registerDoMC()
-#' vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 #' }
+#' vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 #'
 #' @export
 varImpact = function(Y, data, V = 2,
