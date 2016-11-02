@@ -5,16 +5,20 @@
 \alias{varImpact}
 \title{Variable importance estimation using causal inference (TMLE)}
 \usage{
-varImpact(Y, data, V = 2, Q.library = c("SL.glmnet", "SL.mean"),
-  g.library = c("SL.stepAIC"), family = "binomial", minYs = 15,
-  minCell = 0, adjust_cutoff = 10, corthres = 0.8, impute = "knn",
-  miss.cut = 0.5, verbose = F, parallel = T, digits = 4)
+varImpact(Y, data, A_names = colnames(data), V = 2,
+  Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.stepAIC"),
+  family = "binomial", minYs = 15, minCell = 0, adjust_cutoff = 10,
+  corthres = 0.8, impute = "knn", miss.cut = 0.5, verbose = F,
+  parallel = T, digits = 4)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}
 
 \item{data}{data frame of predictor variables of interest for
 which function returns VIM's. (possibly a matrix?)}
+
+\item{A_names}{Names of the variables for which we want to estimate importance,
+a subset of the data argument.}
 
 \item{V}{Number of cross-validation folds.}
 

@@ -36,6 +36,8 @@
 #' @param Y outcome of interest (numeric vector)
 #' @param data data frame of predictor variables of interest for
 #' which function returns VIM's. (possibly a matrix?)
+#' @param A_names Names of the variables for which we want to estimate importance,
+#'  a subset of the data argument.
 #' @param V Number of cross-validation folds.
 #' @param Q.library library used by SuperLearner for model of outcome
 #' versus predictors
@@ -168,6 +170,7 @@
 #' @export
 varImpact = function(Y,
                      data,
+                     A_names = colnames(data),
                      V = 2,
                      Q.library = c("SL.glmnet", "SL.mean"),
                      g.library = c("SL.stepAIC"),
@@ -471,6 +474,11 @@ varImpact = function(Y,
       nameA = names.fac[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "factor variables\n")
+
+      if (!nameA %in% A_names) {
+        if (verbose) cat("Skipping", nameA, " as it is not in A_names.\n")
+        return(NULL)
+      }
 
       # Loop over each fold.
       # TODO: incorporate this loop into parallelization.
@@ -905,6 +913,11 @@ varImpact = function(Y,
       nameA = names.cont[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "numeric variables\n")
+
+      if (!nameA %in% A_names) {
+        if (verbose) cat("Skipping", nameA, " as it is not in A_names.\n")
+        return(NULL)
+      }
 
       #for (fold_k in 1:V) {
       # This is looping sequentially for now.

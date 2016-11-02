@@ -48,6 +48,9 @@ vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "zero")
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "median")
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "knn")
 
+# Test a subset of columns.
+vim = varImpact(Y = Y_bin, data = X, A_names = colnames(X)[1:4], verbose = T)
+vim
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
@@ -163,6 +166,14 @@ if (.Platform$GUI == "RStudio") {
 vim = varImpact(Y = data$Y, X, verbose = T)
 vim$time
 vim
+
+# Test a subset of columns for A_names.
+colnames(X)[1:3]
+vim = varImpact(Y = data$Y, X, A_names = colnames(X)[1:3], verbose = T)
+vim$time
+vim
+vim$results_all
+
 
 context("varImpact() .Dataset D: basic example")
 
