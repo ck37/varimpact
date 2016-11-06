@@ -795,7 +795,7 @@ varImpact = function(Y,
             }
           }
         }
-        cat("Completed fold", fold_k, "\n")
+        if (verbose) cat("Completed fold", fold_k, "\n")
         fold_result$message = "Succcess"
 
         # Return results for this fold.
@@ -827,7 +827,17 @@ varImpact = function(Y,
 
       var_results$EY0V = pooled_min$thetas
       var_results$EY1V = pooled_max$thetas
-      var_results$thetaV = var_results$EY1V - var_results$EY0V
+
+      if (length(var_results$EY1V) == length(var_results$EY0V)) {
+        var_results$thetaV = var_results$EY1V - var_results$EY0V
+      } else {
+        if (verbose) {
+          cat("Error: EY1V and EY0V are different lengths. EY1V =",
+              length(var_results$EY1V), "EY0V =", length(var_results$EY0V), "\n")
+        }
+        var_results$thetaV = rep(NA, max(length(var_results$EY1V),
+                                         length(var_results$EY0V)))
+      }
 
 
       # Save how many observations were in each validation fold.
@@ -846,7 +856,12 @@ varImpact = function(Y,
 
         # Influence_curves here is a list, with an element for each fold.
         var_results$varICV = sapply(1:V, function(index) {
-          var(pooled_max$influence_curves[[index]] - pooled_min$influence_curves[[index]])
+          if (length(pooled_max$influence_curves) >= index &&
+              length(pooled_min$influence_curves) >= index) {
+            var(pooled_max$influence_curves[[index]] - pooled_min$influence_curves[[index]])
+          } else {
+            NA
+          }
         })
 
         if (verbose) {
@@ -1242,7 +1257,16 @@ varImpact = function(Y,
 
       var_results$EY0V = pooled_min$thetas
       var_results$EY1V = pooled_max$thetas
-      var_results$thetaV = var_results$EY1V - var_results$EY0V
+      if (length(var_results$EY1V) == length(var_results$EY0V)) {
+        var_results$thetaV = var_results$EY1V - var_results$EY0V
+      } else {
+        if (verbose) {
+          cat("Error: EY1V and EY0V are different lengths. EY1V =",
+              length(var_results$EY1V), "EY0V =", length(var_results$EY0V), "\n")
+        }
+        var_results$thetaV = rep(NA, max(length(var_results$EY1V),
+                                         length(var_results$EY0V)))
+      }
 
 
       # Save how many observations were in each validation fold.
@@ -1261,7 +1285,8 @@ varImpact = function(Y,
 
         # Influence_curves here is a list, with each element a set of results.
         var_results$varICV = sapply(1:V, function(index) {
-          if (length(pooled_max$influence_curves) >= index) {
+          if (length(pooled_max$influence_curves) >= index &&
+              length(pooled_min$influence_curves) >= index) {
             var(pooled_max$influence_curves[[index]] - pooled_min$influence_curves[[index]])
           } else {
             NA
