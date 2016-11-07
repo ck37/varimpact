@@ -643,8 +643,8 @@ varImpact = function(Y,
         # in either (< minYs)
         # Applies only to binary outcomes, not continuous.
         if ((length(unique(Yt)) == 2 && (num.cat < 2 || min(nYt, nYv) < minYs)) ||
-            mean(is_constant) == 1) {
-          if (mean(is_constant) == 1) {
+            (length(is_constant) > 0 && mean(is_constant) == 1)) {
+          if (length(is_constant) > 0 && mean(is_constant) == 1) {
             error_msg = paste("Skipping", nameA, "because HOPACH reduced W to",
                               "all constant columns.")
           } else if (num.cat < 2) {
