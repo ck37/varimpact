@@ -54,37 +54,47 @@ estimate_tmle2 = function(Y,
   delta = delta[inc]
 
   # Check for any remaining missing data.
-  missing_vals = sum(is.na(A[delta]))
+
+  missing_vals = sum(is.na(W))
+  if (missing_vals != 0) {
+    cat("Warning: found", missing_vals, "NAs in W.\n")
+
+    na_sum = sapply(W, function(col) sum(is.na(col)))
+    cat("Columns with NAs:\n")
+    print(na_sum[na_sum > 0])
+  }
+
+  missing_vals = sum(is.na(A))
   if (missing_vals != 0) {
     cat("Warning: found", missing_vals, "NAs in A.\n")
   }
 
-  missing_vals = sum(is.na(W[delta, ]))
+  missing_vals = sum(is.na(Y[delta]))
   if (missing_vals != 0) {
-    cat("Warning: found", missing_vals, "NAs in W.\n")
+    cat("Warning: found", missing_vals, "NAs in Y.\n")
   }
-
 
   # Here we are using tmle but not using the treatment effect estimate.
   # We're actually using the underlying variables to estimate Y_a.
   # TODO: disable this call, we're just running it now to double-check
   # the custom results.
   if (F) {
-  tmle.1 = tmle::tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
+    tmle.1 = tmle::tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
                       Q.SL.library = Q.lib, family = family, verbose = verbose)
   } else {
     tmle.1 = NULL
   }
 
   if (verbose) cat("Estimating g\n")
-  # Estimate g
+
   # Using modified version of tmle::estimateG
   #g_model = SuperLearner::SuperLearner(Y = A, X = W, SL.library = g.lib,
   #g = tmle_estimate_g(d = cbind(A[delta == 1], W[delta == 1, ]),
   g = tmle_estimate_g(d = cbind(A, W),
                       SL.library = g.lib,
-                      verbose = F,
-                      outcome = "A")
+                      verbose = verbose,
+                      outcome = "A",
+                      message = "g")
 
   # Handle gBounds - code from tmle::tmle().
   if (length(gbound) == 1) {
