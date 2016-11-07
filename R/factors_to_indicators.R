@@ -92,6 +92,13 @@ factors_to_indicators = function(factor_df, miss_name_prefix = "Imiss_",
 
   colnames(newX) = factor_names
 
+  # Any remaining missing data is set to 0.
+  remaining_nas = sum(sapply(newX, function(col) sum(is.na(col))))
+  if (remaining_nas > 0) {
+    if (verbose) cat("Replacing", remaining_nas, "remaining nas with 0s.\n")
+    newX[is.na(newX)] = 0
+  }
+
   ##################
   # Indexing vector for dummy basis back to original factors.
   cc = regexpr("XX", factor_names)
