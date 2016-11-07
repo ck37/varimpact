@@ -9,7 +9,7 @@ varImpact(Y, data, A_names = colnames(data), V = 2,
   Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.stepAIC"),
   family = "binomial", minYs = 15, minCell = 0, adjust_cutoff = 10,
   corthres = 0.8, impute = "knn", miss.cut = 0.5, verbose = F,
-  parallel = T, digits = 4)
+  verbose_tmle = F, parallel = T, digits = 4)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}
@@ -53,6 +53,9 @@ of missing obs > cut.off}
 
 \item{verbose}{Boolean - if TRUE the method will display more detailed
 output.}
+
+\item{verbose_tmle}{Boolean - if TRUE, will display even more detail on the TMLE
+estimation process.}
 
 \item{parallel}{Use parallel processing if a backend is registered; enabled
 by default.}

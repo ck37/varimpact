@@ -63,6 +63,8 @@
 #'   by default.
 #' @param verbose Boolean - if TRUE the method will display more detailed
 #'   output.
+#'@param verbose_tmle Boolean - if TRUE, will display even more detail on the TMLE
+#'   estimation process.
 #' @param digits Number of digits to round the value labels.
 #'
 #' @return Results object.
@@ -182,6 +184,7 @@ varImpact = function(Y,
                      impute = "knn",
                      miss.cut = 0.5,
                      verbose = F,
+                     verbose_tmle = F,
                      parallel = T,
                      digits = 4) {
 
@@ -547,11 +550,25 @@ varImpact = function(Y,
         Wv = Wv[, incc, drop = F]
         Wt = Wt[, incc, drop = F]
 
+        if (verbose) cat("Columns:", ncol(Wt), "Reducing dimensions to", adjust_cutoff, "\n")
+
         # Use HOPACH to reduce dimension of W to some level of tree
         reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
 
         Wtsht = reduced_results$data
         Wvsht = reduced_results$newX
+
+        is_constant = sapply(Wtsht, function(col) var(col) == 0)
+        is_constant = is_constant[is_constant]
+
+        if (verbose) {
+          cat("Updated ncols, training:", ncol(Wtsht), "test:", ncol(Wvsht), "\n")
+          # Restrict to true elements.
+          if (length(is_constant) > 0) {
+            cat("Constant columns (", length(is_constant), "):\n")
+            print(is_constant)
+          }
+        }
 
         # Finished with any needed clustering for variable reduction.
 
@@ -663,13 +680,8 @@ varImpact = function(Y,
             tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
                                     Q.lib = Q.library,
                                     Qbounds = range(Y),
-                                    g.lib = g.library, verbose = F),
+                                    g.lib = g.library, verbose = verbose_tmle),
                       silent = !verbose)
-
-            # Save label
-            tmle_result$label = vals[j]
-
-            training_estimates[[j]] = tmle_result
 
             if (class(tmle_result) == "try-error") {
               # TMLE estimation failed.
@@ -677,11 +689,19 @@ varImpact = function(Y,
               error_count = error_count + 1
             } else {
               # TMLE estimation successed.
-              if (verbose) cat(".")
+
+              # Save label
+              tmle_result$label = vals[j]
+
+              training_estimates[[j]] = tmle_result
+
+              if (verbose) {
+                cat(".")
+              }
             }
           }
           # Finished looping over each level of the assignment variable.
-          if (verbose) cat(" done.\n")
+          if (verbose) cat(" done. Errors:", error_count, "\n")
 
           fold_result$error_count = error_count
 
@@ -691,34 +711,27 @@ varImpact = function(Y,
             ifelse("theta" %in% names(result), result$theta, NA)
           })
 
-          # Identify maximum EY1 (theta)
-          maxj = which.max(theta_estimates)
-          # Save that estimate.
-          maxEY1 = training_estimates[[maxj]]$theta
-          labmax = vals[maxj]
+          if (!all(is.na(theta_estimates))) {
+            # Identify maximum EY1 (theta)
+            # Note: this may be NA if the tmle estimation failed.
+            maxj = which.max(theta_estimates)
 
-          # Save these items into the fold_result list.
-          fold_result$level_max$level = maxj
-          fold_result$level_max$estimate_training = maxEY1
-          fold_result$level_max$label = labmax
-          #fold_result$level_max$tmle = training_estimates[[maxj]]
-
-          # Identify minimum EY1 (theta)
-          minj = which.min(theta_estimates)
-          minEY1 = training_estimates[[minj]]$theta
-          labmin = vals[minj]
-
-          # Save these items into the fold_result list.
-          fold_result$level_min$level = minj
-          fold_result$level_min$estimate_training = minEY1
-          fold_result$level_min$label = labmin
-          #fold_result$level_min$tmle = training_estimates[[minj]]
+            # Identify minimum EY1 (theta)
+            # Note: this may be NA if the tmle estimation failed.
+            minj = which.min(theta_estimates)
+            if (verbose) cat("maxj:", maxj, "minj:", minj, "\n")
+          } else {
+            maxj = NA
+            minj = NA
+          }
 
           # This fold failed if we got an error for each category
           # Or if the minimum and maximum bin is the same.
-          if (error_count == num.cat | minj == maxj) {
+          if (error_count == num.cat ||
+              (is.na(minj) && is.na(maxj)) ||
+              minj == maxj) {
             message = paste("Fold", fold_k, "failed,")
-            if (error_count == num.cat) {
+            if (length(theta_estimates) == 0 || error_count == num.cat) {
               message = paste(message, "all", num.cat, "levels had errors.")
             } else {
               message = paste(message, "min and max level are the same. (j = ", minj,
@@ -730,6 +743,27 @@ varImpact = function(Y,
               cat(message, "\n")
             }
           } else {
+
+            # Extract max items.
+            maxEY1 = training_estimates[[maxj]]$theta
+            labmax = vals[maxj]
+
+            # Save these items into the fold_result list.
+            fold_result$level_max$level = maxj
+            fold_result$level_max$estimate_training = maxEY1
+            fold_result$level_max$label = labmax
+            #fold_result$level_max$tmle = training_estimates[[maxj]]
+
+            # Extract min items.
+            minEY1 = training_estimates[[minj]]$theta
+            labmin = vals[minj]
+
+            # Save these items into the fold_result list.
+            fold_result$level_min$level = minj
+            fold_result$level_min$estimate_training = minEY1
+            fold_result$level_min$label = labmin
+            #fold_result$level_min$tmle = training_estimates[[minj]]
+
 
             # Turn to validation data.
 
@@ -1090,13 +1124,8 @@ varImpact = function(Y,
                                                # Pass in Q bounds from the full
                                                # range of Y (training & test).
                                                Qbounds = range(Y),
-                                               g.lib = g.library, verbose = F),
+                                               g.lib = g.library, verbose = verbose_tmle),
                                 silent = !verbose)
-
-              # Save bin
-              tmle_result$label = labs[j]
-
-              training_estimates[[j]] = tmle_result
 
               # Old way:
               #res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
@@ -1107,6 +1136,14 @@ varImpact = function(Y,
                 if (verbose) cat("X")
                 error_count = error_count + 1
               } else {
+
+                # TMLE succeeded (hopefully).
+
+                # Save bin
+                tmle_result$label = labs[j]
+
+                training_estimates[[j]] = tmle_result
+
                 if (verbose) cat(".")
               }
             }
@@ -1144,7 +1181,7 @@ varImpact = function(Y,
 
             # This fold failed if we got an error for each category
             # Or if the minimum and maximum bin is the same.
-            if (error_count == numcat.cont[var_i] | minj == maxj) {
+            if (error_count == numcat.cont[var_i] || minj == maxj) {
               message = paste("Fold", fold_k, "failed,")
               if (error_count == num.cat) {
                 message = paste(message, "all", num.cat, "levels had errors.")
