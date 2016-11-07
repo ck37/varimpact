@@ -85,7 +85,10 @@ estimate_tmle2 = function(Y,
     tmle.1 = NULL
   }
 
-  if (verbose) cat("Estimating g\n")
+  if (verbose) {
+    cat("Estimating g. A distribution:\n")
+    print(table(A))
+  }
 
   # Using modified version of tmle::estimateG
   #g_model = SuperLearner::SuperLearner(Y = A, X = W, SL.library = g.lib,
@@ -178,6 +181,11 @@ estimate_tmle2 = function(Y,
                     outcome="D")
   })
   g1W.total <- .bound(g$g1W*g.Delta$g1W[,"Z0A1"], gbound)
+  if (sum(is.na(g1W.total)) > 0) {
+    if (verbose) {
+      cat("Error, g1W.total has NAs:", sum(is.na(g1W.total)), "\n")
+    }
+  }
   g0W.total <- .bound((1-g$g1W)*g.Delta$g1W[,"Z0A0"], gbound)
   if(all(g1W.total==0)){g1W.total <- rep(10^-9, length(g1W.total))}
   if(all(g0W.total==0)){g0W.total <- rep(10^-9, length(g0W.total))}
