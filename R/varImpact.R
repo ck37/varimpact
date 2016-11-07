@@ -642,8 +642,12 @@ varImpact = function(Y,
         # 2) if missingness pattern for A is such that there are few death events left
         # in either (< minYs)
         # Applies only to binary outcomes, not continuous.
-        if (length(unique(Yt)) == 2 && (num.cat < 2 || min(nYt, nYv) < minYs)) {
-          if (num.cat < 2) {
+        if ((length(unique(Yt)) == 2 && (num.cat < 2 || min(nYt, nYv) < minYs)) ||
+            mean(is_constant) == 1) {
+          if (mean(is_constant) == 1) {
+            error_msg = paste("Skipping", nameA, "because HOPACH reduced W to",
+                              "all constant columns.")
+          } else if (num.cat < 2) {
             error_msg = paste("Skipping", nameA, "due to lack of variation.")
           } else {
             error_msg = paste("Skipping", nameA, "due to minY constraint.", min(nYt, nYv), "<", minYs)
@@ -1076,6 +1080,18 @@ varImpact = function(Y,
           Wtsht = reduced_results$data
           Wvsht = reduced_results$newX
 
+          is_constant = sapply(Wtsht, function(col) var(col) == 0)
+          is_constant = is_constant[is_constant]
+
+          if (verbose) {
+            cat("Updated ncols, training:", ncol(Wtsht), "test:", ncol(Wvsht), "\n")
+            # Restrict to true elements.
+            if (length(is_constant) > 0) {
+              cat("Constant columns (", length(is_constant), "):\n")
+              print(is_constant)
+            }
+          }
+
           deltat = as.numeric(is.na(Yt) == F & is.na(Atnew) == F)
           deltav = as.numeric(is.na(Yv) == F & is.na(Avnew) == F)
 
@@ -1090,9 +1106,14 @@ varImpact = function(Y,
           Atnew[is.na(Atnew)] = -1
           Avnew[is.na(Avnew)] = -1
 
-          # Only applies to binary outcomes.
-          if (length(unique(Yt)) == 2 && min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell) {
-            error_msg = paste("Skipping", nameA, "due to minCell constraint.\n")
+          if ((length(is_constant) > 0 && mean(is_constant) == 1) ||
+              (length(unique(Yt)) == 2 && min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell)) {
+            if (length(is_constant) > 0 && mean(is_constant) == 1) {
+              error_msg = paste("Skipping", nameA, "because HOPACH reduced W",
+                "to all constant columns.")
+            } else {
+              error_msg = paste("Skipping", nameA, "due to minCell constraint.\n")
+            }
             if (T || verbose) cat(error_msg)
             fold_result$message = error_msg
             # warning(error_msg)
