@@ -521,7 +521,7 @@ varImpact = function(Y,
 
         W = data.frame(data.numW, miss.cont, dumW, missdumW)
 
-        # Restrict to Ws in which there is less than 100% missingness.
+        # Restrict to columns in which there is less than 100% missingness.
         W = W[, !apply(is.na(W), 2, all), drop = F]
 
         # Divide into training and validation subsets.
@@ -554,8 +554,6 @@ varImpact = function(Y,
         Wvsht = reduced_results$newX
 
         # Finished with any needed clustering for variable reduction.
-
-        # cat(' time a = ',proc.time()-pp1,'\n') pp2=proc.time()
 
         deltat = as.numeric(!is.na(Yt) & !is.na(At))
         deltav = as.numeric(!is.na(Yv) & !is.na(Av))
@@ -653,7 +651,7 @@ varImpact = function(Y,
             # and 0 = obs not in this bin.
             IA = as.numeric(At == vals[j])
 
-            # Any observations missing At are assigned to control group.
+            # Any observations missing At are assigned to 0.
             IA[is.na(IA)] = 0
 
             # if(min(table(IA,Yt))>=)
@@ -1092,7 +1090,7 @@ varImpact = function(Y,
                                                # Pass in Q bounds from the full
                                                # range of Y (training & test).
                                                Qbounds = range(Y),
-                                               g.lib = g.library, verbose = verbose),
+                                               g.lib = g.library, verbose = F),
                                 silent = !verbose)
 
               # Save bin
