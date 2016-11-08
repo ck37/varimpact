@@ -546,7 +546,12 @@ varImpact = function(Y,
         })
         corAt[corAt < -1] = 0
         # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
-        incc = abs(corAt) < corthres & is.na(corAt) == F
+        incc = abs(corAt) < corthres & !is.na(corAt)
+
+        if (verbose && sum(!incc) > 0) {
+          cat("Removed", sum(!incc), "columns based on correlation threshold", corthres, "\n")
+        }
+
         Wv = Wv[, incc, drop = F]
         Wt = Wt[, incc, drop = F]
 
@@ -1082,6 +1087,8 @@ varImpact = function(Y,
           incc = corAt < corthres & is.na(corAt) == F
           Wv = Wv[, incc, drop = F]
           Wt = Wt[, incc, drop = F]
+
+          if (verbose) cat("Columns:", ncol(Wt), "Reducing dimensions to", adjust_cutoff, "\n")
 
           # Use HOPACH to reduce dimension of W to some level of tree
           reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
