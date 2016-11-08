@@ -14,9 +14,23 @@
 #' @export
 reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
 
-  num_columns = ncol(data)
+
+  # Identify constant columns in training data.
+  is_constant = sapply(data, function(col) var(col) == 0)
+
+  # Remove constant columns.
+  data = data[, !is_constant]
+
+  if (verbose && sum(is_constant) > 0) {
+    cat("First removing", sum(is_constant), "constant columns.\n")
+  }
+
   # Set this by default, then override it if we do reduce dimensions.
   variables = colnames(data)
+
+  if (!is.null(newX)) newX = newX[, !is_constant]
+
+  num_columns = ncol(data)
 
   # Skip if number covariates is within the target maximum or if the maximum is null.
   if (num_columns <= max_variables || is.null(max_variables)) {
