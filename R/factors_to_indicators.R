@@ -76,6 +76,13 @@ factors_to_indicators = function(factor_df, miss_name_prefix = "Imiss_",
     indicators = model.matrix(~ x - 1)[, omit_levels]
     names = colnames(indicators)
 
+    # Any remaining missing data is set to 0.
+    remaining_nas = sum(sapply(indicators, function(col) sum(is.na(col))))
+    if (remaining_nas > 0) {
+      if (verbose) cat("Replacing", remaining_nas, "remaining nas with 0s.\n")
+      indicators[is.na(indicators)] = 0
+    }
+
     # CK: why do we need this option?
     if (is.null(names)) {
       names2 = facnames[i]
@@ -91,13 +98,6 @@ factors_to_indicators = function(factor_df, miss_name_prefix = "Imiss_",
   }
 
   colnames(newX) = factor_names
-
-  # Any remaining missing data is set to 0.
-  remaining_nas = sum(sapply(newX, function(col) sum(is.na(col))))
-  if (remaining_nas > 0) {
-    if (verbose) cat("Replacing", remaining_nas, "remaining nas with 0s.\n")
-    newX[is.na(newX)] = 0
-  }
 
   ##################
   # Indexing vector for dummy basis back to original factors.
