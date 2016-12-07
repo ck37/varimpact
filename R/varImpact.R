@@ -187,6 +187,9 @@ varImpact = function(Y,
                      verbose_tmle = F,
                      parallel = T,
                      digits = 4) {
+  # We need to explictly load SuperLearner due to an issue with
+  # the "All" screener as of 2016-12-06.
+  library(SuperLearner)
 
   # Time the full function execution.
   time_start = proc.time()
