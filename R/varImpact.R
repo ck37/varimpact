@@ -1376,14 +1376,18 @@ varImpact = function(Y,
           signif_digits = 4
           ey0_mean = mean(pooled_min$thetas)
           if (is.numeric(ey0_mean)) {
-            cat("[Min] EY0:", signif(ey0_mean, signif_digits),
-              "Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
+            cat("[Min] EY0:", signif(ey0_mean, signif_digits))
+            if (is.numeric(pooled_min$epsilon)) {
+              cat("Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
+            }
           }
 
           ey1_mean = mean(pooled_max$thetas)
           if (is.numeric(ey1_mean)) {
-            cat("[Max] EY1:", signif(ey1_mean, signif_digits),
-              "Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
+            cat("[Max] EY1:", signif(ey1_mean, signif_digits))
+            if (is.numeric(pooled_max$epsilon)) {
+              cat("Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
+            }
           }
 
           cat("ATEs:", signif(var_results$thetaV, signif_digits), "\n")
