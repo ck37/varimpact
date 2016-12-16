@@ -190,7 +190,7 @@ varImpact = function(Y,
   # We need to explictly load SuperLearner due to an issue with
   # the "All" screener as of 2016-12-06.
   # CRAN checks want us to use requireNamespace() instead of library()
-  requireNamespace("SuperLearner")
+  # requireNamespace("SuperLearner")
 
   # Time the full function execution.
   time_start = proc.time()
