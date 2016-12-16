@@ -1576,15 +1576,19 @@ varImpact = function(Y,
 
       ##################
       # Factors
-      if (num_vars - num_continuous > 0) {
+      num_factors = num_vars - num_continuous
+      if (num_factors > 0) {
         lwr = NULL
         uwr = NULL
         for (i in 1:V) {
           lwr = cbind(lwr, labels[(num_continuous + 1):num_vars, i * 2 - 1])
-          uwr = cbind(uwr, labels[(num_continuous + 1):num_vars, i * 2 - 1])
+          uwr = cbind(uwr, labels[(num_continuous + 1):num_vars, i * 2])
         }
+        # Count have many unique levels are used for the lower bin - want it to be 1.
         conslwr = apply(lwr, 1, length.uniq)
+        # Count how many unique levels are used for the upper bin - want it to be 1.
         consupr = apply(uwr, 1, length.uniq)
+        # If conslwr * consupr == 1 then the variable is consistent.
         cons = c(cons, conslwr * consupr)
       }
       # consist= (cons==1 & pval.comp > 0.05)
@@ -1592,8 +1596,9 @@ varImpact = function(Y,
         sum(sign(x))
       }
 
-      # Consistent results need to have all positive or all negative thetas.
-      # CK: but really, shouldn't they all be positive?
+      # Consistent results need to have all positive all negative thetas,
+      # And use the same factor levels for the low and high bins in each CV fold.
+      # CK: but really, shouldn't they all be positive? May want to remove abs()
       consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
 
       procedures = c("Holm", "BH")
