@@ -2,6 +2,9 @@
 tryCatch( detach(package:varImpact), error = function(e) invisible() )
 library(varImpact)
 library(testthat)
+# We need to explictly load SuperLearner due to an issue with
+# the "All" screener as of 2016-12-06.
+library(SuperLearner)
 
 # Create test dataset.
 context("varImpact(). Dataset A: continuous variables")
