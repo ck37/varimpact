@@ -13,6 +13,8 @@ Description: Automated data processing and variable importance using data-
     adaptive target parameter methods combined with TMLE. Returns an ordered
     variable list of importance.
 License: GPL (>= 2)
+Depends:
+    SuperLearner
 Imports:
     arules,
     caret,
@@ -24,7 +26,6 @@ Imports:
     MASS,
     multtest,
     RANN,
-    SuperLearner,
     tmle,
     xtable
 biocViews:
