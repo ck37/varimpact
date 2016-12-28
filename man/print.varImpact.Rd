@@ -12,7 +12,7 @@
 \item{...}{Further arguments passed to or from other methods.}
 }
 \description{
-Shows the consistent results by default. If there are no consistent results
-it shows all results.
+Shows the significant and consistent results by default. If there are no
+consistent results it shows all results.
 }
 
