@@ -1,8 +1,8 @@
 Package: varImpact
 Type: Package
 Title: Variable importance estimation using causal inference (TMLE)
-Version: 1.1
-Date: 2016-07-07
+Version: 1.2
+Date: 2017-01-02
 Authors@R: as.person(c(
   "Alan Hubbard <hubbard@berkeley.edu> [aut, cre]",
   "Chris Kennedy <chrisken@gmail.com> [aut]"
