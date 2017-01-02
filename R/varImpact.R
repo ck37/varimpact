@@ -916,7 +916,7 @@ varImpact = function(Y,
           if (is.numeric(ey0_mean)) {
             cat("[Min] EY0:", signif(ey0_mean, signif_digits))
             if (is.numeric(pooled_min$epsilon)) {
-              cat("Epsilon:", signif(pooled_min$epsilon, signif_digits))
+              cat(" Epsilon:", signif(pooled_min$epsilon, signif_digits))
             }
             cat("\n")
           }
@@ -925,7 +925,7 @@ varImpact = function(Y,
           if (is.numeric(ey1_mean)) {
             cat("[Max] EY1:", signif(ey1_mean, signif_digits))
             if (is.numeric(pooled_max$epsilon)) {
-              cat("Epsilon:", signif(pooled_max$epsilon, signif_digits))
+              cat(" Epsilon:", signif(pooled_max$epsilon, signif_digits))
             }
             cat("\n")
           }
@@ -1383,7 +1383,7 @@ varImpact = function(Y,
           if (is.numeric(ey0_mean)) {
             cat("[Min] EY0:", signif(ey0_mean, signif_digits))
             if (is.numeric(pooled_min$epsilon)) {
-              cat("Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
+              cat(" Epsilon:", signif(pooled_min$epsilon, signif_digits), "\n")
             }
           }
 
@@ -1391,7 +1391,7 @@ varImpact = function(Y,
           if (is.numeric(ey1_mean)) {
             cat("[Max] EY1:", signif(ey1_mean, signif_digits))
             if (is.numeric(pooled_max$epsilon)) {
-              cat("Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
+              cat(" Epsilon:", signif(pooled_max$epsilon, signif_digits), "\n")
             }
           }
 
