@@ -1050,7 +1050,8 @@ varImpact = function(Y,
           Atnew = cut(At, breaks = hh)
           Avnew = cut(Av, breaks = hh)
         }
-        if (singleAY1 || length(na.omit(unique(Atnew))) <= 1 || length(na.omit(unique(Avnew))) <= 1) {
+        if (singleAY1 || length(na.omit(unique(Atnew))) <= 1 ||
+            length(na.omit(unique(Avnew))) <= 1) {
           error_msg = paste("Skipping", nameA, "in this fold because there is no variation.")
           if (verbose) cat(error_msg, "\n")
           fold_result$message = error_msg
@@ -1528,7 +1529,7 @@ varImpact = function(Y,
       meanvarIC = apply(varIC, 1, mean)
 
       psi = apply(theta, 1, mean)
-      SE = sqrt(meanvarIC/n)
+      SE = sqrt(meanvarIC / n)
 
       ci_lower = psi - 1.96 * SE
       ci_upper = psi + 1.96 * SE
