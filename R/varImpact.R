@@ -571,12 +571,15 @@ varImpact = function(Y,
         Wtsht = reduced_results$data
         Wvsht = reduced_results$newX
 
+        # We should have no constant columns after calling reduce_dimensions().
         is_constant = sapply(Wtsht, function(col) var(col) == 0)
+        # Restrict to just the TRUE variables - those that are constant.
         is_constant = is_constant[is_constant]
 
         if (verbose) {
-          cat("Updated ncols, training:", ncol(Wtsht), "test:", ncol(Wvsht), "\n")
-          # Restrict to true elements.
+          cat("Updated ncols -- training:", ncol(Wtsht), "test:", ncol(Wvsht), "\n")
+
+          # We should have no constant columns after calling reduce_dimensions().
           if (length(is_constant) > 0) {
             cat("Constant columns (", length(is_constant), "):\n")
             print(is_constant)
@@ -635,6 +638,8 @@ varImpact = function(Y,
           obs_training = length(Yt),
           obs_validation = length(Yv),
           error_count = 0,
+          # Save the variables chosen by reduce_dimensions().
+          variables = reduced_results$variables,
           # Results for estimating the maximum level / treatment.
           level_max = list(
             # Level is which bin was chosen.
@@ -644,7 +649,11 @@ varImpact = function(Y,
             # val_preds contains the g, Q, and H predictions on the validation data.
             val_preds = NULL,
             # Estimate of EY on the training data.
-            estimate_training = NULL
+            estimate_training = NULL,
+            # Risk from SuperLearner on Q.
+            risk_Q = NULL,
+            # Risk from SuperLearner on g.
+            risk_g = NULL
           )
         )
         # Copy the blank result to a second element for the minimum level/bin.
@@ -769,6 +778,20 @@ varImpact = function(Y,
             fold_result$level_max$level = maxj
             fold_result$level_max$estimate_training = maxEY1
             fold_result$level_max$label = labmax
+            # Save the Q risk for the discrete SuperLearner.
+            # We don't have the CV.SL results for the full SuperLearner as it's too
+            # computationallity intensive.
+            fold_result$level_max$Q_risk =
+                training_estimates[[maxj]]$q_model$cvRisk[
+                  which.min(training_estimates[[maxj]]$q_model$cvRisk)]
+            # And the g's discrete SL risk.
+            fold_result$level_max$g_risk =
+                training_estimates[[maxj]]$g_model$cvRisk[
+                  which.min(training_estimates[[maxj]]$g_model$cvRisk)]
+
+            # Extact TMLE results.
+            fold_result$level_max
+
             #fold_result$level_max$tmle = training_estimates[[maxj]]
 
             # Extract min items.
@@ -781,6 +804,16 @@ varImpact = function(Y,
             fold_result$level_min$label = labmin
             #fold_result$level_min$tmle = training_estimates[[minj]]
 
+            # Save the Q risk for the discrete SuperLearner.
+            # We don't have the CV.SL results for the full SuperLearner as it's too
+            # computationallity intensive.
+            fold_result$level_min$Q_risk =
+              training_estimates[[minj]]$q_model$cvRisk[
+                which.min(training_estimates[[minj]]$q_model$cvRisk)]
+            # And the g's discrete SL risk.
+            fold_result$level_min$g_risk =
+              training_estimates[[minj]]$g_model$cvRisk[
+                which.min(training_estimates[[minj]]$g_model$cvRisk)]
 
             # Turn to validation data.
 
@@ -1119,7 +1152,7 @@ varImpact = function(Y,
           is_constant = is_constant[is_constant]
 
           if (verbose) {
-            cat("Updated ncols, training:", ncol(Wtsht), "test:", ncol(Wvsht), "\n")
+            cat("Updated ncols -- training:", ncol(Wtsht), "test:", ncol(Wvsht), "\n")
             # Restrict to true elements.
             if (length(is_constant) > 0) {
               cat("Constant columns (", length(is_constant), "):\n")
@@ -1225,6 +1258,17 @@ varImpact = function(Y,
             fold_result$level_max$estimate_training = maxEY1
             fold_result$level_max$label = labmax
 
+            # Save the Q risk for the discrete SuperLearner.
+            # We don't have the CV.SL results for the full SuperLearner as it's too
+            # computationallity intensive.
+            fold_result$level_max$Q_risk =
+              training_estimates[[maxj]]$q_model$cvRisk[
+                which.min(training_estimates[[maxj]]$q_model$cvRisk)]
+            # And the g's discrete SL risk.
+            fold_result$level_max$g_risk =
+              training_estimates[[maxj]]$g_model$cvRisk[
+                which.min(training_estimates[[maxj]]$g_model$cvRisk)]
+
             # Identify minimum EY1 (theta)
             minj = which.min(theta_estimates)
             minEY1 = training_estimates[[minj]]$theta
@@ -1234,6 +1278,17 @@ varImpact = function(Y,
             fold_result$level_min$level = minj
             fold_result$level_min$estimate_training = minEY1
             fold_result$level_min$label = labmin
+
+            # Save the Q risk for the discrete SuperLearner.
+            # We don't have the CV.SL results for the full SuperLearner as it's too
+            # computationallity intensive.
+            fold_result$level_min$Q_risk =
+              training_estimates[[minj]]$q_model$cvRisk[
+                which.min(training_estimates[[minj]]$q_model$cvRisk)]
+            # And the g's discrete SL risk.
+            fold_result$level_min$g_risk =
+              training_estimates[[minj]]$g_model$cvRisk[
+                which.min(training_estimates[[minj]]$g_model$cvRisk)]
 
             # This fold failed if we got an error for each category
             # Or if the minimum and maximum bin is the same.
