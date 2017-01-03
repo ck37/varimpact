@@ -28,6 +28,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
   # Set this by default, then override it if we do reduce dimensions.
   variables = colnames(data)
 
+  # Remove those same constant columns from the test data, if it was provided.
   if (!is.null(newX)) newX = newX[, !is_constant]
 
   num_columns = ncol(data)
@@ -121,8 +122,12 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
       md <- hopach.1$final$medoids
       mm = md[, 1] %in% two.clust
       incc = md[mm, 2]
+
+      # Restrict to those variables in the training and validation data.
       Wtsht = data[, incc]
       Wvsht = newX[, incc]
+
+      # Save the chosen variables so that we can return them in the result list.
       variables = colnames(data)[incc]
     }
     if (verbose) cat(" Updated columns:", ncol(Wtsht), "\n")
