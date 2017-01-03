@@ -559,7 +559,11 @@ varImpact = function(Y,
         Wv = Wv[, incc, drop = F]
         Wt = Wt[, incc, drop = F]
 
-        if (verbose) cat("Columns:", ncol(Wt), "Reducing dimensions to", adjust_cutoff, "\n")
+        if (verbose) {
+          cat("Columns:", ncol(Wt))
+          if (!is.null(adjust_cutoff)) cat("Reducing dimensions to", adjust_cutoff)
+          cat("\n")
+        }
 
         # Use HOPACH to reduce dimension of W to some level of tree
         reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
@@ -1099,7 +1103,11 @@ varImpact = function(Y,
           Wv = Wv[, incc, drop = F]
           Wt = Wt[, incc, drop = F]
 
-          if (verbose) cat("Columns:", ncol(Wt), "Reducing dimensions to", adjust_cutoff, "\n")
+          if (verbose) {
+            cat("Columns:", ncol(Wt))
+            if (!is.null(adjust_cutoff)) cat("Reducing dimensions to", adjust_cutoff)
+            cat("\n")
+          }
 
           # Use HOPACH to reduce dimension of W to some level of tree
           reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
