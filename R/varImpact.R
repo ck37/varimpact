@@ -439,7 +439,7 @@ varImpact = function(Y,
   n = length(Y)
 
   # TODO: print variable summary before we begin analysis.
-  cat("\nProcessing results--\n")
+  cat("\nProcessing results:\n")
   cat("- Factor variables:", num_factors, "\n")
   cat("- Numeric variables:", num_numeric, "\n\n")
 
