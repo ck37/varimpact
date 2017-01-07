@@ -9,27 +9,33 @@ Alan priorities:
 - Option of ratios (delta method), rather than differences
    - Alan will email Minh, maybe Jeremy too. (may be embedded in TMLE)
 - In ByV table, use the labels of the quantiles to show the actual range.
-- Specify names of variables to use for variable importance
+- Specify names of variables to use for variable importance - DONE
 
 Chris items:
+* Give a warning if data is a matrix rather than dataframe. Causes an error in separate_factors_numerics.
 * Arguments
-  - Also support "X" optional argument, ala glm
-  - Parameter for the number of covariates after which we use dimensionality reduction (HOPACH).
   - Argument for p-value cutoff for consistent results.
 * Coding style
-  - Create subfunctions.
+  - Create more subfunctions.
 * Output
   - Sort consistent results by p-value then estimate size?
   - Support summary()
+  - Return SEs
 * Quality
   - Warn/error if there are character columns in the data, as a bonus check.
   - Figure out how to reduce the number of potential failures in various steps.
   - Count and report how many variables are skipped due to minCell constraint.
   - Automatically handle rows that are all NAs?
+* Prediction Accuracy
+  - Save risk estimates for g and Q during CV-TMLE. - IN PROGRESS
 * Testing
+  - Need tests with single factors and numerics. Lots of lingering bugs.
   - Make examples quicker to execute, esp. during devtools::check()
   - Add other tests.
+* Visualization
+  - Plot of BH correction ala figure 10.6 in All of Statistics.
 * Performance
+  - Parallelization is hit-or-miss - needs way more testing.
   - Try Rprofvis
   - Use Jeremy's method of not wasting SL folds during CV-TMLE.
 * Documentation
