@@ -28,7 +28,7 @@ estimate_tmle2 = function(Y,
                         Qbounds = NULL,
                         gbound = 0.025,
                         alpha = 0.995,
-                        fluctuation="logistic",
+                        fluctuation = "logistic",
                         verbose = F) {
 
   if (!family %in% c("binomial", "gaussian")) {
@@ -45,6 +45,10 @@ estimate_tmle2 = function(Y,
     if (num_missing > 0 && num_missing < 10) {
       inc[delta == 0] = F
     }
+  }
+
+  if (length(dim(W)) != 2) {
+    stop("Error: W should have two dimensions. Instead its dimensions are:", paste(dim(W)), "\n")
   }
 
   Y = Y[inc]
