@@ -19,7 +19,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
   is_constant = sapply(data, function(col) var(col) == 0)
 
   # Remove constant columns.
-  data = data[, !is_constant]
+  data = data[, !is_constant, drop = F]
 
   if (verbose && sum(is_constant) > 0) {
     cat("First removing", sum(is_constant), "constant columns.\n")
@@ -29,7 +29,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
   variables = colnames(data)
 
   # Remove those same constant columns from the test data, if it was provided.
-  if (!is.null(newX)) newX = newX[, !is_constant]
+  if (!is.null(newX)) newX = newX[, !is_constant, drop = F]
 
   num_columns = ncol(data)
 
@@ -124,8 +124,8 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
       incc = md[mm, 2]
 
       # Restrict to those variables in the training and validation data.
-      Wtsht = data[, incc]
-      Wvsht = newX[, incc]
+      Wtsht = data[, incc, drop = F]
+      Wvsht = newX[, incc, drop = F]
 
       # Save the chosen variables so that we can return them in the result list.
       variables = colnames(data)[incc]
