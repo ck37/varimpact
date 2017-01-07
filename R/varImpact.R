@@ -12,8 +12,6 @@
 #'  \item Drops variables for which their distribution is uneven  - e.g., all 1
 #'  value (tuneable) separately for factors and numeric variables (ADD MORE
 #'  DETAIL HERE)
-#'  \item Removes spaces from factor labels (used for naming dummies later).
-#'  \item Removes spaces from variable names.
 #'  \item Makes dummy variable basis for factors, including naming dummies
 #'  to be traceable to original factor variables later.
 #'  \item Makes new ordered variable of integers mapped to intervals defined by
@@ -59,6 +57,7 @@
 #'   "median", "knn" (default).
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
+#' @param bins_numeric Numbers of bins when discretizing numeric variables.
 #' @param parallel Use parallel processing if a backend is registered; enabled
 #'   by default.
 #' @param verbose Boolean - if TRUE the method will display more detailed
@@ -67,7 +66,7 @@
 #'   estimation process.
 #' @param digits Number of digits to round the value labels.
 #'
-#' @return Results object.
+#' @return Results object. TODO: add more detail here.
 #'
 #' @importFrom stats cor model.matrix na.omit pnorm quantile var
 #'
@@ -183,14 +182,11 @@ varImpact = function(Y,
                      corthres = 0.8,
                      impute = "knn",
                      miss.cut = 0.5,
+                     bins_numeric = 10,
                      verbose = F,
                      verbose_tmle = F,
                      parallel = T,
                      digits = 4) {
-  # We need to explictly load SuperLearner due to an issue with
-  # the "All" screener as of 2016-12-06.
-  # CRAN checks want us to use requireNamespace() instead of library()
-  # requireNamespace("SuperLearner")
 
   # Time the full function execution.
   time_start = proc.time()
@@ -357,6 +353,7 @@ varImpact = function(Y,
     # Make deciles for continuous variables
     X = data.num
     xc = dim(X)[2]
+    # We don't seem to use this qt variable.
     qt = apply(na.omit(X), 2, quantile, probs = seq(0.1, 0.9, 0.1))
     newX = NULL
     coln = NULL
@@ -379,7 +376,7 @@ varImpact = function(Y,
         # TODO: number of bins should be a function argument.
         var_binned = as.numeric(arules::discretize(Xt,
                                                    method = "frequency",
-                                                   categories = 10,
+                                                   categories = bins_numeric,
                                                    ordered = T))
       })
       Xnew = cbind(Xnew, var_binned)
@@ -441,6 +438,11 @@ varImpact = function(Y,
 
   n = length(Y)
 
+  # TODO: print variable summary before we begin analysis.
+  cat("\nProcessing results--\n")
+  cat("- Factor variables:", num_factors, "\n")
+  cat("- Numeric variables:", num_numeric, "\n\n")
+
   ###############################################################################
   # VIM for Factors
   # NOTE: we use && so that conditional will short-circuit if num_factors == 0.
@@ -476,8 +478,8 @@ varImpact = function(Y,
     # vim_factor = lapply(1:xc, function(i) {
 
     # vim_factor will be a list of results, one element per factor variable.
-    vim_factor = foreach::foreach(var_i = 1:xc, .verbose = F, .errorhandling = "stop") %do_op% {
-    #vim_factor = lapply(1:xc, function(var_i) {
+    #vim_factor = foreach::foreach(var_i = 1:xc, .verbose = F, .errorhandling = "stop") %do_op% {
+    vim_factor = lapply(1:xc, function(var_i) {
       nameA = names.fac[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "factor variables\n")
@@ -561,7 +563,7 @@ varImpact = function(Y,
 
         if (verbose) {
           cat("Columns:", ncol(Wt))
-          if (!is.null(adjust_cutoff)) cat("Reducing dimensions to", adjust_cutoff)
+          if (!is.null(adjust_cutoff)) cat(" Reducing dimensions to", adjust_cutoff)
           cat("\n")
         }
 
@@ -591,12 +593,13 @@ varImpact = function(Y,
         deltat = as.numeric(!is.na(Yt) & !is.na(At))
         deltav = as.numeric(!is.na(Yv) & !is.na(Av))
 
+        # TODO (CK): don't do this, in order to use the delta missingness estimation.
         # To avoid crashing TMLE function just drop obs missing A or Y if the
         # total number of missing is < 10
         if (sum(deltat == 0) < 10) {
           Yt = Yt[deltat == 1]
           At = At[deltat == 1]
-          Wtsht = Wtsht[deltat == 1, ]
+          Wtsht = Wtsht[deltat == 1, , drop = F]
           deltat = deltat[deltat == 1]
         }
 
@@ -605,10 +608,10 @@ varImpact = function(Y,
         if (length(unique(Yt)) == 2) {
           # Binary outcome.
 
-          # Minimum numer of observations in validation fold.
+          # Minimum numer of observations for each cell in validation fold.
           minc = apply(table(Av, Yv), 1, min)
 
-          # Minimum numer of observations in training fold.
+          # Minimum numer of observations for each cell in training fold.
           minc2 = apply(table(At, Yt), 1, min)
 
           # Restrict analysis to levels of this variable in which
@@ -976,10 +979,10 @@ varImpact = function(Y,
 
       # Return results for this factor variable.
       var_results
-    } # End foreach loop over all variables.
-    #) # End lapply if we're not using foreach. (temporary tweak)
+    #} # End foreach loop over all variables.
+    }) # End lapply if we're not using foreach. (temporary tweak)
 
-    if (verbose) cat("Factor VIMs:", length(vim_factor), "\n")
+    if (verbose) cat("Factor VIMs:", length(vim_factor), "\n\n")
 
     # Confirm that we have the correct number of results, otherwise fail out.
     stopifnot(length(vim_factor) == xc)
@@ -988,7 +991,7 @@ varImpact = function(Y,
   } else {
     colnames_factor = NULL
     vim_factor = NULL
-    cat("No factor variables - skip VIM estimation.\n")
+    cat("No factor variables - skip VIM estimation.\n\n")
   }
 
   ###############################################################################
@@ -1012,16 +1015,15 @@ varImpact = function(Y,
     numcat.cont = apply(data.cont.dist, 2, length_unique)
     # CK: I think we can comment out this line:
     #xc = length(numcat.cont)
-    cat("xc is", xc, "and length numcat.cont is", length(numcat.cont), "\n")
+    # cat("xc is", xc, "and length numcat.cont is", length(numcat.cont), "\n")
 
     cats.cont = lapply(1:xc, function(i) {
       sort(unique(data.cont.dist[, i]))
     })
 
     ### Loop over each numeric variable.
-    #vim_numeric = lapply(1:xc, function(i) {
-    vim_numeric = foreach::foreach(var_i = 1:num_numeric) %do_op% {
-    #vim_numeric = lapply(1:num_numeric, function(var_i) {
+    #vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = T, .errorhandling = "stop") %do_op% {
+    vim_numeric = lapply(1:num_numeric, function(var_i) {
       nameA = names.cont[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "numeric variables\n")
@@ -1133,12 +1135,17 @@ varImpact = function(Y,
           })
           # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
           incc = corAt < corthres & is.na(corAt) == F
+
+          if (verbose && sum(!incc) > 0) {
+            cat("Removed", sum(!incc), "columns based on correlation threshold", corthres, "\n")
+          }
+
           Wv = Wv[, incc, drop = F]
           Wt = Wt[, incc, drop = F]
 
           if (verbose) {
             cat("Columns:", ncol(Wt))
-            if (!is.null(adjust_cutoff)) cat("Reducing dimensions to", adjust_cutoff)
+            if (!is.null(adjust_cutoff)) cat(" Reducing dimensions to", adjust_cutoff)
             cat("\n")
           }
 
@@ -1165,7 +1172,7 @@ varImpact = function(Y,
 
           if (sum(deltat == 0) < 10) {
             Yt = Yt[deltat == 1]
-            Wtsht = Wtsht[deltat == 1, ]
+            Wtsht = Wtsht[deltat == 1, , drop = F]
             Atnew = Atnew[deltat == 1]
             deltat = deltat[deltat == 1]
           }
@@ -1468,8 +1475,8 @@ varImpact = function(Y,
 
       # Return results for this factor variable.
       var_results
-    } # end foreach loop.
-    #) # End lapply if we're not using foreach
+    #} # end foreach loop.
+    }) # End lapply if we're not using foreach
 
     if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
 
@@ -1732,7 +1739,8 @@ varImpact = function(Y,
                  family = family,  datafac.dumW  = datafac.dumW,
                  miss.fac = miss.fac,
                  data.numW = data.numW, impute_info = impute_info,
-                 time = time_end - time_start)
+                 time = time_end - time_start,
+                 cv_folds = folds)
   # Set a custom class so that we can override print and summary.
   class(results) = "varImpact"
   invisible(results)

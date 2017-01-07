@@ -8,8 +8,8 @@
 varImpact(Y, data, A_names = colnames(data), V = 2,
   Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.stepAIC"),
   family = "binomial", minYs = 15, minCell = 0, adjust_cutoff = 10,
-  corthres = 0.8, impute = "knn", miss.cut = 0.5, verbose = F,
-  verbose_tmle = F, parallel = T, digits = 4)
+  corthres = 0.8, impute = "knn", miss.cut = 0.5, bins_numeric = 10,
+  verbose = F, verbose_tmle = F, parallel = T, digits = 4)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}
@@ -51,6 +51,8 @@ variable for inclusion of an adjustment variables}
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
 of missing obs > cut.off}
 
+\item{bins_numeric}{Numbers of bins when discretizing numeric variables.}
+
 \item{verbose}{Boolean - if TRUE the method will display more detailed
 output.}
 
@@ -63,7 +65,7 @@ by default.}
 \item{digits}{Number of digits to round the value labels.}
 }
 \value{
-Results object.
+Results object. TODO: add more detail here.
 }
 \description{
 \code{varImpact} returns variable importance statistics ordered
@@ -78,8 +80,6 @@ The function performs the following functions.
  \item Drops variables for which their distribution is uneven  - e.g., all 1
  value (tuneable) separately for factors and numeric variables (ADD MORE
  DETAIL HERE)
- \item Removes spaces from factor labels (used for naming dummies later).
- \item Removes spaces from variable names.
  \item Makes dummy variable basis for factors, including naming dummies
  to be traceable to original factor variables later.
  \item Makes new ordered variable of integers mapped to intervals defined by
