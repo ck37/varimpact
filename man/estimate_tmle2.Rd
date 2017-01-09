@@ -33,6 +33,8 @@ estimate_tmle2(Y, A, W, family, delta = rep(1, length(Y)), Q.lib, g.lib,
 
 \item{fluctuation}{Only logistic is currently supported.}
 
+\item{V}{Number of folds for SuperLearner}
+
 \item{verbose}{If true output extra information during execution.}
 }
 \description{

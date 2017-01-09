@@ -12,6 +12,7 @@
 #' @param gbound Bounds on G
 #' @param alpha TBD, from TMLE package
 #' @param fluctuation Only logistic is currently supported.
+#' @param V Number of folds for SuperLearner
 #' @param verbose If true output extra information during execution.
 #' @importFrom tmle tmle
 #' @importFrom stats as.formula binomial coef glm plogis poisson predict qlogis

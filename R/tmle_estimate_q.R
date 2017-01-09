@@ -28,6 +28,7 @@
 #' @param cvQinit flag, if TRUE, cross-validate SL.
 #' @param family regression family
 #' @param	id subject identifier
+#' @param V number of folds for SuperLearner
 #' @param verbose Set T for extra output
 # returns matrix of linear predictors for Q(A,W), Q(0,W), Q(1,W),
 #   (for controlled direct effect, 2 additional columns: Q(Z=1,A=0,W), Q(Z=1,A=1,W))

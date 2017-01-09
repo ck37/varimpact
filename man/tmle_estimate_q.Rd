@@ -35,6 +35,8 @@ tmle_estimate_q(Y, Z = rep(0, length(Y)), A, W, Delta, Q = NULL, Qbounds,
 
 \item{id}{subject identifier}
 
+\item{V}{number of folds for SuperLearner}
+
 \item{verbose}{Set T for extra output}
 }
 \description{
