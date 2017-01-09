@@ -14,7 +14,13 @@ apply_tmle_to_validation = function(Y,
     # Use the Qbounds from the full range of Y,
     # not the tmle$ab that is based only on training data.
     # Y_star = (Y_star - tmle$ab[1]) / diff(tmle$ab)
+    # If Y is binary this will have no effect as bounds & outcome are already {0, 1}.
     Y_star = (Y_star - tmle$Qbounds[1]) / diff(tmle$Qbounds)
+
+    if (verbose) {
+      cat("Mapped Y to Y_star using Qbounds:", tmle$Qbounds, "\n")
+      cat("New Y_star range:", range(Y_star), "\n")
+    }
   }
 
   if (max(Y_star) > 1 | min(Y_star) < 0) {
@@ -31,29 +37,42 @@ apply_tmle_to_validation = function(Y,
   # We only include this because TMLE functions use Z.
   Z = rep(0, length(Y))
 
-  # Predict Q
-  sl_pred = predict(tmle$q_model, data.frame(Z, A, W), onlySL = T)
+  # Predict Q(1, W)
+  sl_pred = predict(tmle$q_model, data.frame(Z, A=1, W), onlySL = T)
   Q_hat = sl_pred$pred
 
   # Predict g
   sl_pred = predict(tmle$g_model, W, type = "response", onlySL = T)
   g1W_hat = sl_pred$pred
 
-  # Bound g1W_hat
+  if (verbose) cat("Current range of g1W on test:", range(g1W_hat), "\n")
+
+  # Truncate g1W_hat
   # TODO: double-check this with Alan.
-  g1W_hat = .bound(g1W_hat, tmle$gbounds)
+  g1W_hat_truncated = .bound(g1W_hat, tmle$gbounds)
+  if (verbose) cat("Truncating g1W on test using bounds:", tmle$gbounds, "\n")
 
   # Create clever covariate.
-  H1W = (A == 1) / g1W_hat
+  # H1W = (A == 1) / g1W_hat_truncated
+  # Based on Jeremy Coyle's CV-TMLE implementation.
+  H1W = 1 / g1W_hat_truncated
+  HAW = A * H1W
 
   # TODO: handle delta in some way?
+
+  if (verbose) {
+    cat("Mean Y_a on validation:", mean(Y[A == 1]), "\n")
+    cat("Mean Y_star_a on validation:", mean(Y_star[A == 1]), "\n")
+    cat("Mean Q_bar_a on validation:", mean(Q_hat[A == 1]), "\n")
+  }
 
   # Return results
 
   # We return Y_star rather than Y, for use in pooled fluctuation step.
   data = data.frame(Y_star = Y_star, A = A, Q_hat = Q_hat,
-                    g1W_hat = g1W_hat,
-                    H1W = H1W)
+                    g1W_hat = g1W_hat_truncated,
+                    H1W = H1W,
+                    HAW = HAW)
 
   results = data
 

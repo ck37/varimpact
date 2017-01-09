@@ -202,6 +202,20 @@ varImpact = function(Y,
     stop('Family must be either "binomial" or "gaussian".')
   }
 
+  # Save bounds on the full Y variables for later transformation if Y is not binary.
+  if (family == "binomial" || length(unique(Y)) == 2) {
+    #Qbounds = NULL
+    Qbounds = c(0, 1)
+  } else {
+    # This part is duplicated from the TMLE code in tmle_init_stage1.
+
+    # Define Qbounds just for continuous (non-binary) outcomes.
+    Qbounds = range(Y, na.rm = T)
+    # Extend bounds 10% beyond the observed range.
+    # NOTE: if one of the bounds is zero then it won't be extended.
+    Qbounds = Qbounds + 0.1 * c(-abs(Qbounds[1]), abs(Qbounds[2]))
+  }
+
   # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
   `%do_op%` = foreach::`%do%`
   # Use parallelism if there is a backend registered, unless parallel == F.
@@ -485,7 +499,7 @@ varImpact = function(Y,
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "factor variables\n")
 
       if (!nameA %in% A_names) {
-        if (verbose) cat("Skipping", nameA, " as it is not in A_names.\n")
+        if (verbose) cat("Skipping", nameA, "as it is not in A_names.\n")
         return(NULL)
       }
 
@@ -708,7 +722,7 @@ varImpact = function(Y,
             # 3. Estimate g on training data.
             tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
                                     Q.lib = Q.library,
-                                    Qbounds = range(Y),
+                                    Qbounds = Qbounds,
                                     g.lib = g.library, verbose = verbose_tmle),
                       silent = !verbose)
 
@@ -748,7 +762,10 @@ varImpact = function(Y,
             # Identify minimum EY1 (theta)
             # Note: this may be NA if the tmle estimation failed.
             minj = which.min(theta_estimates)
-            if (verbose) cat("maxj:", maxj, "minj:", minj, "\n")
+            if (verbose) {
+              cat("Max level:", vals[maxj], paste0("(", maxj, ")"),
+                    "Min level:", vals[minj], paste0("(", minj, ")"), "\n")
+            }
           } else {
             maxj = NA
             minj = NA
@@ -828,6 +845,8 @@ varImpact = function(Y,
             # Missing values are not taken to be in this level.
             IA[is.na(IA)] = 0
 
+            if (verbose) cat("\nMin level prediction - apply_tmle_to_validation()\n")
+
             # CV-TMLE: predict g, Q, and clever covariate on validation data.
             min_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                      deltav, training_estimates[[minj]],
@@ -856,8 +875,9 @@ varImpact = function(Y,
               # Missing values are not taken to be in this level.
               IA[is.na(IA)] = 0
 
-              # CV-TMLE: predict g, Q, and clever covariate on validation data.
+              if (verbose) cat("\nMax level prediction - apply_tmle_to_validation()\n")
 
+              # CV-TMLE: predict g, Q, and clever covariate on validation data.
               max_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                         deltav, training_estimates[[maxj]],
                                         verbose = verbose))
@@ -880,7 +900,7 @@ varImpact = function(Y,
             }
           }
         }
-        if (verbose) cat("Completed fold", fold_k, "\n")
+        if (verbose) cat("Completed fold", fold_k, "\n\n")
         fold_result$message = "Succcess"
 
         # Return results for this fold.
@@ -903,12 +923,14 @@ varImpact = function(Y,
 
       # TODO: compile results into the new estimate.
 
-      # if (verbose) cat("Estimating pooled min.\n")
+      if (verbose) cat("Estimating pooled min.\n")
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
                                            verbose = verbose)
-      # if (verbose) cat("Estimating pooled max.\n")
+      cat("\n")
+      if (verbose) cat("Estimating pooled max.\n")
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
                                            verbose = verbose)
+      cat("\n")
 
       var_results$EY0V = pooled_min$thetas
       var_results$EY1V = pooled_max$thetas
@@ -1219,7 +1241,7 @@ varImpact = function(Y,
                                                Q.lib = Q.library,
                                                # Pass in Q bounds from the full
                                                # range of Y (training & test).
-                                               Qbounds = range(Y),
+                                               Qbounds = Qbounds,
                                                g.lib = g.library, verbose = verbose_tmle),
                                 silent = !verbose)
 
@@ -1256,6 +1278,15 @@ varImpact = function(Y,
 
             # Identify maximum EY1 (theta)
             maxj = which.max(theta_estimates)
+
+            # Identify minimum EY1 (theta)
+            minj = which.min(theta_estimates)
+
+            if (verbose) {
+              cat("Max level:", vals[maxj], paste0("(", maxj, ")"),
+                  "Min level:", vals[minj], paste0("(", minj, ")"), "\n")
+            }
+
             # Save that estimate.
             maxEY1 = training_estimates[[maxj]]$theta
             labmax = vals[maxj]
@@ -1276,8 +1307,7 @@ varImpact = function(Y,
               training_estimates[[maxj]]$g_model$cvRisk[
                 which.min(training_estimates[[maxj]]$g_model$cvRisk)]
 
-            # Identify minimum EY1 (theta)
-            minj = which.min(theta_estimates)
+
             minEY1 = training_estimates[[minj]]$theta
             labmin = vals[minj]
 
@@ -1324,6 +1354,8 @@ varImpact = function(Y,
               # Missing values are not taken to be in this level.
               IA[is.na(IA)] = 0
 
+              if (verbose) cat("\nMin level prediction - apply_tmle_to_validation()\n")
+
               # CV-TMLE: predict g, Q, and clever covariate on validation data.
               min_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                                        deltav, training_estimates[[minj]],
@@ -1352,6 +1384,8 @@ varImpact = function(Y,
                 # Missing values are not taken to be in this level.
                 IA[is.na(IA)] = 0
 
+                if (verbose) cat("\nMax level prediction - apply_tmle_to_validation()\n")
+
                 # CV-TMLE: predict g, Q, and clever covariate on validation data.
 
                 max_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
@@ -1377,7 +1411,7 @@ varImpact = function(Y,
             }
           }
         }
-        cat("Completed fold", fold_k, "\n")
+        cat("Completed fold", fold_k, "\n\n")
         fold_result$message = "Succcess"
 
         # Return results for this fold.
@@ -1398,6 +1432,7 @@ varImpact = function(Y,
         type = "factor",
         name = nameA
       )
+
 
       # TODO: compile results into the new estimate.
 
@@ -1695,7 +1730,7 @@ varImpact = function(Y,
                             rawp = pvalue,
                             Holm = pvalue,
                             BH = pvalue,
-                            lbs,
+                            labels,
                             consist)
       } else {
         outres = NULL

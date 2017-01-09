@@ -1,3 +1,4 @@
+# Copied from tmle package.
 #---------- function .initStage1 ---------------
 # Bound Y, map to Ystar if applicable, and
 # set boundson on Q and enforce on user-specified values

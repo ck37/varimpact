@@ -29,6 +29,7 @@ estimate_tmle2 = function(Y,
                         gbound = 0.025,
                         alpha = 0.995,
                         fluctuation = "logistic",
+                        V = 10,
                         verbose = F) {
 
   if (!family %in% c("binomial", "gaussian")) {
@@ -58,6 +59,9 @@ estimate_tmle2 = function(Y,
   delta = delta[inc]
 
   # Check for any remaining missing data.
+  # It is technically ok for Y or A to include missingness, because the
+  # delta estimation is intended to estimate the missingness mechanism.
+  # This needs more testing though.
 
   missing_vals = sum(is.na(W))
   if (missing_vals != 0) {
@@ -131,7 +135,7 @@ estimate_tmle2 = function(Y,
 
   if (verbose) cat("TMLE init stage1\n")
 
-  # Run tmle stage 1
+  # Run tmle stage 1 - this is basically just bounding & transforming Y.
   stage1 = tmle_init_stage1(Y = Y, Q = NULL,
                              A = A,
                              Delta = delta,
@@ -171,6 +175,8 @@ estimate_tmle2 = function(Y,
 
   # From tmle::tmle()
   ############################################
+  if (verbose) cat("Estimating g.Delta (missingness mechanism)\n")
+
   g.z <- NULL
   g.z$type="No intermediate variable"
   g.z$coef=NA
@@ -179,9 +185,9 @@ estimate_tmle2 = function(Y,
                     pDelta1,
                     g.Deltaform,
                     g.lib,
-                    id,
+                    id = id, V = V,
                     verbose = verbose,
-                    "missingness mechanism",
+                    message = "missingness mechanism",
                     outcome="D")
   })
   g1W.total <- .bound(g$g1W*g.Delta$g1W[,"Z0A1"], gbound)
@@ -218,7 +224,11 @@ estimate_tmle2 = function(Y,
   res <- tmle::calcParameters(Ystar, A, I.Z=rep(1, length(Ystar)), delta, g1W.total, g0W.total, Qstar,
                         mu1=mean(Qstar[,"Q1W"]), mu0=mean(Qstar[,"Q0W"]), id, family)
 
+  #returnVal <- list(estimates=res, Qinit=Q, g=g, g.Z=g.z, g.Delta=g.Delta, Qstar=Qstar[,-1], epsilon=epsilon)
+  #class(returnVal) <- "tmle"
   ############################################
+
+
 
 
   # Calculate Qstar
@@ -251,13 +261,3 @@ estimate_tmle2 = function(Y,
   return(result)
 }
 
-#---------- function .bound ---------------
-# set outliers to min/max allowable values
-# assumes x contains only numerical data
-#-----------------------------------------
-#' @export
-.bound <- function(x, bounds) {
-  x[x>max(bounds)] <- max(bounds)
-  x[x<min(bounds)] <- min(bounds)
-  return(x)
-}

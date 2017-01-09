@@ -21,7 +21,16 @@
 # d = [Delta, Z,A,W for missingness]
 #----------------------------------------
 #' @importFrom utils packageDescription
-tmle_estimate_g <- function (d,g1W = NULL, gform = NULL,SL.library, id=1:nrow(d), verbose = F, message = "", outcome="A", newdata=d)  {
+tmle_estimate_g <- function (d,
+                             g1W = NULL,
+                             gform = NULL,
+                             SL.library,
+                             id=1:nrow(d),
+                             V = 10,
+                             verbose = F,
+                             message = "",
+                             outcome="A",
+                             newdata=d)  {
   SL.version <- 2
   SL.ok <- FALSE
   m <- NULL
@@ -42,9 +51,9 @@ tmle_estimate_g <- function (d,g1W = NULL, gform = NULL,SL.library, id=1:nrow(d)
         SL.ok <- TRUE
         old.SL <- packageDescription("SuperLearner")$Version < SL.version
         if(old.SL){
-          arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE], family="binomial", SL.library=SL.library, V=5, id=id)
+          arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE], family="binomial", SL.library=SL.library, V=V, id=id)
         } else {
-          arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE], family="binomial", SL.library=SL.library, cvControl=list(V=5), id=id)
+          arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE], family="binomial", SL.library=SL.library, cvControl=list(V=V), id=id)
         }
         suppressWarnings({
           m <- try(do.call(SuperLearner::SuperLearner, arglist))

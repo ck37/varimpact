@@ -51,7 +51,8 @@ tmle_estimate_q <-
             cvQinit = F,
             family,
             id = 1:length(Y),
-            verbose
+            V = 10,
+            verbose = F
   ) {
   if (is.null(Qbounds)) stop("Qbounds must be defined.")
   SL.version <- 2
@@ -104,10 +105,10 @@ tmle_estimate_q <-
         }
         if(packageDescription("SuperLearner")$Version < SL.version){
           arglist <- list(Y=Y[Delta==1],X=X[Delta==1,], newX=newX, SL.library=SL.library,
-                          V=5, family=family, save.fit.library=T, id=id[Delta==1])
+                          V=V, family=family, save.fit.library=T, id=id[Delta==1])
         } else {
           arglist <- list(Y=Y[Delta==1],X=X[Delta==1,], newX=newX, SL.library=SL.library,
-                          cvControl=list(V=5), family=family, control = list(saveFitLibrary=T), id=id[Delta==1])
+                          cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=id[Delta==1])
         }
         suppressWarnings({
           m <- try(do.call(SuperLearner::SuperLearner, arglist))

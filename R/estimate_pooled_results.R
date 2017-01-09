@@ -1,15 +1,18 @@
 estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbose = F) {
-  # Fold results is a list with results from each fold.
+  # Fold results is a list with test results from each fold.
 
   # Each fold result should have at least this element:
   # val_preds dataframe, with Y_star, g, Q, H.
 
+  # Extract the results from each CV-TMLE fold and rbind into a single dataframe.
   data = do.call(rbind, lapply(1:length(fold_results), function(i) {
     fold = fold_results[[i]]
     # Save the fold number so we can use it to generate fold-specific estimates.
     if (is.null(fold$val_preds)) {
+      # Skip folds that failed.
       NULL
     } else {
+      # val_preds is a dataframe with columns: Y_star, g, Q, H
       df = cbind(fold$val_preds, fold_num = i)
       df
     }
@@ -26,21 +29,38 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
 
     # If Y is binary, take logit of Q.
     #if (length(unique(data$Y)) == 2) {
-    data$Q_hat = qlogis(data$Q_hat)
+
+    # Look at thetas prior to fluctuation.
+    pre_thetas = tapply(data$Q_hat, data$fold_num, mean, na.rm = T)
+    if (verbose) cat("Pre-fluctuation thetas:", pre_thetas, "\n")
+
+    # If Q is binary or continuous we still want to take logit of predicted values.
+    # See tmle::estimateQ where it does this after predicting Q.
+    data$logit_Q_hat = qlogis(data$Q_hat)
     #}
 
     # Estimate epsilon
-    if (verbose) cat("Estimating epsilon\n")
+    if (verbose) cat("Estimating epsilon: ")
     if (fluctuation == "logistic") {
-      #epsilon = coef(glm(Y_star ~ -1 + offset(Q_hat) + H1W, data = data, family = "binomial"))
+      suppressWarnings({
+        #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + H1W,
+        epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
+                         data = data, family = "binomial"))
+      })
       # Use more stable version where clever covariate is the weight, and now we
       # have an intercept. Causal 2, Lecture 3, slide 51.
       # We have to suppressWarnings about "non-integrate #successes in binomial glm".
-      suppressWarnings({
+      #suppressWarnings({
         # Catch an error if one occurs here.
-        epsilon = try(coef(glm(Y_star ~ offset(Q_hat), weights = H1W, data = data, family = "binomial")))
-      })
+        #epsilon = try(coef(glm(Y_star ~ offset(logit_Q_hat),
+      #  epsilon = try(coef(glm(Y_star ~ .,
+      #                         offset = logit_Q_hat,
+      #                         weights = H1W,
+      #                         data = data, family = "binomial")))
+      #})
+      if (verbose) cat(epsilon, "\n")
     } else {
+      # No need to support linear fluctuation as it does not respect model bounds.
       stop("Only support logistic fluctuation currently.")
       # TBD.
     }
@@ -52,16 +72,18 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
       if (verbose) cat("Fluctuating Q_star\n")
 
       # Fluctuate Q to get Q_star
-      Q_star = data$Q_hat + epsilon * data$H1W
+      Q_star = data$logit_Q_hat + epsilon * data$H1W
+      #Q_star = data$logit_Q_hat + epsilon * data$HAW
 
       if (verbose) cat("Transforming Q_star\n")
       #if (length(unique(data$Y)) == 2) {
       Q_star = plogis(Q_star)
       #}
 
-      if (verbose) cat("Estimating thetas\n")
+      if (verbose) cat("Estimating per-fold thetas: ")
       # Estimate parameter on every validation fold.
       thetas = tapply(Q_star, data$fold_num, mean, na.rm = T)
+      if (verbose) cat(thetas, "\n")
 
       # Take average across folds to get final estimate.
       #theta = mean(thetas)
@@ -70,7 +92,7 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
       data$Q_star = Q_star
       rm(Q_star)
 
-      if (verbose) cat("Calculating influence curves\n")
+      if (verbose) cat("Calculating per-fold influence curves\n")
       # Get influence curve per fold.
       # Influence_curves here is a list, where each element is a result.
       # We can't convert to a matrix because lengths are different.
