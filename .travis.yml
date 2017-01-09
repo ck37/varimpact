@@ -18,7 +18,7 @@ after_success:
 script:
   - |
     R CMD build .
-    travis_wait 20 R CMD check varImpact.tar.gz
+    travis_wait 20 R CMD check varImpact_1.2.tar.gz
 
 # Get error logs in case of failure.
 after_failure:
