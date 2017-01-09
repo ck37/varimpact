@@ -15,4 +15,11 @@ after_success:
  - Rscript -e 'covr::codecov()'
 
 # Allow build to take up to 20 minutes without returning output (esp. during example testing)
-install: travis_wait
+script:
+  - |
+    R CMD build .
+    travis_wait 20 R CMD check varImpact.tar.gz
+
+# Get error logs in case of failure.
+after_failure:
+  find *Rcheck -name '*.fail' -print -exec cat '{}' \;
