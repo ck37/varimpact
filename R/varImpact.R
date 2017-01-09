@@ -996,6 +996,7 @@ varImpact = function(Y,
           cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
           cat("Labels:\n")
           print(labels)
+          cat("\n")
         }
       }
 
@@ -1504,6 +1505,7 @@ varImpact = function(Y,
           cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
           cat("Labels:\n")
           print(labels)
+          cat("\n")
         }
 
       }
