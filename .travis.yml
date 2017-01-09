@@ -10,5 +10,9 @@ bioc_packages:
 
 r_github_packages:
  - jimhester/covr
+
 after_success:
  - Rscript -e 'covr::codecov()'
+
+# Allow build to take up to 20 minutes without returning output (esp. during example testing)
+install: travis_wait
