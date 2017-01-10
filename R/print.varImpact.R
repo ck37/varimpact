@@ -9,13 +9,15 @@
 #' @export
 print.varImpact = function(x, ...) {
   # Just print the significant and consistent results.
-  if (nrow(x$results_consistent) > 0) {
+  if (!is.null(x$results_consistent) && nrow(x$results_consistent) > 0) {
     cat("Significant and consistent results:\n")
     print(x$results_consistent)
-  } else {
+  } else if (!is.null(x$results_all)) {
     cat("No significant and consistent results.\n")
     cat("All results:\n")
     print(x$results_all)
+  } else {
+    cat("No results could be calculated.\n")
   }
   invisible(x)
 }
