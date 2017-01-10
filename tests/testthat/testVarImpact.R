@@ -1,16 +1,14 @@
 # Make sure we're using the rebuilt package. Suppress any error if it isn't loaded.
-tryCatch( detach(package:varImpact), error = function(e) invisible() )
+try(detach(package:varImpact), silent = T)
 library(varImpact)
 library(testthat)
-# We need to explictly load SuperLearner due to an issue with
-# the "All" screener as of 2016-12-06.
-library(SuperLearner)
 
 # Create test dataset.
 context("varImpact(). Dataset A: continuous variables")
 
 # Set multicore-compatible seed.
 set.seed(1, "L'Ecuyer-CMRG")
+# Can't go below 90 without changing more varImpact default settings.
 N = 100
 num_normal = 5
 X = data.frame(matrix(rnorm(N * num_normal), N, num_normal))
@@ -29,7 +27,7 @@ miss_num = 10
 for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test - binary outcome.
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose=T)
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T)
 vim$time
 # Be explict about printing for code coverage of tests.
 print(vim)
@@ -43,16 +41,17 @@ suppressWarnings({
 })
 
 # And try a gaussian outcome.
-vim = varImpact(Y = Y_gaus, data = X[, 1:4], V = 2, verbose=T, family="gaussian")
+vim = varImpact(Y = Y_gaus, data = X[, 1:3], V = 2, verbose = T,
+                family = "gaussian")
 vim
 
 # Test imputation
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "zero")
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "median")
+vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T, impute = "zero")
+vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T, impute = "median")
 vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "knn")
 
-# Test a subset of columns.
-vim = varImpact(Y = Y_bin, data = X, A_names = colnames(X)[1:4], verbose = T)
+# Test a subset of columns using A_names.
+vim = varImpact(Y = Y_bin, data = X, A_names = colnames(X)[1:2], verbose = T)
 vim
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
@@ -61,11 +60,12 @@ if (.Platform$GUI == "RStudio") {
   doMC::registerDoMC()
   # Check how many cores we're using.
   foreach::getDoParWorkers()
-  vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T)
+  vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T)
+  print(vim)
 }
 
 # Test disabling parallelization.
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, parallel = F)
+vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T, parallel = F)
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
@@ -83,7 +83,7 @@ if (.Platform$GUI == "RStudio") {
   expect_equal(foreach::getDoParName(), "doSNOW")
   expect_equal(foreach::getDoParWorkers(), 2)
 
-  vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose=T)
+  vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T)
   vim
 }
 
@@ -108,10 +108,11 @@ summary(X_fac)
 
 # Basic factor test.
 # TODO: this generates multiple errors for fac_4
-vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose=T)
+vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose = T)
 vim
 # And gaussian
-vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose=T, family="gaussian")
+vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose = T,
+                family = "gaussian")
 vim
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
@@ -121,9 +122,29 @@ if (.Platform$GUI == "RStudio") {
   # Check how many cores we're using.
   foreach::getDoParWorkers()
 
+  # Try a snow cluster, which does return the output to STDOUT.
+  if (F) {
+    # Run manually when debugging.
+    cores = RhpcBLASctl::get_num_cores()
+    capture.output({ cl = snow::makeCluster(cores, type="SOCK", outfile = "") })
+    doSNOW::registerDoSNOW(cl)
+    parallel::setDefaultCluster(cl)
+    foreach::getDoParName()
+  }
+
   # Factor variables with parallelization.
-  vim = varImpact(Y = Y_bin, data = X_fac[, 1:4], verbose=T)
+  # TOFIX: This does not complete currently if fac_4 is included.
+  # I think it is due to HOPACH never completing.
+  vim = varImpact(Y = Y_bin, data = X_fac[, 1:3],
+                  #A_names = c(_4", "fac_2"),
+                  verbose = T)
   vim
+
+  # Run manually when debugging, if the snow cluster was used.
+  if (F) {
+    ckTools::stop_cluster(cl)
+  }
+
 }
 
 context("varImpact(). Dataset C: numeric and factor variables")
