@@ -6,10 +6,11 @@
 \title{Variable importance estimation using causal inference (TMLE)}
 \usage{
 varImpact(Y, data, A_names = colnames(data), V = 2,
-  Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.stepAIC"),
-  family = "binomial", minYs = 15, minCell = 0, adjust_cutoff = 10,
-  corthres = 0.8, impute = "knn", miss.cut = 0.5, bins_numeric = 10,
-  verbose = F, verbose_tmle = F, parallel = T, digits = 4)
+  Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.glmnet",
+  "SL.mean"), family = "binomial", minYs = 15, minCell = 0,
+  adjust_cutoff = 10, corthres = 0.8, impute = "knn", miss.cut = 0.5,
+  bins_numeric = 10, verbose = F, verbose_tmle = F, parallel = T,
+  digits = 4)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}

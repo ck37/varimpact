@@ -174,7 +174,8 @@ varImpact = function(Y,
                      A_names = colnames(data),
                      V = 2,
                      Q.library = c("SL.glmnet", "SL.mean"),
-                     g.library = c("SL.stepAIC"),
+                     g.library = c("SL.glmnet", "SL.mean"),
+                     #g.library = c("SL.stepAIC"),
                      family = "binomial",
                      minYs = 15,
                      minCell = 0,
@@ -492,8 +493,8 @@ varImpact = function(Y,
     # vim_factor = lapply(1:xc, function(i) {
 
     # vim_factor will be a list of results, one element per factor variable.
-    #vim_factor = foreach::foreach(var_i = 1:xc, .verbose = F, .errorhandling = "stop") %do_op% {
-    vim_factor = lapply(1:xc, function(var_i) {
+    vim_factor = foreach::foreach(var_i = 1:xc, .verbose = verbose, .errorhandling = "stop") %do_op% {
+    #vim_factor = lapply(1:xc, function(var_i) {
       nameA = names.fac[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "factor variables\n")
@@ -1002,8 +1003,8 @@ varImpact = function(Y,
 
       # Return results for this factor variable.
       var_results
-    #} # End foreach loop over all variables.
-    }) # End lapply if we're not using foreach. (temporary tweak)
+    } # End foreach loop over all variables.
+    #}) # End lapply if we're not using foreach. (temporary tweak)
 
     if (verbose) cat("Factor VIMs:", length(vim_factor), "\n\n")
 
@@ -1045,8 +1046,9 @@ varImpact = function(Y,
     })
 
     ### Loop over each numeric variable.
-    #vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = T, .errorhandling = "stop") %do_op% {
-    vim_numeric = lapply(1:num_numeric, function(var_i) {
+    vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = verbose,
+                                   .errorhandling = "stop") %do_op% {
+    #vim_numeric = lapply(1:num_numeric, function(var_i) {
       nameA = names.cont[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "numeric variables\n")
@@ -1512,8 +1514,8 @@ varImpact = function(Y,
 
       # Return results for this factor variable.
       var_results
-    #} # end foreach loop.
-    }) # End lapply if we're not using foreach
+    } # end foreach loop.
+    #}) # End lapply if we're not using foreach
 
     if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
 
