@@ -802,11 +802,11 @@ varImpact = function(Y,
             # Save the Q risk for the discrete SuperLearner.
             # We don't have the CV.SL results for the full SuperLearner as it's too
             # computationallity intensive.
-            fold_result$level_max$Q_risk =
+            fold_result$level_max$risk_Q =
                 training_estimates[[maxj]]$q_model$cvRisk[
                   which.min(training_estimates[[maxj]]$q_model$cvRisk)]
             # And the g's discrete SL risk.
-            fold_result$level_max$g_risk =
+            fold_result$level_max$risk_g =
                 training_estimates[[maxj]]$g_model$cvRisk[
                   which.min(training_estimates[[maxj]]$g_model$cvRisk)]
 
@@ -828,11 +828,11 @@ varImpact = function(Y,
             # Save the Q risk for the discrete SuperLearner.
             # We don't have the CV.SL results for the full SuperLearner as it's too
             # computationallity intensive.
-            fold_result$level_min$Q_risk =
+            fold_result$level_min$risk_Q =
               training_estimates[[minj]]$q_model$cvRisk[
                 which.min(training_estimates[[minj]]$q_model$cvRisk)]
             # And the g's discrete SL risk.
-            fold_result$level_min$g_risk =
+            fold_result$level_min$risk_g =
               training_estimates[[minj]]$g_model$cvRisk[
                 which.min(training_estimates[[minj]]$g_model$cvRisk)]
 
@@ -897,12 +897,12 @@ varImpact = function(Y,
               } else {
                 # Save the result.
                 fold_result$level_max$val_preds = max_preds
+                fold_result$message = "Succcess"
               }
             }
           }
         }
         if (verbose) cat("Completed fold", fold_k, "\n\n")
-        fold_result$message = "Succcess"
 
         # Return results for this fold.
         fold_result
@@ -1086,7 +1086,11 @@ varImpact = function(Y,
             # val_preds contains the g, Q, and H predictions on the validation data.
             val_preds = NULL,
             # Estimate of EY on the training data.
-            estimate_training = NULL
+            estimate_training = NULL,
+            # Risk from SuperLearner on Q.
+            risk_Q = NULL,
+            # Risk from SuperLearner on g.
+            risk_g = NULL
           )
         )
         # Copy the blank result to a second element for the minimum level/bin.
@@ -1302,11 +1306,11 @@ varImpact = function(Y,
             # Save the Q risk for the discrete SuperLearner.
             # We don't have the CV.SL results for the full SuperLearner as it's too
             # computationallity intensive.
-            fold_result$level_max$Q_risk =
+            fold_result$level_max$risk_Q =
               training_estimates[[maxj]]$q_model$cvRisk[
                 which.min(training_estimates[[maxj]]$q_model$cvRisk)]
             # And the g's discrete SL risk.
-            fold_result$level_max$g_risk =
+            fold_result$level_max$risk_g =
               training_estimates[[maxj]]$g_model$cvRisk[
                 which.min(training_estimates[[maxj]]$g_model$cvRisk)]
 
@@ -1322,11 +1326,11 @@ varImpact = function(Y,
             # Save the Q risk for the discrete SuperLearner.
             # We don't have the CV.SL results for the full SuperLearner as it's too
             # computationallity intensive.
-            fold_result$level_min$Q_risk =
+            fold_result$level_min$risk_Q =
               training_estimates[[minj]]$q_model$cvRisk[
                 which.min(training_estimates[[minj]]$q_model$cvRisk)]
             # And the g's discrete SL risk.
-            fold_result$level_min$g_risk =
+            fold_result$level_min$risk_g =
               training_estimates[[minj]]$g_model$cvRisk[
                 which.min(training_estimates[[minj]]$g_model$cvRisk)]
 
@@ -1409,19 +1413,18 @@ varImpact = function(Y,
                 } else {
                   # Save the result.
                   fold_result$level_max$val_preds = max_preds
+                  fold_result$message = "Succcess"
                 }
               }
             }
           }
         }
         cat("Completed fold", fold_k, "\n\n")
-        fold_result$message = "Succcess"
 
         # Return results for this fold.
         fold_result
       }) # End lapply
       # Done looping over each fold.
-
 
       # Create list to save results for this variable.
       var_results = list(
