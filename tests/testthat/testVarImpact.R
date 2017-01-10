@@ -140,6 +140,9 @@ if (.Platform$GUI == "RStudio") {
                   verbose = T)
   vim
 
+  # Return to single core usage.
+  foreach::registerDoSEQ()
+
   # Run manually when debugging, if the snow cluster was used.
   if (F) {
     ckTools::stop_cluster(cl)
@@ -198,6 +201,9 @@ vim$time
 vim
 vim$results_all
 
+# Return to single core usage.
+foreach::registerDoSEQ()
+
 
 context("varImpact() .Dataset D: basic example")
 
@@ -205,17 +211,21 @@ context("varImpact() .Dataset D: basic example")
 # Create test dataset.
 set.seed(1, "L'Ecuyer-CMRG")
 
-N <- 100
-num_normal <- 7
-X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
-Y <- rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
+N = 100
+num_normal = 7
+X = as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
+Y = rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
 # Add some missing data to X so we can test imputation.
-for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
+for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 ####################################
 # Basic example
 # TODO: fix warnings here, due to failed folds.
-vim <- varImpact(Y = Y, data = X, verbose = T)
+# TOFIX: there is an error here on the numeric variables.
+# task 3 failed - "attempt to select less than one element in get1index"
+# X_3 seems to be causing the problem - need to investigate why.
+vim = varImpact(Y = Y, data = X, A_names = colnames(X)[c(1, 2, 4:7)],
+                verbose = T, parallel = F)
 vim
 vim$results_all
 vim$results_by_fold
