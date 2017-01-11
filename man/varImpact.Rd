@@ -9,8 +9,9 @@ varImpact(Y, data, A_names = colnames(data), V = 2,
   Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.glmnet",
   "SL.mean"), family = "binomial", minYs = 15, minCell = 0,
   adjust_cutoff = 10, corthres = 0.8, impute = "knn", miss.cut = 0.5,
-  bins_numeric = 10, verbose = F, verbose_tmle = F, parallel = T,
-  digits = 4)
+  bins_numeric = 10, quantile_probs_factor = c(0.1, 0.9),
+  quantile_probs_numeric = quantile_probs_factor, verbose = F,
+  verbose_tmle = F, parallel = T, digits = 4)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}
@@ -53,6 +54,12 @@ variable for inclusion of an adjustment variables}
 of missing obs > cut.off}
 
 \item{bins_numeric}{Numbers of bins when discretizing numeric variables.}
+
+\item{quantile_probs_factor}{Quantiles used to check if factors have
+sufficient variation.}
+
+\item{quantile_probs_numeric}{Quantiles used to check if numerics have
+sufficient variation.}
 
 \item{verbose}{Boolean - if TRUE the method will display more detailed
 output.}

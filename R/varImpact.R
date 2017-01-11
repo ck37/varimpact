@@ -58,6 +58,10 @@
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
 #' @param bins_numeric Numbers of bins when discretizing numeric variables.
+#' @param quantile_probs_factor Quantiles used to check if factors have
+#'   sufficient variation.
+#' @param quantile_probs_numeric Quantiles used to check if numerics have
+#'   sufficient variation.
 #' @param parallel Use parallel processing if a backend is registered; enabled
 #'   by default.
 #' @param verbose Boolean - if TRUE the method will display more detailed
@@ -184,6 +188,8 @@ varImpact = function(Y,
                      impute = "knn",
                      miss.cut = 0.5,
                      bins_numeric = 10,
+                     quantile_probs_factor = c(0.1, 0.9),
+                     quantile_probs_numeric = quantile_probs_factor,
                      verbose = F,
                      verbose_tmle = F,
                      parallel = T,
@@ -283,8 +289,9 @@ varImpact = function(Y,
     ###################
     # For each factor, apply function and get rid of those where
     # 'true' data.fac is data frame of variables that are factors
-
-    data.fac = restrict_by_quantiles(data.fac, quantile_probs = c(0.1, 0.9))
+    if (!is.null(quantile_probs_factor)) {
+      data.fac = restrict_by_quantiles(data.fac, quantile_probs = quantile_probs_factor)
+    }
 
     dropped_cols = num_cols - ncol(data.fac)
 
@@ -346,7 +353,9 @@ varImpact = function(Y,
 
     # Remove columns where the 0.1 and 0.9 quantiles have the same value, i.e. insufficent variation.
     # TODO: set this is a configurable setting?
-    data.num = restrict_by_quantiles(data.num, quantile_probs = c(0.1, 0.9))
+    if (!is.null(quantile_probs_numeric)) {
+      data.num = restrict_by_quantiles(data.num, quantile_probs = quantile_probs_numeric)
+    }
 
     if (verbose) {
       num_dropped = num_cols - ncol(data.num)
