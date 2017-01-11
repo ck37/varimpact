@@ -37,7 +37,7 @@ vim$results_by_fold
 exportLatex(vim)
 # Clean up - will get a warning if there were no consistent results.
 suppressWarnings({
-  file.remove(c("varimpByV.tex", "varImpAll.tex", "varimpConsistent.tex"))
+  file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
 })
 
 # And try a gaussian outcome.
@@ -233,5 +233,5 @@ vim$results_by_fold
 exportLatex(vim)
 # Clean up
 suppressWarnings({ # Suppress a warning when no results are consistent.
-  file.remove(c("varimpByV.tex", "varImpAll.tex", "varimpConsistent.tex"))
+  file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
 })

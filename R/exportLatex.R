@@ -27,9 +27,9 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
             label = "byV",
             digits = digits),
         type = "latex",
-        file = paste0(paste(dir, outname, sep="/"), "varimpByV.tex"),
+        file = paste0(paste(dir, outname, sep="/"), "varimpByFold.tex"),
         #caption.placement = "top",
-        include.rownames = F,
+        include.rownames = T,
         ...)
 
 
