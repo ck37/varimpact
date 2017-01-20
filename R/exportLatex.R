@@ -24,11 +24,11 @@
 exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...) {
   print(xtable::xtable(impact_results$results_by_fold,
             caption = "Variable Importance Results By Estimation Sample",
-            label = "byV",
+            label = "byFold",
             digits = digits),
         type = "latex",
-        file = paste0(paste(dir, outname, sep="/"), "varimpByFold.tex"),
-        #caption.placement = "top",
+        file = paste0(paste(dir, outname, sep = "/"), "varimpByFold.tex"),
+        caption.placement = "top",
         include.rownames = T,
         ...)
 
