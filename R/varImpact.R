@@ -1071,7 +1071,7 @@ varImpact = function(Y,
       # This is looping sequentially for now.
       #fold_results = foreach (fold_k = 1:V) %do% {
       fold_results = lapply(1:V, function(fold_k) {
-        if (verbose) cat("v =", fold_k, "out of V =", V, "\n")
+        if (verbose) cat("Fold", fold_k, "of", V, "\n")
 
         At = data.cont.dist[folds != fold_k, var_i]
         Av = data.cont.dist[folds == fold_k, var_i]
@@ -1090,7 +1090,7 @@ varImpact = function(Y,
           level_max = list(
             # Level is which bin was chosen.
             level = NULL,
-            # Label is the description of that bin.
+            # Label is the string description of that bin.
             label = NULL,
             # val_preds contains the g, Q, and H predictions on the validation data.
             val_preds = NULL,
@@ -1136,9 +1136,12 @@ varImpact = function(Y,
         } else {
           #if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) > 1) {
           labs = names(table(Atnew))
+
           Atnew = as.numeric(Atnew) - 1
           Avnew = as.numeric(Avnew) - 1
+
           numcat.cont[var_i] = length(labs)
+
           # change this to match what was done for factors - once
           # cats.cont[[i]]=as.numeric(na.omit(unique(Atnew)))
           cats.cont[[var_i]] = as.numeric(names(table(Atnew)))
@@ -1187,7 +1190,7 @@ varImpact = function(Y,
             cat("\n")
           }
 
-          # Use HOPACH to reduce dimension of W to some level of tree
+          # Use HOPACH to reduce dimension of W to some level of tree.
           reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
 
           Wtsht = reduced_results$data
@@ -1243,10 +1246,11 @@ varImpact = function(Y,
 
             training_estimates = list()
 
+            # Loop over each bin for this variable.
             for (j in 1:numcat.cont[var_i]) {
+
               # Create a treatment indicator, where 1 = obs in this bin
               # and 0 = obs not in this bin.
-
               IA = as.numeric(Atnew == vals[j])
 
               # CV-TMLE: we are using this for three reasons:
@@ -1273,7 +1277,7 @@ varImpact = function(Y,
 
                 # TMLE succeeded (hopefully).
 
-                # Save bin
+                # Save bin label.
                 tmle_result$label = labs[j]
 
                 training_estimates[[j]] = tmle_result
@@ -1299,8 +1303,8 @@ varImpact = function(Y,
             minj = which.min(theta_estimates)
 
             if (verbose) {
-              cat("Max level:", vals[maxj], paste0("(", maxj, ")"),
-                  "Min level:", vals[minj], paste0("(", minj, ")"), "\n")
+              cat("Max level:", vals[maxj], labs[maxj], paste0("(", maxj, ")"),
+                  "Min level:", vals[minj], labs[minj], paste0("(", minj, ")"), "\n")
             }
 
             # Save that estimate.
@@ -1310,7 +1314,8 @@ varImpact = function(Y,
             # Save these items into the fold_result list.
             fold_result$level_max$level = maxj
             fold_result$level_max$estimate_training = maxEY1
-            fold_result$level_max$label = labmax
+            #fold_result$level_max$label = labmax
+            fold_result$level_max$label = labs[maxj]
 
             # Save the Q risk for the discrete SuperLearner.
             # We don't have the CV.SL results for the full SuperLearner as it's too
@@ -1330,7 +1335,8 @@ varImpact = function(Y,
             # Save these items into the fold_result list.
             fold_result$level_min$level = minj
             fold_result$level_min$estimate_training = minEY1
-            fold_result$level_min$label = labmin
+            #fold_result$level_min$label = labmin
+            fold_result$level_min$label = labs[minj]
 
             # Save the Q risk for the discrete SuperLearner.
             # We don't have the CV.SL results for the full SuperLearner as it's too
@@ -1632,13 +1638,17 @@ varImpact = function(Y,
 
       SEV = sqrt(varIC / nV)
 
-      # Get labels for each of the training sample
+      # Get labels for each of the training samples.
       extract_labels = function(x, total_folds) {
+        # Repeat each fold id twice, one for low level and once for high.
         labels = rep(1:total_folds, 2)
+        # Re-order in ascending order.
+        # TODO: isn't there another rep() function that would sort automatically?
         oo = order(labels)
         labels = labels[oo]
+        # Convert labels from vector elements to columns in a single row.
         out = as.vector(t(x))
-        names(out) = paste0("v.", labels, rep(c("a_L", "a_H"), total_folds))
+        names(out) = paste0(rep(c("Low", "High"), total_folds), "_v", labels)
         out
       }
 
@@ -1693,6 +1703,7 @@ varImpact = function(Y,
           dir = cbind(dir, uwr > lwr)
         }
 
+        # For numeric variables, consistency means each fold finds the same directionality.
         cons = apply(dir, 1, length.uniq)
       }
 
@@ -1757,7 +1768,7 @@ varImpact = function(Y,
       # Restrict to variables that aren't missing their p-value.
       outres = outres[!is.na(outres[, "rawp"]), , drop = F]
 
-      names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("psiV", 1:V), "AvePsi", "CI95")
+      names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("Est_v", 1:V), "AvePsi", "CI95")
       names(outres)[(9 + 2 * V)] = "Consistent"
 
       ################
