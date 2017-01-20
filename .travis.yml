@@ -18,7 +18,7 @@ bioc_packages:
 script:
   - |
     R CMD build .
-    travis_wait 30 R CMD check varImpact_1.2.tar.gz
+    travis_wait 30 R CMD check varImpact_1.3.tar.gz
 
 # Get error logs in case of failure.
 after_failure:
