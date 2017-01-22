@@ -27,7 +27,7 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
             label = "byFold",
             digits = digits),
         type = "latex",
-        file = paste0(paste(dir, outname, sep = "/"), "varimpByFold.tex"),
+        file = paste0(dir, "/", outname, "varimpByFold.tex"),
         caption.placement = "top",
         include.rownames = T,
         ...)
@@ -43,24 +43,24 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
     hline.after = NULL
   }
 
-  table_all = cbind("Rank"=1:nrow(impact_results$results_all),
-                    "Variable"=rownames(impact_results$results_all),
+  table_all = cbind("Rank" = 1:nrow(impact_results$results_all),
+                    "Variable" = rownames(impact_results$results_all),
                     impact_results$results_all)
 
   print(xtable::xtable(table_all,
-                  caption = "Variable Importance Results for Combined Estimates",
+                  caption = "Variable Importance Results For Combined Estimates",
                   label = "allRes",
                   digits = digits),
           type = "latex",
-          file = paste0(paste(dir, outname, sep="/"), "varimpAll.tex"),
+          file = paste0(dir, "/", outname, "varimpAll.tex"),
           caption.placement = "top",
           include.rownames = F,
           hline.after = hline.after,
           ...)
 
   if (nrow(impact_results$results_consistent) > 0) {
-    consistent_table = cbind("Rank"=1:nrow(impact_results$results_consistent),
-                           "Variable"=rownames(impact_results$results_consistent),
+    consistent_table = cbind("Rank" = 1:nrow(impact_results$results_consistent),
+                           "Variable" = rownames(impact_results$results_consistent),
                            impact_results$results_consistent)
     consistent_xtable = xtable::xtable(consistent_table,
               caption = "Subset of of Significant and ``Consistent'' Results",
@@ -75,7 +75,7 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
 
   print(consistent_xtable,
         type = "latex",
-        file = paste0(paste(dir, outname, sep="/"), "varimpConsistent.tex"),
+        file = paste0(dir, "/", outname, "varimpConsistent.tex"),
         caption.placement = "top",
         include.rownames = F,
         ...)
