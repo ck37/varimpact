@@ -388,21 +388,25 @@ varImpact = function(Y,
     Xnew = NULL
 
     for (k in 1:num_numeric) {
+      # Because we do not specify "drop" within the brackets, Xt is now a vector.
       Xt = X[, k]
       # cat("Numeric", k, "", colnames(X)[k], "mean missing:", mean(is.na(Xt)), "\n")
 
-      # Suppress the warning that can occur when there are fewer than 10 bins.
-      # We should be able to see this as var_binned containing fewer than 10 columns.
+      # Suppress the warning that can occur when there are fewer than the desired
+      # maximum number of bins, as specified by bins_numeric. We should be able to
+      # see this as var_binned containing fewer than bins_numeric columns.
       # Warning is in .cut2(): min(xx[xx > upper])
       # "no non-missing arguments to min; returning Inf"
       suppressWarnings({
-        # Discretize into up to 10 deciles.
-        # TODO: number of bins should be a function argument.
-        var_binned = as.numeric(arules::discretize(Xt,
-                                                   method = "frequency",
-                                                   categories = bins_numeric,
-                                                   ordered = T))
+        # Discretize into up to 10 quantiles (by default), configurable based on
+        # bins_numeric argument.
+        var_binned_names = arules::discretize(Xt,
+                                              method = "frequency",
+                                              categories = bins_numeric,
+                                              ordered = T)
       })
+      # This removes the labels of the bins.
+      var_binned = as.numeric(var_binned_names)
       Xnew = cbind(Xnew, var_binned)
     }
     colnames(Xnew) = varn
