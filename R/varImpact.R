@@ -1566,7 +1566,7 @@ varImpact = function(Y,
   num_numeric = length(colnames_numeric)
   num_factor = length(colnames_factor)
 
-  variable_types = c(rep("ordered", num_numeric), rep("factor", num_factor))
+  variable_types = c(rep("Ordered", num_numeric), rep("Factor", num_factor))
   variable_names = c(colnames_numeric, colnames_factor)
 
   vim_combined = c(vim_numeric, vim_factor)
@@ -1682,7 +1682,7 @@ varImpact = function(Y,
       # pval.comp=2*(1-pnorm(abs(TT))) FOR levels
       # (just make sure in same order)
 
-      num_continuous = sum(variable_types == "ordered")
+      num_continuous = sum(variable_types == "Ordered")
       num_vars = length(variable_types)
 
       length.uniq = function(x) {
