@@ -21,15 +21,18 @@
 #' \code{\link[varImpact]{varImpact}}
 #'
 #' @export
+# TODO: document return object.
 exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...) {
 
   table_byfold = cbind("Variable" = rownames(impact_results$results_by_fold),
                     impact_results$results_by_fold)
 
-  print(xtable::xtable(table_byfold,
+  xtable_byfold = xtable::xtable(table_byfold,
             caption = "Variable Importance Results By Estimation Sample",
             label = "byFold",
-            digits = digits),
+            digits = digits)
+
+  print(xtable_byfold,
         type = "latex",
         file = paste0(dir, "/", outname, "varimpByFold.tex"),
         caption.placement = "top",
@@ -51,10 +54,12 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
                     "Variable" = rownames(impact_results$results_all),
                     impact_results$results_all)
 
-  print(xtable::xtable(table_all,
-                  caption = "Variable Importance Results For Combined Estimates",
-                  label = "allRes",
-                  digits = digits),
+  xtable_all = xtable::xtable(table_all,
+                   caption = "Variable Importance Results For Combined Estimates",
+                   label = "allRes",
+                   digits = digits)
+
+  print(xtable_all,
           type = "latex",
           file = paste0(dir, "/", outname, "varimpAll.tex"),
           caption.placement = "top",
@@ -63,28 +68,37 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
           ...)
 
   if (nrow(impact_results$results_consistent) > 0) {
-    consistent_table = cbind("Rank" = 1:nrow(impact_results$results_consistent),
+    table_consistent = cbind("Rank" = 1:nrow(impact_results$results_consistent),
                            "Variable" = rownames(impact_results$results_consistent),
                            impact_results$results_consistent)
-    consistent_xtable = xtable::xtable(consistent_table,
+    xtable_consistent = xtable::xtable(table_consistent,
               caption = "Subset of of Significant and ``Consistent'' Results",
               label = "consisRes",
               digits = digits)
   } else {
     # Create a blank dataframe.
-    consistent_table = data.frame()
+    table_consistent = data.frame()
     # Create a blank xtable.
-    consistent_xtable = NULL
+    xtable_consistent = NULL
   }
 
-  print(consistent_xtable,
+  print(xtable_consistent,
         type = "latex",
         file = paste0(dir, "/", outname, "varimpConsistent.tex"),
         caption.placement = "top",
         include.rownames = F,
         ...)
 
-  # Give a default return value, silently.
-  # TODO: return a list with the output results.
-  invisible(T)
+  # Return a list with the output results.
+  results = list(tables = list(
+                   consistent = table_consistent,
+                   all = table_all,
+                   byfold = table_byfold
+                 ),
+                 xtables = list(
+                   consistent = xtable_consistent,
+                   all = xtable_all,
+                   byfold = xtable_byfold
+                 ))
+  invisible(results)
 }
