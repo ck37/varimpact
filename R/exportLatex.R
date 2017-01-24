@@ -22,14 +22,18 @@
 #'
 #' @export
 exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...) {
-  print(xtable::xtable(impact_results$results_by_fold,
+
+  table_byfold = cbind("Variable" = rownames(impact_results$results_by_fold),
+                    impact_results$results_by_fold)
+
+  print(xtable::xtable(table_byfold,
             caption = "Variable Importance Results By Estimation Sample",
             label = "byFold",
             digits = digits),
         type = "latex",
         file = paste0(dir, "/", outname, "varimpByFold.tex"),
         caption.placement = "top",
-        include.rownames = T,
+        include.rownames = F,
         ...)
 
 
