@@ -40,6 +40,9 @@ suppressWarnings({
   file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
 })
 
+# Try larger V.
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 3, verbose = T)
+
 # And try a gaussian outcome.
 vim = varImpact(Y = Y_gaus, data = X[, 1:3], V = 2, verbose = T,
                 family = "gaussian")
