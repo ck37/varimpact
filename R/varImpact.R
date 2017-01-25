@@ -1357,7 +1357,7 @@ varImpact = function(Y,
             # Or if the minimum and maximum bin is the same.
             if (error_count == numcat.cont[var_i] || minj == maxj) {
               message = paste("Fold", fold_k, "failed,")
-              if (error_count == num.cat) {
+              if (error_count == numcat.cont[var_i]) {
                 message = paste(message, "all", num.cat, "levels had errors.")
               } else {
                 message = paste(message, "min and max level are the same. (j = ", minj,
@@ -1718,6 +1718,7 @@ varImpact = function(Y,
         lwr = NULL
         uwr = NULL
         for (i in 1:V) {
+          # The 2 here is because we have the a_l and a_h labels, not because V = 2.
           lwr = cbind(lwr, labels[(num_continuous + 1):num_vars, i * 2 - 1])
           uwr = cbind(uwr, labels[(num_continuous + 1):num_vars, i * 2])
         }
@@ -1771,9 +1772,16 @@ varImpact = function(Y,
 
       # Restrict to variables that aren't missing their p-value.
       outres = outres[!is.na(outres[, "rawp"]), , drop = F]
+      print(colnames(outres))
+      print(ncol(outres))
 
-      names(outres)[1:(1 + 2 * V)] = c("VarType", paste0("Est_v", 1:V), "AvePsi", "CI95")
-      names(outres)[(9 + 2 * V)] = "Consistent"
+      #names(outres)[1:(1 + 2*V)] = c("VarType", paste0("Est_v", 1:V), "AvePsi", "CI95")
+      names(outres)[1:(3 + V)] = c("VarType", paste0("Est_v", 1:V), "AvePsi", "CI95")
+      #names(outres)[(9 + 2 * V)] = "Consistent"
+      names(outres)[ncol(outres)] = "Consistent"
+
+      print(colnames(outres))
+      print(ncol(outres))
 
       ################
       # Get Consistency Measure and only significant
@@ -1786,7 +1794,8 @@ varImpact = function(Y,
 
       # drops = c('VarType','description','Holm,')
       # outres.all=outres[,!(names(outres) %in% drops)]
-      outres.byV = outres[, c(2:(2 + V - 1), 9:(9 + 2 * V)), drop = F]
+      # We want to extract the per-fold psi estimates, per-fold levels, and consistency flag.
+      outres.byV = outres[, c(2:(2 + V - 1), (7 + V):(7 + 3 * V)), drop = F]
       outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH", "Consistent"), drop = F]
       colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value", "Consistent")
     }
