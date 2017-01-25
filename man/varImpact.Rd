@@ -122,6 +122,10 @@ Gruber, S., & van der Laan, M. J. (2012). \emph{tmle: An R Package for
 Targeted Maximum Likelihood Estimation}. Journal of Statistical Software,
 51(i13).
 
+Hubbard, A. E., Kherad-Pajouh, S., & van der Laan, M. J. (2016).
+\emph{Statistical Inference for Data Adaptive Target Parameters}. The
+international journal of biostatistics, 12(1), 3-19.
+
 Hubbard, A., Munoz, I. D., Decker, A., Holcomb, J. B., Schreiber, M. A.,
 Bulger, E. M., ... & Rahbar, M. H. (2013). \emph{Time-Dependent Prediction
 and Evaluation of Variable Importance Using SuperLearning in High Dimensional
@@ -132,8 +136,8 @@ data-adaptive target parameters (pp. 439-452)}. In P. Bühlmann et al. (Ed.),
 \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca
 Raton, FL.
 
-van der Laan, M. J. (2006). Statistical inference for variable importance.
-The International Journal of Biostatistics, 2(1).
+van der Laan, M. J. (2006). \emph{Statistical inference for variable
+importance}. The International Journal of Biostatistics, 2(1).
 
 van der Laan, M. J., & Pollard, K. S. (2003). \emph{A new algorithm for
 hybrid hierarchical clustering with visualization and the bootstrap}. Journal
