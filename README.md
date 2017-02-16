@@ -13,7 +13,7 @@ varImpact uses causal inference statistics to generate variable importance estim
 
 Each covariate is analyzed using targeted minimum loss-based estimation ([TMLE](https://cran.r-project.org/web/packages/tmle/index.html)) as though it were a treatment, with all other variables serving as adjustment variables via [SuperLearner](https://github.com/ecpolley/SuperLearner). Then the statistical significance of the estimated treatment effect for each covariate determines the variable importance ranking. This formulation allows the asymptotics of TMLE to provide valid standard errors and p-values, unlike other variable importance algorithms.
 
-The results provide raw p-values as well as p-values adjusted for false discovery rate using the Benjamini-Hochberg (1995) procedure. Adjustment variables are automatically clustered hierarchically using HOPACH (van der Laan & Pollard 2003) in order to reduce dimensionality.  The package supports multi-core and multi-node parallelization, which are detected and used automatically when a parallel backend is registered. Missing values are automatically imputed using K-nearest neighbors and missingness indicator variables are incorporated into the analysis.
+The results provide raw p-values as well as p-values adjusted for false discovery rate using the Benjamini-Hochberg (1995) procedure. Adjustment variables are automatically clustered hierarchically using HOPACH (van der Laan & Pollard 2003) in order to reduce dimensionality.  The package supports multi-core and multi-node parallelization, which are detected and used automatically when a parallel backend is registered. Missing values are automatically imputed using K-nearest neighbors (Troyanskaya et al. 2001, Jerez et al. 2010) and missingness indicator variables are incorporated into the analysis.
 
 varImpact is under active development so please submit any bug reports or feature requests to the [issue queue](https://github.com/ck37/varImpact/issues), or email Alan & Chris directly.
 
@@ -100,6 +100,10 @@ Hubbard, A. E., Kherad-Pajouh, S., & van der Laan, M. J. (2016). Statistical Inf
 Hubbard, A., Munoz, I. D., Decker, A., Holcomb, J. B., Schreiber, M. A., Bulger, E. M., ... & Rahbar, M. H. (2013). Time-Dependent Prediction and Evaluation of Variable Importance Using SuperLearning in High Dimensional Clinical Data. The journal of trauma and acute care surgery, 75(1 0 1), S53.
 
 Hubbard, A. E., & van der Laan, M. J. (2016). Mining with inference: data-adaptive target parameters (pp. 439-452). In P. Bühlmann et al. (Ed.), Handbook of Big Data. CRC Press, Taylor & Francis Group, LLC: Boca Raton, FL.
+
+Jerez, J. M., Molina, I., García-Laencina, P. J., Alba, E., Ribelles, N., Martín, M., & Franco, L. (2010). Missing data imputation using statistical and machine learning methods in a real breast cancer problem. Artificial intelligence in medicine, 50(2), 105-115.
+
+Troyanskaya, O., Cantor, M., Sherlock, G., Brown, P., Hastie, T., Tibshirani, R., Botstein, D., & Altman, R. B. (2001). Missing value estimation methods for DNA microarrays. Bioinformatics, 17(6), 520-525.
 
 van der Laan, M. J. (2006). Statistical inference for variable importance. The International Journal of Biostatistics, 2(1).
 
