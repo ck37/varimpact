@@ -250,7 +250,7 @@ varImpact = function(Y,
 
   #######
   # Cut-off for eliminating variable for proportion of obs missing.
-  data = data[, mis.prop < miss.cut]
+  data = data[, mis.prop < miss.cut, drop = F]
 
   if (verbose) cat("Removed", sum(mis.prop >= miss.cut), "variables due to high",
                    "missing value proportion.\n")
@@ -389,12 +389,15 @@ varImpact = function(Y,
 
     num.cat = apply(X, 2, length_unique)
 
-    Xnew = NULL
+    # Matrix to store the numeric columns converted to bin levels (integer value per quantile).
+    numerics_binned = matrix(nrow = n, ncol = num_numeric)
 
-    for (k in 1:num_numeric) {
+    # Make a list to store the levels for each numeric variable.
+    numeric_levels = vector("list", num_numeric)
+
+    for (numeric_i in 1:num_numeric) {
       # Because we do not specify "drop" within the brackets, Xt is now a vector.
-      Xt = X[, k]
-      # cat("Numeric", k, "", colnames(X)[k], "mean missing:", mean(is.na(Xt)), "\n")
+      Xt = X[, numeric_i]
 
       # Suppress the warning that can occur when there are fewer than the desired
       # maximum number of bins, as specified by bins_numeric. We should be able to
@@ -404,21 +407,24 @@ varImpact = function(Y,
       suppressWarnings({
         # Discretize into up to 10 quantiles (by default), configurable based on
         # bins_numeric argument.
+        # This returns a factor version of the discretized variable.
         var_binned_names = arules::discretize(Xt,
                                               method = "frequency",
                                               categories = bins_numeric,
                                               ordered = T)
       })
-      # This removes the labels of the bins.
+      # Save the levels for future usage.
+      numeric_levels[[numeric_i]] = levels(var_binned_names)
+      # This converts the factor variable to just the quantile numbers.
       var_binned = as.numeric(var_binned_names)
-      Xnew = cbind(Xnew, var_binned)
+      numerics_binned[, numeric_i] =  var_binned
     }
-    colnames(Xnew) = varn
-    data.cont.dist = Xnew
+    colnames(numerics_binned) = varn
+    data.cont.dist = numerics_binned
 
     ###############
     # Missing Basis for numeric variables, post-binning.
-    xp = ncol(data.cont.dist)
+
     n.cont = nrow(data.cont.dist)
 
     sum_nas = apply(data.cont.dist, 2, sum_na)
@@ -427,15 +433,18 @@ varImpact = function(Y,
     nmesm = NULL
 
     # Create imputed version of the numeric dataframe.
+    # This is used as the adjustment set, but not used when generating the treatment assignment vector.
     data.numW = data.num
 
     # Loop over each binned numeric variable.
-    for (k in 1:xp) {
+    # TODO: do this as part of the binning process.
+    for (k in 1:num_numeric) {
       # Check if that variable has any missing values.
       if (sum_nas[k] > 0) {
         # The effect is that the basis is set to 1 if it exists and 0 if it's missing.
         ix = as.numeric(!is.na(data.cont.dist[, k]))
         miss.cont = cbind(miss.cont, ix)
+        # TODO: convert to paste0
         nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
       }
     }
@@ -1053,11 +1062,8 @@ varImpact = function(Y,
     names.cont = colnames(data.cont.dist)
     n.cont = nrow(data.cont.dist)
 
-    # TODO: describe this stpe.
+    # Tally the number of unique values (bins) in each numeric variable; save as a vector.
     numcat.cont = apply(data.cont.dist, 2, length_unique)
-    # CK: I think we can comment out this line:
-    #xc = length(numcat.cont)
-    # cat("xc is", xc, "and length numcat.cont is", length(numcat.cont), "\n")
 
     cats.cont = lapply(1:xc, function(i) {
       sort(unique(data.cont.dist[, i]))
@@ -1082,6 +1088,7 @@ varImpact = function(Y,
       fold_results = lapply(1:V, function(fold_k) {
         if (verbose) cat("Fold", fold_k, "of", V, "\n")
 
+        # data.cont.dist is the discretized version of the numeric variables of size bins_numeric
         At = data.cont.dist[folds != fold_k, var_i]
         Av = data.cont.dist[folds == fold_k, var_i]
         Yt = Y[folds != fold_k]
@@ -1116,25 +1123,45 @@ varImpact = function(Y,
 
         if (length(unique(Yt)) == 2) {
           # Binary outcome.
+          # CK: do we need to restrict the adjustment variables and Y in the same manner as this part?
           AY1 = At[Yt == 1 & !is.na(At)]
           # Check if AY1 has only a single value. If so, skip histogramming to avoid an error.
           singleAY1 = length(unique(na.omit(AY1))) == 1
         } else {
           # Continuous outcome.
+          # CK: do we need to restrict the adjustment variables and Y in the same manner as this part?
           AY1 = At[!is.na(At)]
           singleAY1 = F
         }
 
         if (!singleAY1) {
+          # Within this CV-TMLE fold look at further combining bins of the treatment based on the
+          # penalized histogram.
+          # Note that this is only examining the already discretized version of the treatment variable.
           hh = histogram::histogram(AY1, verbose = F, type = "irregular", plot = F)$breaks
+
+          # TODO: see if these next two steps are ever used/needed.
+
+          # Check if the final cut-off is less that the maximum possible level; if so extend to slightly
+          # larger than the maximimum possible level.
           if (hh[length(hh)] < max(At, na.rm = T)) {
             hh[length(hh)] = max(At, na.rm = T) + 0.1
           }
+
+          # Check if the lowest cut-off is greater than the minimum possible bin; if so extend to slightly
+          # below the minimum level.
           if (hh[1] > min(At[At > 0], na.rm = T)) {
             hh[1] = min(At[At > 0], na.rm = T) - 0.1
           }
+
+          # Re-bin the training and validation vectors for the treatment variable based on the penalized
+          # histogram.
+          # This is creating factors, with levels specific to this CV-TMLE fold.
           Atnew = cut(At, breaks = hh)
           Avnew = cut(Av, breaks = hh)
+
+          # TODO: check if the binning results in no-variation, and handle separately from the below situation.
+
         }
         if (singleAY1 || length(na.omit(unique(Atnew))) <= 1 ||
             length(na.omit(unique(Avnew))) <= 1) {
@@ -1143,17 +1170,20 @@ varImpact = function(Y,
           fold_result$message = error_msg
           #warning(error_msg)
         } else {
-          #if (length(na.omit(unique(Atnew))) > 1 & length(na.omit(unique(Avnew))) > 1) {
+
           labs = names(table(Atnew))
 
           Atnew = as.numeric(Atnew) - 1
           Avnew = as.numeric(Avnew) - 1
 
+          # Update the number of bins for this numeric variable.
+          # CK: note though, this is specific to this CV-TMLE fold - don't we need to different which fold we're in?
           numcat.cont[var_i] = length(labs)
 
           # change this to match what was done for factors - once
           # cats.cont[[i]]=as.numeric(na.omit(unique(Atnew)))
           cats.cont[[var_i]] = as.numeric(names(table(Atnew)))
+
           ### acit.numW is just same as data.cont.dist except with NA's replaced by
           ### 0's.
           if (!exists("miss.cont") || is.null(miss.cont)) {
@@ -1168,21 +1198,35 @@ varImpact = function(Y,
           if (!exists("data.numW") || is.null(data.numW)) {
             data.numW = rep(NA, n.cont)
           }
+
+          # Construct a matrix of adjustment variables in which we use the imputed dataset
+          # but remove the current treatment variable (and its missingness indicator).
           W = data.frame(data.numW[, -var_i, drop = F], miss.cont, datafac.dumW, miss.fac)
+
           W = W[, !apply(is.na(W), 2, all), drop = F]
+
+          # Separate adjustment matrix into the training and test folds.
           Wt = W[folds != fold_k, , drop = F]
           Wv = W[folds == fold_k, , drop = F]
 
-          nmesW = names(Wt)
-          mtch = match(nmesW, paste0("Imiss_", nameA))
+          # Identify columns which are the missingness indicator for this treatment.
+          # All other columns will be NA.
+          # TODO: simplify this, we can just use "==" instead of match().
+          mtch = match(names(Wt), paste0("Imiss_", nameA))
+
+          # Remove the missingness indicator for this treatment.
+          # TODO: simplify this per above comment.
           Wt = Wt[, is.na(mtch), drop = F]
           Wv = Wv[, is.na(mtch), drop = F]
-          ### Pull out any variables that are overly correlated with At (corr coef
-          ### < corthes)
+
+          # Pull out any variables that are overly correlated with At (corr coef > corthes)
+
           # Suppress possible warning from cor() "the standard deviation is zero".
+          # TODO: remove those constant variables beforehand?
           suppressWarnings({
             corAt = apply(Wt, 2, cor.two, y = At)
           })
+
           # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
           incc = corAt < corthres & is.na(corAt) == F
 
@@ -1205,6 +1249,7 @@ varImpact = function(Y,
           Wtsht = reduced_results$data
           Wvsht = reduced_results$newX
 
+          # Identify any constant columns.
           is_constant = sapply(Wtsht, function(col) var(col) == 0)
           is_constant = is_constant[is_constant]
 
@@ -1217,9 +1262,11 @@ varImpact = function(Y,
             }
           }
 
+          # Indicator that Y and A are both defined.
           deltat = as.numeric(is.na(Yt) == F & is.na(Atnew) == F)
           deltav = as.numeric(is.na(Yv) == F & is.na(Avnew) == F)
 
+          # TODO: may want to remove this procedure, which is pretty arbitrary.
           if (sum(deltat == 0) < 10) {
             Yt = Yt[deltat == 1]
             Wtsht = Wtsht[deltat == 1, , drop = F]
