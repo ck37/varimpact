@@ -103,6 +103,8 @@ Hubbard, A. E., & van der Laan, M. J. (2016). Mining with inference: data-adapti
 
 Jerez, J. M., Molina, I., García-Laencina, P. J., Alba, E., Ribelles, N., Martín, M., & Franco, L. (2010). Missing data imputation using statistical and machine learning methods in a real breast cancer problem. Artificial intelligence in medicine, 50(2), 105-115.
 
+Rozenholc, Y., Mildenberger, T., & Gather, U. (2010). Combining regular and irregular histograms by penalized likelihood. Computational Statistics & Data Analysis, 54(12), 3313-3323.
+
 Troyanskaya, O., Cantor, M., Sherlock, G., Brown, P., Hastie, T., Tibshirani, R., Botstein, D., & Altman, R. B. (2001). Missing value estimation methods for DNA microarrays. Bioinformatics, 17(6), 520-525.
 
 van der Laan, M. J. (2006). Statistical inference for variable importance. The International Journal of Biostatistics, 2(1).
