@@ -73,6 +73,7 @@
 #' @return Results object. TODO: add more detail here.
 #'
 #' @importFrom stats cor model.matrix na.omit pnorm quantile var
+#' @import SuperLearner
 #'
 #' @seealso
 #' \code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}}
@@ -1121,16 +1122,19 @@ varImpact = function(Y,
         # Copy the blank result to a second element for the minimum level/bin.
         fold_result$level_min = fold_result$level_max
 
+        # Conduct penalized histogramming by looking at the distribution of the rare outcome over
+        # the treatment variable. So we create A_Y1 as the conditional distribution of treatment given Y = 1.
+        # P(A | Y = 1).
         if (length(unique(Yt)) == 2) {
           # Binary outcome.
-          # CK: do we need to restrict the adjustment variables and Y in the same manner as this part?
-          AY1 = At[Yt == 1 & !is.na(At)]
+
+          A_Y1 = At[Yt == 1 & !is.na(At)]
+
           # Check if AY1 has only a single value. If so, skip histogramming to avoid an error.
-          singleAY1 = length(unique(na.omit(AY1))) == 1
+          singleAY1 = length(unique(na.omit(A_Y1))) == 1
         } else {
-          # Continuous outcome.
-          # CK: do we need to restrict the adjustment variables and Y in the same manner as this part?
-          AY1 = At[!is.na(At)]
+          # Continuous outcome - just restricted to non-missing treatment.
+          A_Y1 = At[!is.na(At)]
           singleAY1 = F
         }
 
@@ -1138,7 +1142,8 @@ varImpact = function(Y,
           # Within this CV-TMLE fold look at further combining bins of the treatment based on the
           # penalized histogram.
           # Note that this is only examining the already discretized version of the treatment variable.
-          hh = histogram::histogram(AY1, verbose = F, type = "irregular", plot = F)$breaks
+          penalized_hist = histogram::histogram(A_Y1, verbose = F, type = "irregular", plot = F)
+          hh = penalized_hist$breaks
 
           # TODO: see if these next two steps are ever used/needed.
 
@@ -1171,14 +1176,27 @@ varImpact = function(Y,
           #warning(error_msg)
         } else {
 
-          labs = names(table(Atnew))
+          # These labels are simply the quantiles right now.
+          At_bin_labels = names(table(Atnew))
+
+          # Non-discretized version of A in the training data; converted to a vector.
+          At_raw = data.num[folds != fold_k, var_i]
+
+          # Loop over the Atnew levels and figure out the equivalent true range of this bin
+          # by examining the non-discretized continuous variable.
+          for (newlevel_i in 1:length(unique(as.numeric(na.omit(Atnew))))) {
+            range = range(na.omit(At_raw[na.omit(which(as.numeric(Atnew) == newlevel_i))]))
+            label_i = paste0("[", round(range[1], 4), " - ", round(range[2], 4), "]")
+            At_bin_labels[newlevel_i] = label_i
+          }
+          At_bin_labels
 
           Atnew = as.numeric(Atnew) - 1
           Avnew = as.numeric(Avnew) - 1
 
           # Update the number of bins for this numeric variable.
           # CK: note though, this is specific to this CV-TMLE fold - don't we need to different which fold we're in?
-          numcat.cont[var_i] = length(labs)
+          numcat.cont[var_i] = length(At_bin_labels)
 
           # change this to match what was done for factors - once
           # cats.cont[[i]]=as.numeric(na.omit(unique(Atnew)))
@@ -1200,24 +1218,23 @@ varImpact = function(Y,
           }
 
           # Construct a matrix of adjustment variables in which we use the imputed dataset
-          # but remove the current treatment variable (and its missingness indicator).
+          # but remove the current treatment variable.
           W = data.frame(data.numW[, -var_i, drop = F], miss.cont, datafac.dumW, miss.fac)
 
+          # Remove any columns in which all values are NA.
+          # CK: but we're using imputed data, so there should be no NAs actually.
           W = W[, !apply(is.na(W), 2, all), drop = F]
 
           # Separate adjustment matrix into the training and test folds.
           Wt = W[folds != fold_k, , drop = F]
           Wv = W[folds == fold_k, , drop = F]
 
-          # Identify columns which are the missingness indicator for this treatment.
-          # All other columns will be NA.
-          # TODO: simplify this, we can just use "==" instead of match().
-          mtch = match(names(Wt), paste0("Imiss_", nameA))
+          # Identify the missingness indicator for this treatment.
+          miss_ind_name = paste0("Imiss_", nameA)
 
-          # Remove the missingness indicator for this treatment.
-          # TODO: simplify this per above comment.
-          Wt = Wt[, is.na(mtch), drop = F]
-          Wv = Wv[, is.na(mtch), drop = F]
+          # Remove the missingness indicator for this treatment (if it exists) from the adjustment set.
+          Wt = Wt[, colnames(Wt) != miss_ind_name, drop = F]
+          Wv = Wv[, colnames(Wt) != miss_ind_name, drop = F]
 
           # Pull out any variables that are overly correlated with At (corr coef > corthes)
 
@@ -1227,15 +1244,15 @@ varImpact = function(Y,
             corAt = apply(Wt, 2, cor.two, y = At)
           })
 
-          # cat('i = ',i,' maxCor = ',max(corAt,na.rm=T),'\n')
-          incc = corAt < corthres & is.na(corAt) == F
 
-          if (verbose && sum(!incc) > 0) {
-            cat("Removed", sum(!incc), "columns based on correlation threshold", corthres, "\n")
+          keep_vars = corAt < corthres & !is.na(corAt)
+
+          if (verbose && sum(!keep_vars) > 0) {
+            cat("Removed", sum(!keep_vars), "columns based on correlation threshold", corthres, "\n")
           }
 
-          Wv = Wv[, incc, drop = F]
-          Wt = Wt[, incc, drop = F]
+          Wv = Wv[, keep_vars, drop = F]
+          Wt = Wt[, keep_vars, drop = F]
 
           if (verbose) {
             cat("Columns:", ncol(Wt))
@@ -1263,8 +1280,8 @@ varImpact = function(Y,
           }
 
           # Indicator that Y and A are both defined.
-          deltat = as.numeric(is.na(Yt) == F & is.na(Atnew) == F)
-          deltav = as.numeric(is.na(Yv) == F & is.na(Avnew) == F)
+          deltat = as.numeric(!is.na(Yt) & !is.na(Atnew))
+          deltav = as.numeric(!is.na(Yv) & !is.na(Avnew))
 
           # TODO: may want to remove this procedure, which is pretty arbitrary.
           if (sum(deltat == 0) < 10) {
@@ -1275,6 +1292,7 @@ varImpact = function(Y,
           }
 
           vals = cats.cont[[var_i]]
+
           Atnew[is.na(Atnew)] = -1
           Avnew[is.na(Avnew)] = -1
 
@@ -1334,7 +1352,7 @@ varImpact = function(Y,
                 # TMLE succeeded (hopefully).
 
                 # Save bin label.
-                tmle_result$label = labs[j]
+                tmle_result$label = At_bin_labels[j]
 
                 training_estimates[[j]] = tmle_result
 
@@ -1359,8 +1377,8 @@ varImpact = function(Y,
             minj = which.min(theta_estimates)
 
             if (verbose) {
-              cat("Max level:", vals[maxj], labs[maxj], paste0("(", maxj, ")"),
-                  "Min level:", vals[minj], labs[minj], paste0("(", minj, ")"), "\n")
+              cat("Max level:", vals[maxj], At_bin_labels[maxj], paste0("(", maxj, ")"),
+                  "Min level:", vals[minj], At_bin_labels[minj], paste0("(", minj, ")"), "\n")
             }
 
             # Save that estimate.
@@ -1371,7 +1389,7 @@ varImpact = function(Y,
             fold_result$level_max$level = maxj
             fold_result$level_max$estimate_training = maxEY1
             #fold_result$level_max$label = labmax
-            fold_result$level_max$label = labs[maxj]
+            fold_result$level_max$label = At_bin_labels[maxj]
 
             # Save the Q risk for the discrete SuperLearner.
             # We don't have the CV.SL results for the full SuperLearner as it's too
@@ -1392,7 +1410,7 @@ varImpact = function(Y,
             fold_result$level_min$level = minj
             fold_result$level_min$estimate_training = minEY1
             #fold_result$level_min$label = labmin
-            fold_result$level_min$label = labs[minj]
+            fold_result$level_min$label = At_bin_labels[minj]
 
             # Save the Q risk for the discrete SuperLearner.
             # We don't have the CV.SL results for the full SuperLearner as it's too
