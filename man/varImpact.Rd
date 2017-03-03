@@ -48,7 +48,7 @@ reduction.}
 variable for inclusion of an adjustment variables}
 
 \item{impute}{Type of missing value imputation to conduct. One of: "zero",
-"median", "knn" (default).}
+"median", "knn" (default). Note: knn results in the covariate data being centered/scaled.}
 
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
 of missing obs > cut.off}
@@ -150,6 +150,7 @@ van der Laan, M. J., & Rose, S. (2011). \emph{Targeted learning: causal
 inference for observational and experimental data}. Springer Science &
 Business Media.
 }
+
 \examples{
 ####################################
 # Create test dataset.
@@ -209,4 +210,3 @@ vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 \seealso{
 \code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}}
 }
-

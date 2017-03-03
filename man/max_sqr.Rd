@@ -15,4 +15,3 @@ Maximum of the squared values, or -Inf if all elements are NA.
 \description{
 Find the maximum of the squared values.
 }
-

@@ -12,4 +12,3 @@ sum_na(x)
 \description{
 Function for getting total number missing values for vector
 }
-

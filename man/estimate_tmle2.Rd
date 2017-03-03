@@ -40,4 +40,3 @@ estimate_tmle2(Y, A, W, family, delta = rep(1, length(Y)), Q.lib, g.lib,
 \description{
 Get TMLE estimate: E[Y | A = 1, W].
 }
-

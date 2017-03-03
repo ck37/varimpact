@@ -20,4 +20,3 @@ to disable any dimension reduction.}
 \description{
 Currently uses HOPACH hierarchical clustering but could be generalized.
 }
-

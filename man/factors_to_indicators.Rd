@@ -19,4 +19,3 @@ A list of results.
 \description{
 More details
 }
-

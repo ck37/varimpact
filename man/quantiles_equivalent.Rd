@@ -22,4 +22,3 @@ This indicates that the vector has little variation.
 \seealso{
 restrict_by_quantiles
 }
-

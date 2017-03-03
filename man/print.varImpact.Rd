@@ -15,4 +15,3 @@
 Shows the significant and consistent results by default. If there are no
 consistent results it shows all results.
 }
-

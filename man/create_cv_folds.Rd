@@ -19,4 +19,3 @@ Vector of fold assignments.
 \description{
 Stratified CV to insure balance (by one grouping variable, Y)
 }
-

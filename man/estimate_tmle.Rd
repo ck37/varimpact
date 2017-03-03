@@ -26,4 +26,3 @@ estimate_tmle(Y, A, W, family, delta = NULL, Q.lib, g.lib, verbose = F)
 \description{
 Get TMLE estimate: E[Y | A = 1, W].
 }
-

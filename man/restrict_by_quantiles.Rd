@@ -20,4 +20,3 @@ Remove columns from a dataframe if they do not have sufficient variation.
 \seealso{
 quantiles_equivalent
 }
-

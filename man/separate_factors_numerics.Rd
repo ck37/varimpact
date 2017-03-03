@@ -20,4 +20,3 @@ Convert strings to factors as well.
 \description{
 Split df into one of only factors and one of only numerics.
 }
-

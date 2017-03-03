@@ -32,4 +32,3 @@ Creates three Latex table files:
 \seealso{
 \code{\link[varImpact]{varImpact}}
 }
-
