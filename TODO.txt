@@ -1,33 +1,39 @@
 VarImpact TODOs
 
 Alan priorities:
-- HIGHEST: Add CV-TMLE (also Mark priority!)
-  * IN PROGRESS, largely working.
-  * Needs more testing with non-binary outcomes. E.g. transform theta?
+- Display true bin ranges for continuous variables in results tables.
 - Unadjusted difference in means estimate (t-test) to compare to TMLE estimate
 - Cell sizes in the groups that it chooses (A = 0 and A = 1)
-- Option of ratios (delta method), rather than differences
-   - Alan will email Minh, maybe Jeremy too. (may be embedded in TMLE)
-- In ByV table, use the labels of the quantiles to show the actual range.
-- Specify names of variables to use for variable importance - DONE
+- Calculate RR treatment effects (see tmle, ltmle, Ben Arnold's package).
+   * OR doesn't need to be in there, byproduct of parametric regression.
+- Test CV-TMLE with non-binary outcomes. E.g. transform theta?
 
 Chris items:
+* PRIORITY: for continuous outcomes, need to transform effect size and CIs back to the original scale (multiply by range of the original bounds.)
 * Give a warning if data is a matrix rather than dataframe. Causes an error in separate_factors_numerics.
 * Arguments
   - Argument for p-value cutoff for consistent results.
 * Coding style
   - Create more subfunctions.
 * Output
+  - Add "Variable" column name to $results_by_fold.
+  - Show a_L and a_H in consistent results table - critical for interpretation.
+     * Unfortunately this requires per-fold results for numeric variables, due to
+       the "directionality" definition of consistency.
   - Sort consistent results by p-value then estimate size?
   - Support summary()
-  - Return SEs
+  - Return SEs in results tables.
+  - Output the specific variables dropped due to lack of variation (restrict_by_quantiles).
+  - Fix exportTable() when vim_result is NULL due to lack of results.
 * Quality
   - Warn/error if there are character columns in the data, as a bonus check.
   - Figure out how to reduce the number of potential failures in various steps.
   - Count and report how many variables are skipped due to minCell constraint.
   - Automatically handle rows that are all NAs?
+  - Automatically remove any data column that is 100% equal to the outcome (so it can stay in df).
 * Prediction Accuracy
   - Save risk estimates for g and Q during CV-TMLE. - IN PROGRESS
+  - Save and report range of g to examine sparsity.
 * Testing
   - Need tests with single factors and numerics. Lots of lingering bugs.
   - Make examples quicker to execute, esp. during devtools::check()
@@ -35,7 +41,10 @@ Chris items:
 * Visualization
   - Plot of BH correction ala figure 10.6 in All of Statistics.
 * Performance
-  - Parallelization is hit-or-miss - needs way more testing.
+  - Parallelization: use .errorhandling option in foreach to recover even if certain variables yield errors (esp. with different parallel settings).
+       * See .errorhandling = "pass" and then need to check for errors in the result.
+  - Parallelization is hit-or-miss - needs way more testing. - PRIORITY
+  - Explore other parallelization frameworks besides foreach. - PRIORITY
   - Try Rprofvis
   - Use Jeremy's method of not wasting SL folds during CV-TMLE.
 * Documentation

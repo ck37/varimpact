@@ -54,7 +54,7 @@
 #' @param corthres cut-off correlation with explanatory
 #' variable for inclusion of an adjustment variables
 #' @param impute Type of missing value imputation to conduct. One of: "zero",
-#'   "median", "knn" (default).
+#'   "median", "knn" (default). Note: knn results in the covariate data being centered/scaled.
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
 #' @param bins_numeric Numbers of bins when discretizing numeric variables.
@@ -452,6 +452,7 @@ varImpact = function(Y,
     } else if (impute == "mean") {
       stop("Mean imputation not implemented yet. Please use another imputation method.")
     } else if (impute == "knn") {
+      # NOTE: this also results in caret centering and scaling the data.
       impute_info = caret::preProcess(data.num, method = "knnImpute")
       data.numW = predict(impute_info, data.num)
     }
@@ -1665,6 +1666,7 @@ varImpact = function(Y,
       tst = lapply(tst, extract_labels, total_folds = V)
       labels = do.call(rbind, tst)
 
+      # Each row is a variable and each column in a fold estimate.
       meanvarIC = apply(varIC, 1, mean)
 
       psi = apply(theta, 1, mean)
