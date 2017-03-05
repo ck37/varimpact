@@ -14,7 +14,7 @@ num_normal = 5
 X = data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 
 # Systematic Y generation.
-Y = .2 * X[, 1] + .1 * X[, 2] - .2 * X[, 3] + .1 * X[, 3] * X[, 4] - .2 * abs(X[, 4])
+Y = .2 * X[, 1] + .9 * X[, 2] - 0.8 * X[, 3] + .1 * X[, 3] * X[, 4] - .2 * abs(X[, 4])
 
 # Binary distribution via the binomial.
 Y_bin = rbinom(N, 1, plogis(Y))
@@ -27,7 +27,7 @@ miss_num = 10
 for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test - binary outcome.
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T)
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T, verbose_tmle = F, bins_numeric = 3)
 vim$time
 # Be explict about printing for code coverage of tests.
 print(vim)
