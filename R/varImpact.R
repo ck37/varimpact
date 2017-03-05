@@ -1186,7 +1186,7 @@ varImpact = function(Y,
           # by examining the non-discretized continuous variable.
           for (newlevel_i in 1:length(unique(as.numeric(na.omit(Atnew))))) {
             range = range(na.omit(At_raw[na.omit(which(as.numeric(Atnew) == newlevel_i))]))
-            label_i = paste0("[", round(range[1], 4), " - ", round(range[2], 4), "]")
+            label_i = paste0("[", round(range[1], 2), ", ", round(range[2], 2), "]")
             At_bin_labels[newlevel_i] = label_i
           }
           At_bin_labels
@@ -1195,7 +1195,8 @@ varImpact = function(Y,
           Avnew = as.numeric(Avnew) - 1
 
           # Update the number of bins for this numeric variable.
-          # CK: note though, this is specific to this CV-TMLE fold - don't we need to different which fold we're in?
+          # CK: note though, this is specific to this CV-TMLE fold - don't we
+          # need to differentiate which fold we're in?
           numcat.cont[var_i] = length(At_bin_labels)
 
           # change this to match what was done for factors - once
@@ -1661,7 +1662,7 @@ varImpact = function(Y,
     error_msg = "No variable importance estimates could be calculated due to sample size, etc."
     if (verbose) {
       cat(error_msg, "\n")
-      cat("Lengths:", element_length, "\n")
+      #cat("Lengths:", element_length, "\n")
     }
     warning(error_msg)
     # TODO: also write output to the file in a separate function call.
@@ -1843,16 +1844,16 @@ varImpact = function(Y,
 
       # Restrict to variables that aren't missing their p-value.
       outres = outres[!is.na(outres[, "rawp"]), , drop = F]
-      print(colnames(outres))
-      print(ncol(outres))
+      #print(colnames(outres))
+      #print(ncol(outres))
 
       #names(outres)[1:(1 + 2*V)] = c("VarType", paste0("Est_v", 1:V), "AvePsi", "CI95")
       names(outres)[1:(3 + V)] = c("VarType", paste0("Est_v", 1:V), "AvePsi", "CI95")
       #names(outres)[(9 + 2 * V)] = "Consistent"
       names(outres)[ncol(outres)] = "Consistent"
 
-      print(colnames(outres))
-      print(ncol(outres))
+      #print(colnames(outres))
+      #print(ncol(outres))
 
       ################
       # Get Consistency Measure and only significant
