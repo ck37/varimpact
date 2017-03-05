@@ -37,13 +37,29 @@ apply_tmle_to_validation = function(Y,
   # We only include this because TMLE functions use Z.
   Z = rep(0, length(Y))
 
+  q_df = data.frame(Z, A = 1, W)
+
   # Predict Q(1, W)
-  sl_pred = predict(tmle$q_model, data.frame(Z, A=1, W), onlySL = T)
-  Q_hat = sl_pred$pred
+  tryCatch({
+    sl_pred = predict(tmle$q_model, q_df, onlySL = T)
+    Q_hat = sl_pred$pred
+  }, error = function(e) {
+    print(e)
+    print(tmle$q_model)
+    browser()
+    stop("apply_tmle_to_validation() failed during prediction of Q(1, W).")
+  })
 
   # Predict g
-  sl_pred = predict(tmle$g_model, W, type = "response", onlySL = T)
-  g1W_hat = sl_pred$pred
+  tryCatch({
+    sl_pred = predict(tmle$g_model, W, type = "response", onlySL = T)
+    g1W_hat = sl_pred$pred
+  }, error = function(e) {
+    print(e)
+    print(tmle$g_model)
+    browser()
+    stop("apply_tmle_to_validation() failed during prediction of g.")
+  })
 
   if (verbose) cat("Current range of g1W on test:", range(g1W_hat), "\n")
 
@@ -66,6 +82,7 @@ apply_tmle_to_validation = function(Y,
     cat("Mean Q_bar_a on validation:", mean(Q_hat[A == 1]), "\n")
   }
 
+  ####################
   # Return results
 
   # We return Y_star rather than Y, for use in pooled fluctuation step.
