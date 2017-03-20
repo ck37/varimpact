@@ -10,6 +10,8 @@ Alan priorities:
 
 Chris items:
 * PRIORITY: for continuous outcomes, need to transform effect size and CIs back to the original scale (multiply by range of the original bounds.)
+* Investigate penalized histogramming of numeric variables
+  - Needs more tests and probably its own function.
 * Give a warning if data is a matrix rather than dataframe. Causes an error in separate_factors_numerics.
 * Arguments
   - Argument for p-value cutoff for consistent results.
