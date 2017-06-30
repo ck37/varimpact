@@ -1,4 +1,4 @@
-#' @title Variable importance estimation using causal inference (TMLE)
+#' @title Variable importance estimation using causal inference (targeted learning)
 #'
 #' @description \code{varImpact} returns variable importance statistics ordered
 #'   by statistical significance using a combination of data-adaptive target
@@ -66,7 +66,7 @@
 #'   by default.
 #' @param verbose Boolean - if TRUE the method will display more detailed
 #'   output.
-#'@param verbose_tmle Boolean - if TRUE, will display even more detail on the TMLE
+#' @param verbose_tmle Boolean - if TRUE, will display even more detail on the TMLE
 #'   estimation process.
 #' @param digits Number of digits to round the value labels.
 #'
@@ -78,10 +78,11 @@
 #' @seealso
 #' \code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}}
 #'
+#' @encoding utf8
+#'
 #' @section Authors:
 #' Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 #'
-#' @encoding utf8
 #'
 #' @section References:
 #' Benjamini, Y., & Hochberg, Y. (1995). \emph{Controlling the false discovery
@@ -102,7 +103,7 @@
 #' Clinical Data}. The journal of trauma and acute care surgery, 75(1 0 1), S53.
 #'
 #' Hubbard, A. E., & van der Laan, M. J. (2016). \emph{Mining with inference:
-#' data-adaptive target parameters (pp. 439-452)}. In P. Bühlmann et al. (Ed.),
+#' data-adaptive target parameters (pp. 439-452)}. In P. Buhlmann et al. (Ed.),
 #' \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca
 #' Raton, FL.
 #'
@@ -521,6 +522,8 @@ varImpact = function(Y,
     # vim_factor = lapply(1:xc, function(i) {
 
     # vim_factor will be a list of results, one element per factor variable.
+    # Define var_i just to avoid automated NOTEs, will be overwritten by foreach.
+    var_i = NULL
     vim_factor = foreach::foreach(var_i = 1:xc, .verbose = verbose, .errorhandling = "stop") %do_op% {
     #vim_factor = lapply(1:xc, function(var_i) {
       nameA = names.fac[var_i]
@@ -1071,6 +1074,8 @@ varImpact = function(Y,
     })
 
     ### Loop over each numeric variable.
+    # Define var_i just to avoid automated NOTEs, will be overwritten by foreach.
+    var_i = NULL
     vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = verbose,
                                    .errorhandling = "stop") %do_op% {
     #vim_numeric = lapply(1:num_numeric, function(var_i) {
@@ -1614,7 +1619,7 @@ varImpact = function(Y,
 
     # Confirm that we have the correct number of results, otherwise fail out.
     if (length(vim_numeric) != num_numeric) {
-      save(vim_numeric, file="varimpact.RData")
+      save(vim_numeric, file = "varimpact.RData")
       # TEMP remove this:
       stop(paste("We have", num_numeric, "continuous variables but only",
                  length(vim_numeric), "results."))

@@ -3,7 +3,7 @@
 \encoding{utf8}
 \name{varImpact}
 \alias{varImpact}
-\title{Variable importance estimation using causal inference (TMLE)}
+\title{Variable importance estimation using causal inference (targeted learning)}
 \usage{
 varImpact(Y, data, A_names = colnames(data), V = 2,
   Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.glmnet",
@@ -132,7 +132,7 @@ and Evaluation of Variable Importance Using SuperLearning in High Dimensional
 Clinical Data}. The journal of trauma and acute care surgery, 75(1 0 1), S53.
 
 Hubbard, A. E., & van der Laan, M. J. (2016). \emph{Mining with inference:
-data-adaptive target parameters (pp. 439-452)}. In P. Bühlmann et al. (Ed.),
+data-adaptive target parameters (pp. 439-452)}. In P. Buhlmann et al. (Ed.),
 \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca
 Raton, FL.
 
