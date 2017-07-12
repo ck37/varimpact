@@ -27,7 +27,7 @@ miss_num = 10
 for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test - binary outcome.
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T, verbose_tmle = F, bins_numeric = 3)
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T, verbose_tmle = F, bins_numeric = 3, parallel = F)
 vim$time
 # Be explict about printing for code coverage of tests.
 print(vim)
