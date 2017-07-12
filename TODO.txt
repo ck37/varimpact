@@ -53,6 +53,7 @@ Chris items:
   - Improve varImpact() roxygen description.
   - Document the return object
   - Vignette
+     * Clarify consistency definition
 * Examples
   - Use doParallel instead of doMC so that it works on Windows.
 * Benchmarking
