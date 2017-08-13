@@ -4,9 +4,11 @@
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ck37/varImpact?branch=master&svg=true)](https://ci.appveyor.com/project/ck37/varImpact)
 [![codecov](https://codecov.io/gh/ck37/varImpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varImpact)
 
-# Introduction
+## Summary
 
 varImpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. It answers the question: which of my Xs are most related to my Y? Each variable's influence on the outcome is estimated semiparametrically, without assuming a linear relationship or other functional form, and the covariate list is ranked by order of importance. This can be used for exploratory data analysis, for dimensionality reduction, for experimental design (e.g. to determine blocking and re-randomization), to reduce variance in an estimation procedure, etc. See Hubbard & van der Laan (2016) for more details.
+
+## Details
 
 Each covariate is analyzed using targeted minimum loss-based estimation ([TMLE](https://cran.r-project.org/web/packages/tmle/index.html)) as though it were a treatment, with all other variables serving as adjustment variables via [SuperLearner](https://github.com/ecpolley/SuperLearner). Then the statistical significance of the estimated treatment effect for each covariate determines the variable importance ranking. This formulation allows the asymptotics of TMLE to provide valid standard errors and p-values, unlike other variable importance algorithms.
 
@@ -14,7 +16,7 @@ The results provide raw p-values as well as p-values adjusted for false discover
 
 varImpact is under active development so please submit any bug reports or feature requests to the [issue queue](https://github.com/ck37/varImpact/issues), or email Alan & Chris directly.
 
-# Installation
+## Installation
 
 ### Install varImpact from Github
 
@@ -81,11 +83,11 @@ vim <- varImpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
 
 ```
 
-# Authors
+## Authors
 
 Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 
-# References
+## References
 
 Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a practical and powerful approach to multiple testing. Journal of the royal statistical society. Series B (Methodological), 289-300.
 
