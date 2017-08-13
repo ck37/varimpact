@@ -156,7 +156,7 @@ Business Media.
 # Create test dataset.
 set.seed(1)
 N <- 100
-num_normal <- 7
+num_normal <- 5
 X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 Y <- rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
 # Add some missing data to X so we can test imputation.
@@ -164,47 +164,50 @@ for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
 
 ####################################
 # Basic example
-vim <- varImpact(Y = Y, data = X)
+
+# Setup multicore parallelization.
+library(future)
+plan("multiprocess", workers = 2)
+
+vim <- varImpact(Y = Y, data = X[, 1:3])
 vim
 vim$results_all
 exportLatex(vim)
 
 # Impute by median rather than knn.
-vim <- varImpact(Y = Y, data = X, impute = "median")
-
-####################################
-# doMC parallel (multicore) example.
 \dontrun{
-library(doMC)
-registerDoMC()
-# Use L'Ecuyer for multicore seeds; see ?set.seed for details.
-set.seed(23432, "L'Ecuyer-CMRG")
-vim <- varImpact(Y = Y, data = X)
+vim <- varImpact(Y = Y, data = X[, 1:3], impute = "median")
 }
 
 ####################################
-# doSNOW parallel example.
+# Multicore parallel example.
 \dontrun{
-library(doSNOW)
-library(RhpcBLASctl)
-# Detect the number of physical cores on this computer using RhpcBLASctl.
-cluster <- makeCluster(get_num_cores())
-registerDoSNOW(cluster)
-vim <- varImpact(Y = Y, data = X)
-stopCluster(cluster)
+vim <- varImpact(Y = Y, data = X[, 1:3])
+}
+
+####################################
+# Cluster parallel example.
+\dontrun{
+cl = parallel::makeCluster(2L)
+plan(cluster, workers = cl)
+vim <- varImpact(Y = Y, data = X[, 1:3])
+parallel::stopCluster(cl)
 }
 
 ####################################
 # mlbench BreastCancer example.
+\dontrun{
 data(BreastCancer, package="mlbench")
 data <- BreastCancer
+
+set.seed(1, "L'Ecuyer-CMRG")
+# Reduce to a dataset of 100 observations to speed up testing.
 # Create a numeric outcome variable.
 data$Y <- as.numeric(data$Class == "malignant")
 # Use multicore parallelization to speed up processing.
-\dontrun{
-doMC::registerDoMC()
-}
+future::plan("multiprocess", workers = 2)
 vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+}
 
 }
 \seealso{

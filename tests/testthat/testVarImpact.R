@@ -27,7 +27,9 @@ miss_num = 10
 for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test - binary outcome.
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T, verbose_tmle = F, bins_numeric = 3, parallel = F)
+#future::plan("multiprocess")
+future::plan("sequential")
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T, verbose_tmle = F, bins_numeric = 3)
 vim$time
 # Be explict about printing for code coverage of tests.
 print(vim)
@@ -59,42 +61,20 @@ vim
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
-  # Test parallelization via doMC.
-  doMC::registerDoMC()
-  # Check how many cores we're using.
-  foreach::getDoParWorkers()
+  # Test parallelization
+  future::plan("multiprocess", workers = 2)
   vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T)
   print(vim)
 }
 
-# Test disabling parallelization.
-vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T, parallel = F)
-
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
-  # Return to single core usage.
-  foreach::registerDoSEQ()
-  foreach::getDoParWorkers()
-}
-
-# Only run in RStudio so that automated CRAN checks don't give errors.
-if (.Platform$GUI == "RStudio") {
-  # Test parallelization via doSnow.
-  cluster = snow::makeCluster(2)
-  doSNOW::registerDoSNOW(cluster)
-  # Check that we're using the snow cluster.
-  expect_equal(foreach::getDoParName(), "doSNOW")
-  expect_equal(foreach::getDoParWorkers(), 2)
-
+  # Test parallelization via snow.
+  cl = snow::makeCluster(2L)
+  future::plan("cluster", workers = cl)
   vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T)
   vim
-}
-
-# Only run in RStudio so that automated CRAN checks don't give errors.
-if (.Platform$GUI == "RStudio") {
-  snow::stopCluster(cluster)
-  # Return to single core usage.
-  foreach::registerDoSEQ()
+  snow::stopCluster(cl)
 }
 
 context("varImpact(). Dataset B: factor variables")
@@ -109,6 +89,9 @@ colnames(X_fac) = paste0("fac_", 1:ncol(X_fac))
 colnames(X_fac)
 summary(X_fac)
 
+# Return to sequential execution for now.
+future::plan("sequential")
+
 # Basic factor test.
 # TODO: this generates multiple errors for fac_4
 vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose = T)
@@ -119,11 +102,10 @@ vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose = T,
 vim
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
-if (.Platform$GUI == "RStudio") {
+# Disabled for now - need to review.
+if (F && .Platform$GUI == "RStudio") {
   # Test parallelization.
-  doMC::registerDoMC()
-  # Check how many cores we're using.
-  foreach::getDoParWorkers()
+  future::plan("multiprocess")
 
   # Try a snow cluster, which does return the output to STDOUT.
   if (F) {
@@ -144,7 +126,6 @@ if (.Platform$GUI == "RStudio") {
   vim
 
   # Return to single core usage.
-  foreach::registerDoSEQ()
 
   # Run manually when debugging, if the snow cluster was used.
   if (F) {
@@ -160,11 +141,12 @@ context("varImpact(). Dataset C: numeric and factor variables")
 X_combined = cbind(X[1:3], X_fac[4:5])
 
 # Basic combined test.
-vim = varImpact(Y = Y_bin, data = X_combined, V = 2, verbose=T)
+vim = varImpact(Y = Y_bin, data = X_combined, V = 2, verbose = T)
 vim
 
 # And gaussian
-vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose=T, family="gaussian")
+vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose = T,
+                family = "gaussian")
 vim
 
 #################################
@@ -172,7 +154,7 @@ vim
 
 context("BreastCancer dataset")
 
-data(BreastCancer, package="mlbench")
+data(BreastCancer, package = "mlbench")
 data = BreastCancer
 
 set.seed(3, "L'Ecuyer-CMRG")
@@ -184,13 +166,13 @@ data = data[sample(nrow(data), 100), ]
 data$Y = as.numeric(data$Class == "malignant")
 table(data$Y)
 
-X = subset(data, select=-c(Y, Class, Id))
+X = subset(data, select = -c(Y, Class, Id))
 dim(X)
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
   # Use multicore parallelization to speed up processing.
-  doMC::registerDoMC()
+  future::plan("multiprocess", workers = 2)
 }
 # This takes 1-2 minutes.
 vim = varImpact(Y = data$Y, X, verbose = T)
@@ -205,7 +187,7 @@ vim
 vim$results_all
 
 # Return to single core usage.
-foreach::registerDoSEQ()
+future::plan("sequential")
 
 
 context("varImpact() .Dataset D: basic example")
@@ -235,6 +217,7 @@ vim$results_by_fold
 # In this test all variables are significant, which is rare.
 exportLatex(vim)
 # Clean up
-suppressWarnings({ # Suppress a warning when no results are consistent.
+ # Suppress a warning when no results are consistent.
+suppressWarnings({
   file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
 })

@@ -73,7 +73,8 @@
 #' @return Results object. TODO: add more detail here.
 #'
 #' @importFrom stats cor model.matrix na.omit pnorm quantile var
-#' @import SuperLearner
+#' @importFrom SuperLearner All
+#' @importFrom future future_lapply
 #'
 #' @seealso
 #' \code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}}
@@ -126,7 +127,7 @@
 #' # Create test dataset.
 #' set.seed(1)
 #' N <- 100
-#' num_normal <- 7
+#' num_normal <- 5
 #' X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 #' Y <- rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
 #' # Add some missing data to X so we can test imputation.
@@ -134,49 +135,54 @@
 #'
 #' ####################################
 #' # Basic example
-#' vim <- varImpact(Y = Y, data = X)
+#'
+#' # Setup multicore parallelization.
+#' library(future)
+#' plan("multiprocess", workers = 2)
+#'
+#' vim <- varImpact(Y = Y, data = X[, 1:3])
 #' vim
 #' vim$results_all
 #' exportLatex(vim)
 #'
 #' # Impute by median rather than knn.
-#' vim <- varImpact(Y = Y, data = X, impute = "median")
-#'
-#' ####################################
-#' # doMC parallel (multicore) example.
 #' \dontrun{
-#' library(doMC)
-#' registerDoMC()
-#' # Use L'Ecuyer for multicore seeds; see ?set.seed for details.
-#' set.seed(23432, "L'Ecuyer-CMRG")
-#' vim <- varImpact(Y = Y, data = X)
+#' vim <- varImpact(Y = Y, data = X[, 1:3], impute = "median")
 #' }
 #'
 #' ####################################
-#' # doSNOW parallel example.
+#' # Multicore parallel example.
 #' \dontrun{
-#' library(doSNOW)
-#' library(RhpcBLASctl)
-#' # Detect the number of physical cores on this computer using RhpcBLASctl.
-#' cluster <- makeCluster(get_num_cores())
-#' registerDoSNOW(cluster)
-#' vim <- varImpact(Y = Y, data = X)
-#' stopCluster(cluster)
+
+#' vim <- varImpact(Y = Y, data = X[, 1:3])
+#' }
+#'
+#' ####################################
+#' # Cluster parallel example.
+#' \dontrun{
+#' cl = parallel::makeCluster(2L)
+#' plan(cluster, workers = cl)
+#' vim <- varImpact(Y = Y, data = X[, 1:3])
+#' parallel::stopCluster(cl)
 #' }
 #'
 #' ####################################
 #' # mlbench BreastCancer example.
+#' \dontrun{
 #' data(BreastCancer, package="mlbench")
 #' data <- BreastCancer
+#'
+#' set.seed(1, "L'Ecuyer-CMRG")
+#' # Reduce to a dataset of 100 observations to speed up testing.
+#  data = data[sample(nrow(data), 100), ]
 #
 #' # Create a numeric outcome variable.
 #' data$Y <- as.numeric(data$Class == "malignant")
 #
 #' # Use multicore parallelization to speed up processing.
-#' \dontrun{
-#' doMC::registerDoMC()
-#' }
+#' future::plan("multiprocess", workers = 2)
 #' vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+#' }
 #'
 #' @export
 varImpact = function(Y,
@@ -228,17 +234,6 @@ varImpact = function(Y,
     # NOTE: if one of the bounds is zero then it won't be extended.
     Qbounds = Qbounds + 0.1 * c(-abs(Qbounds[1]), abs(Qbounds[2]))
   }
-
-  # Setup parallelism. Thanks to Jeremy Coyle's origami package for this approach.
-  `%do_op%` = foreach::`%do%`
-  # Use parallelism if there is a backend registered, unless parallel == F.
-  if (foreach::getDoParRegistered() && parallel) {
-    `%do_op%` = foreach::`%dopar%`
-    if (verbose) cat("Parallel backend detected: using foreach parallelization.\n")
-  } else {
-    if (verbose) cat("No parallel backend detected. Operating sequentially.\n")
-  }
-
 
   ########
   # Applied to Explanatory (X) data frame
@@ -524,7 +519,8 @@ varImpact = function(Y,
     # vim_factor will be a list of results, one element per factor variable.
     # Define var_i just to avoid automated NOTEs, will be overwritten by foreach.
     var_i = NULL
-    vim_factor = foreach::foreach(var_i = 1:xc, .verbose = verbose, .errorhandling = "stop") %do_op% {
+    #vim_factor = foreach::foreach(var_i = 1:xc, .verbose = verbose, .errorhandling = "stop") %do_op% {
+    vim_factor = future::future_lapply(1:xc, future.seed = TRUE, function(var_i) {
     #vim_factor = lapply(1:xc, function(var_i) {
       nameA = names.fac[var_i]
 
@@ -1034,8 +1030,8 @@ varImpact = function(Y,
 
       # Return results for this factor variable.
       var_results
-    } # End foreach loop over all variables.
-    #}) # End lapply if we're not using foreach. (temporary tweak)
+    #} # End foreach loop over all variables.
+    }) # End lapply or future_lapply if we're not using foreach.
 
     if (verbose) cat("Factor VIMs:", length(vim_factor), "\n\n")
 
@@ -1076,8 +1072,10 @@ varImpact = function(Y,
     ### Loop over each numeric variable.
     # Define var_i just to avoid automated NOTEs, will be overwritten by foreach.
     var_i = NULL
-    vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = verbose,
-                                   .errorhandling = "stop") %do_op% {
+    #vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = verbose,
+    #                               .errorhandling = "stop") %do_op% {
+    vim_numeric = future::future_lapply(1:num_numeric, future.seed = TRUE,
+                                        function(var_i) {
     #vim_numeric = lapply(1:num_numeric, function(var_i) {
       nameA = names.cont[var_i]
 
@@ -1091,6 +1089,7 @@ varImpact = function(Y,
       #for (fold_k in 1:V) {
       # This is looping sequentially for now.
       #fold_results = foreach (fold_k = 1:V) %do% {
+      # TODO: convert to future_lapply
       fold_results = lapply(1:V, function(fold_k) {
         if (verbose) cat("Fold", fold_k, "of", V, "\n")
 
@@ -1612,8 +1611,8 @@ varImpact = function(Y,
 
       # Return results for this factor variable.
       var_results
-    } # end foreach loop.
-    #}) # End lapply if we're not using foreach
+    #} # end foreach loop.
+    }) # End lapply or future_lapply if we're not using foreach
 
     if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
 

@@ -19,7 +19,7 @@ Imports:
     arules,
     caret,
     cvTools,
-    foreach,
+    future,
     glmnet,
     histogram,
     hopach,
