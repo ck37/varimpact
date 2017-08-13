@@ -1,6 +1,5 @@
 # varImpact - variable importance through causal inference
 
-[![Join the chat at https://gitter.im/varImpact/Lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/varImpact/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/ck37/varImpact.svg?branch=master)](https://travis-ci.org/ck37/varImpact)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ck37/varImpact?branch=master&svg=true)](https://ci.appveyor.com/project/ck37/varImpact)
 [![codecov](https://codecov.io/gh/ck37/varImpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varImpact)
