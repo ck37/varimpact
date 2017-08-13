@@ -30,9 +30,6 @@ Imports:
     xtable
 biocViews:
 Suggests:
-    doMC,
-    doParallel,
-    doSNOW,
     mlbench,
     RhpcBLASctl,
     testthat
