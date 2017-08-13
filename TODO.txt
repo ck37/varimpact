@@ -8,7 +8,11 @@ Alan priorities:
    * OR doesn't need to be in there, byproduct of parametric regression.
 - Test CV-TMLE with non-binary outcomes. E.g. transform theta?
 
+Mark priorities:
+- Support for 10-fold CV-TMLE
+
 Chris items:
+* PRIORITY: Fix build failure!
 * PRIORITY: for continuous outcomes, need to transform effect size and CIs back to the original scale (multiply by range of the original bounds.)
 * Investigate penalized histogramming of numeric variables
   - Needs more tests and probably its own function.
@@ -38,24 +42,18 @@ Chris items:
   - Save and report range of g to examine sparsity.
 * Testing
   - Need tests with single factors and numerics. Lots of lingering bugs.
-  - Make examples quicker to execute, esp. during devtools::check()
   - Add other tests.
 * Visualization
   - Plot of BH correction ala figure 10.6 in All of Statistics.
 * Performance
-  - Parallelization: use .errorhandling option in foreach to recover even if certain variables yield errors (esp. with different parallel settings).
-       * See .errorhandling = "pass" and then need to check for errors in the result.
-  - Parallelization is hit-or-miss - needs way more testing. - PRIORITY
-  - Explore other parallelization frameworks besides foreach. - PRIORITY
   - Try Rprofvis
-  - Use Jeremy's method of not wasting SL folds during CV-TMLE.
+  - Investigate Jeremy's method of not wasting SL folds during CV-TMLE.
 * Documentation
   - Improve varImpact() roxygen description.
   - Document the return object
   - Vignette
      * Clarify consistency definition
 * Examples
-  - Use doParallel instead of doMC so that it works on Windows.
 * Benchmarking
   - Benchmark to random forest, lasso, OLS and SL-perturbation algorithms.
 * BUGS/ERRORS
