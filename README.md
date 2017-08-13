@@ -6,7 +6,7 @@
 
 ## Summary
 
-varImpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. It answers the question: which of my Xs are most related to my Y? Each variable's influence on the outcome is estimated semiparametrically, without assuming a linear relationship or other functional form, and the covariate list is ranked by order of importance. This can be used for exploratory data analysis, for dimensionality reduction, for experimental design (e.g. to determine blocking and re-randomization), to reduce variance in an estimation procedure, etc. See Hubbard & van der Laan (2016) for more details.
+varImpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. It answers the question: which of my Xs are most related to my Y? Each variable's influence on the outcome is estimated semiparametrically, without assuming a linear relationship or other functional form, and the covariate list is ranked by order of importance. This can be used for exploratory data analysis, for dimensionality reduction, for experimental design (e.g. to determine blocking and re-randomization), to reduce variance in an estimation procedure, etc. See Hubbard & van der Laan (2016) and Hubbard, Kennedy, & van der Laan (2017) for more details.
 
 ## Details
 
@@ -96,6 +96,8 @@ Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a practical and powerful approach to multiple testing. Journal of the royal statistical society. Series B (Methodological), 289-300.
 
 Gruber, S., & van der Laan, M. J. (2012). tmle: An R Package for Targeted Maximum Likelihood Estimation. Journal of Statistical Software, 51(i13).
+
+Hubbard, A. E., Kennedy, C. J., van der Laan, M. J. (2017). Data-adaptive Variable Importance Using Cross-validated Targeted Maximum Likelihood Estimation. In M. van der Laan & S. Rose (2017) Targeted Learning in Data Science. Springer.
 
 Hubbard, A. E., Kherad-Pajouh, S., & van der Laan, M. J. (2016). Statistical Inference for Data Adaptive Target Parameters. The international journal of biostatistics, 12(1), 3-19.
 
