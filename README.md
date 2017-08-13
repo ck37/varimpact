@@ -18,7 +18,7 @@ varImpact is under active development so please submit any bug reports or featur
 
 ## Installation
 
-### Install varImpact from Github
+### Github
 
 ```r
 # Install devtools if necessary:
@@ -26,7 +26,11 @@ varImpact is under active development so please submit any bug reports or featur
 devtools::install_github("ck37/varImpact")
 ```
 
-# Examples
+### CRAN
+
+Forthcoming Fall 2017
+
+## Examples
 
 ```r
 ####################################
