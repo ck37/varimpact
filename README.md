@@ -18,7 +18,7 @@ varImpact is under active development so please submit any bug reports or featur
 
 ### Install varImpact from Github
 
-```{r}
+```r
 # Install devtools if necessary:
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("ck37/varImpact")
@@ -26,7 +26,7 @@ devtools::install_github("ck37/varImpact")
 
 # Examples
 
-```{r}
+```r
 ####################################
 # Create test dataset.
 set.seed(1)
