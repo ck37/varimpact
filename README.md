@@ -20,7 +20,7 @@ varImpact is under active development so please submit any bug reports or featur
 
 ```r
 # Install devtools if necessary:
-if (!require("devtools")) install.packages("devtools")
+# install.packages("devtools")
 devtools::install_github("ck37/varImpact")
 ```
 
@@ -31,7 +31,7 @@ devtools::install_github("ck37/varImpact")
 # Create test dataset.
 set.seed(1)
 N <- 200
-num_normal <- 7
+num_normal <- 5
 X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 Y <- rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
 # Add some missing data to X so we can test imputation.
@@ -48,37 +48,36 @@ exportLatex(vim)
 vim <- varImpact(Y = Y, data = X, impute = "median")
 
 # Customize Q and g libraries for TMLE estimation.
-Q_lib <- c("SL.gam","SL.glmnet", "SL.stepAIC", "SL.randomForest", "SL.rpartPrune", "SL.bayesglm")
-g_lib <- c("SL.stepAIC", "SL.glmnet")
+Q_lib <- c("SL.mean", "SL.glmnet", "SL.ranger", "SL.rpartPrune", "SL.bayesglm")
+g_lib <- c("SL.mean", "SL.glmnet")
 vim <- varImpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
 
 ####################################
-# doMC parallel (multicore) example.
-library(doMC)
-registerDoMC()
+# Parallel (multicore) example.
+library(future)
+plan("multiprocess")
 vim <- varImpact(Y = Y, data = X)
 
 ####################################
-# doSNOW parallel example.
-library(doSNOW)
+# SNOW parallel example.
 library(RhpcBLASctl)
 # Detect the number of physical cores on this computer using RhpcBLASctl.
-cluster <- makeCluster(get_num_cores())
-registerDoSNOW(cluster)
+cl = parallel::makeCluster(get_num_cores())
+plan("cluster", workers = cl)
 vim <- varImpact(Y = Y, data = X)
-stopCluster(cluster)
+parallel::stopCluster(cl)
 
 ####################################
 # mlbench BreastCancer example.
-data(BreastCancer, package="mlbench")
+data(BreastCancer, package = "mlbench")
 data <- BreastCancer
 
 # Create a numeric outcome variable.
 data$Y <- as.numeric(data$Class == "malignant")
 
 # Use multicore parallelization to speed up processing.
-doMC::registerDoMC()
-vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+plan("multiprocess")
+vim <- varImpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
 
 ```
 
