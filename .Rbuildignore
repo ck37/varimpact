@@ -1,5 +1,13 @@
+# RStudio files.
 ^.*\.Rproj$
 ^\.Rproj\.user$
+
+# Automated testing.
 ^\.travis\.yml$
 ^appveyor\.yml$
+
+# Misc.
 ^TODO.txt$
+
+# Github files.
+^readme.Rmd$
