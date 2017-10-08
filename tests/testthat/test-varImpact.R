@@ -29,7 +29,8 @@ for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 # Basic test - binary outcome.
 #future::plan("multiprocess")
 future::plan("sequential")
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T, verbose_tmle = F, bins_numeric = 3)
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T,
+                verbose_tmle = F, bins_numeric = 3)
 vim$time
 # Be explict about printing for code coverage of tests.
 print(vim)
@@ -46,7 +47,7 @@ suppressWarnings({
 vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 3, verbose = T)
 
 # And try a gaussian outcome.
-vim = varImpact(Y = Y_gaus, data = X[, 1:3], V = 2, verbose = T,
+vim = varImpact(Y = Y_gaus, data = X[, 1:3], V = 3, verbose = T,
                 family = "gaussian")
 vim
 
