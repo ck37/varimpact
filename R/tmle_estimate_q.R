@@ -112,7 +112,12 @@ tmle_estimate_q <-
                           cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=id[Delta==1])
         }
         suppressWarnings({
-          m <- try(do.call(SuperLearner::SuperLearner, arglist))
+          # CK: try to eliminate messages from loading packages.
+          out = utils::capture.output({
+            suppressPackageStartupMessages({
+              m <- try(do.call(SuperLearner::SuperLearner, arglist))
+            })
+          })
           # Set call to null because do.call() messes up that element.
           m$call = NULL
         })
