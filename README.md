@@ -87,6 +87,11 @@ vim$results_all
 #> V5 Ordered 0.04340259  (-0.196 - 0.283) 0.36142148    0.3614215       TRUE
 exportLatex(vim)
 #> NULL
+# Clean up - will get a warning if there were no consistent results.
+suppressWarnings({
+  file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
+})
+#> [1]  TRUE  TRUE FALSE
 
 # Impute by median rather than knn.
 vim <- varImpact(Y = Y, data = X, impute = "median")
