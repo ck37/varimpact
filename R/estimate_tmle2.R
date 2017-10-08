@@ -18,20 +18,21 @@
 #' @importFrom stats as.formula binomial coef glm plogis poisson predict qlogis
 #' @importFrom utils packageDescription
 #' @export
-estimate_tmle2 = function(Y,
-                        A,
-                        W,
-                        family,
-                        delta = rep(1, length(Y)),
-                        Q.lib,
-                        g.lib,
-                        id = 1:length(Y),
-                        Qbounds = NULL,
-                        gbound = 0.025,
-                        alpha = 0.995,
-                        fluctuation = "logistic",
-                        V = 10,
-                        verbose = F) {
+estimate_tmle2 =
+  function(Y,
+           A,
+           W,
+           family,
+           delta = rep(1, length(Y)),
+           Q.lib,
+           g.lib,
+           id = 1:length(Y),
+           Qbounds = NULL,
+           gbound = 0.025,
+           alpha = 0.995,
+           fluctuation = "logistic",
+           V = 10,
+           verbose = F) {
 
   if (!family %in% c("binomial", "gaussian")) {
     stop('Estimate_tmle: family must be either "binomial" or "gaussian".')
@@ -42,6 +43,7 @@ estimate_tmle2 = function(Y,
   n = length(Y)
   inc = rep(T, n)
 
+  # TODO: revisit this decision.
   if (!is.null(delta)) {
     num_missing = sum(delta == 0)
     if (num_missing > 0 && num_missing < 10) {
