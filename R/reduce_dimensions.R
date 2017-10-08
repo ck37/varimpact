@@ -37,6 +37,11 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
   if (num_columns <= max_variables || is.null(max_variables)) {
     Wtsht = data
     Wvsht = newX
+
+    # We still need to restrict validation W to contain only columns that
+    # were in the training data. I.e. remove any extra missingness indicators.
+    Wvsht = Wvsht[, colnames(Wvsht) %in% colnames(Wtsht), drop = FALSE]
+
   } else {
     if (verbose) cat("Reducing dimensions via clustering.\n")
 
@@ -130,8 +135,26 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
       # Save the chosen variables so that we can return them in the result list.
       variables = colnames(data)[incc]
     }
-    if (verbose) cat(" Updated columns:", ncol(Wtsht), "\n")
   }
+
+  # If training data contains any columsn that don't exist in the validation data
+  # create them and assign a value of 0.
+
+  missing_cols = setdiff(colnames(Wtsht), colnames(Wvsht))
+  if (length(missing_cols) > 0) {
+    if (verbose) cat(paste("Adding missing columns in prediction data:",
+                  paste(missing_cols, collapse = ", ")))
+
+    new_cols = matrix(0, nrow = nrow(Wvsht), ncol = length(missing_cols))
+    colnames(new_cols) = missing_cols
+    Wvsht = cbind(Wvsht, new_cols)
+
+    # Sort columns in the correct order so that matrix multiplication is correct.
+    Wvsht = Wvsht[, colnames(Wtsht), drop = FALSE]
+  }
+
+  if (verbose) cat(" Updated columns:", ncol(Wtsht), "training",
+                   ncol(Wvsht), "validation.\n")
 
   results = list(data = Wtsht, newX = Wvsht, variables = variables)
   results
