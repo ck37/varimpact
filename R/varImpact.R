@@ -1513,7 +1513,7 @@ varImpact = function(Y,
             }
           }
         }
-        cat("Completed fold", fold_k, "\n\n")
+        if (verbose) cat("Completed fold", fold_k, "\n\n")
 
         # Return results for this fold.
         fold_result
