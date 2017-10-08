@@ -40,21 +40,21 @@
 #' @export
 tmle_estimate_q <-
   function(Y,
-            Z = rep(0, length(Y)),
-            A,
-            W,
-            Delta,
-            Q = NULL,
-            Qbounds,
-            Qform = NULL,
-            maptoYstar,
-            SL.library,
-            cvQinit = F,
-            family,
-            id = 1:length(Y),
-            V = 10,
-            verbose = F
-  ) {
+           Z = rep(0, length(Y)),
+           A,
+           W,
+           Delta,
+           Q = NULL,
+           Qbounds,
+           Qform = NULL,
+           maptoYstar,
+           SL.library,
+           cvQinit = F,
+           family,
+           id = 1:length(Y),
+           V = 10,
+           verbose = F) {
+
   if (is.null(Qbounds)) stop("Qbounds must be defined.")
   SL.version <- 2
   Qfamily <- family
