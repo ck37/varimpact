@@ -4,12 +4,22 @@
 language: r
 cache: packages
 sudo: false
+
+# Install nlopt package to help nloptr install.
+addons:
+  apt:
+    packages:
+      - libnlopt-dev
+
+#r_github_packages:
+#  - jimhester/covr
+
+r_packages:
+  - covr
+
 bioc_packages:
  - hopach
  - multtest
-
-#r_github_packages:
-# - jimhester/covr
 
 #after_success:
  #- Rscript -e 'covr::codecov()'
@@ -18,7 +28,7 @@ bioc_packages:
 script:
   - |
     R CMD build .
-    travis_wait 40 R CMD check $PKG_TARBALL
+    travis_wait 40 R CMD check varImpact*.tar.gz
 
 # Get error logs in case of failure.
 after_failure:
