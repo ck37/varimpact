@@ -50,6 +50,14 @@ apply_tmle_to_validation = function(Y,
     stop("apply_tmle_to_validation() failed during prediction of Q(1, W).")
   })
 
+  if (verbose) cat("Bounding Q_hat to", tmle$stage1_Qbounds, "\n")
+  Q_hat = .bound(Q_hat, tmle$stage1_Qbounds)
+
+  if (min(Q_hat) < 0 || max(Q_hat) > 1) {
+    cat("Error: predicted Q_hat outside of [0, 1] bounds.\n")
+    browser()
+  }
+
   # Predict g
   tryCatch({
     sl_pred = predict(tmle$g_model, W, type = "response", onlySL = T)

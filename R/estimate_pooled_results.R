@@ -1,4 +1,6 @@
-estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbose = F) {
+estimate_pooled_results = function(fold_results,
+                                   fluctuation = "logistic",
+                                   verbose = FALSE) {
   # Fold results is a list with test results from each fold.
 
   # Each fold result should have at least this element:
@@ -18,6 +20,13 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
     }
   }))
 
+  if (min(data$Q_hat) < 0 || max(data$Q_hat) > 1) {
+    cat("Error: some predicted values of Q_hat are out of bounds.",
+        "They should be in [0, 1].\n")
+    print(summary(data$Q_hat))
+    browser()
+  }
+
   # Set some default values in case of a future error.
   thetas = NULL
   influence_curves = NULL
@@ -36,16 +45,29 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
 
     # If Q is binary or continuous we still want to take logit of predicted values.
     # See tmle::estimateQ where it does this after predicting Q.
-    data$logit_Q_hat = qlogis(data$Q_hat)
+    data$logit_Q_hat = try(qlogis(data$Q_hat))
+    if (class(data$logit_Q_hat) == "try-error") {
+      cat("Error in estimate_pooled_results() with qlogis()\n")
+      print(summary(data$Q_hat))
+      browser()
+    }
     #}
 
     # Estimate epsilon
     if (verbose) cat("Estimating epsilon: ")
+
     if (fluctuation == "logistic") {
       suppressWarnings({
         #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + H1W,
-        epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
-                         data = data, family = "binomial"))
+        #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
+        #                 data = data, family = "binomial"))
+        reg = try(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
+                  data = data, family = "binomial"))
+        if (class(reg) == "try-error") {
+          cat("Error in epsilon rgression.\n")
+          browser()
+        }
+        epsilon = try(coef(reg))
       })
       # Use more stable version where clever covariate is the weight, and now we
       # have an intercept. Causal 2, Lecture 3, slide 51.
@@ -67,6 +89,8 @@ estimate_pooled_results = function(fold_results, fluctuation = "logistic", verbo
 
     if (class(epsilon) == "try-error") {
       if (verbose) cat("Error when estimating epsilon.\n")
+      print(summary(data$Y_star))
+      browser()
     } else {
 
       if (verbose) cat("Fluctuating Q_star\n")
