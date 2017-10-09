@@ -1,4 +1,4 @@
-# CK: this is copied from TMLE package
+# CK: this is copied from TMLE package, with some modifications.
 # Edits:
 # - full superLearner model is returned.
 # - set default for id argument.
@@ -21,16 +21,24 @@
 # d = [Delta, Z,A,W for missingness]
 #----------------------------------------
 #' @importFrom utils packageDescription
-tmle_estimate_g <- function (d,
-                             g1W = NULL,
-                             gform = NULL,
-                             SL.library,
-                             id=1:nrow(d),
-                             V = 10,
-                             verbose = F,
-                             message = "",
-                             outcome="A",
-                             newdata=d)  {
+tmle_estimate_g <-
+  function (d,
+            g1W = NULL,
+            gform = NULL,
+            SL.library,
+            id=1:nrow(d),
+            V = 10,
+            stratify = TRUE,
+            # TODO: consider changing default to method.NNloglik
+            method = "method.NNLS",
+            verbose = F,
+            message = "",
+            outcome = "A",
+            newdata=d)  {
+
+  cvControl = SuperLearner::SuperLearner.CV.control(V = V,
+                                                    stratifyCV = stratify,
+                                                    shuffle = TRUE)
   SL.version <- 2
   SL.ok <- FALSE
   m <- NULL
@@ -51,9 +59,17 @@ tmle_estimate_g <- function (d,
         SL.ok <- TRUE
         old.SL <- packageDescription("SuperLearner")$Version < SL.version
         if(old.SL){
-          arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE], family="binomial", SL.library=SL.library, V=V, id=id)
+          arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE],
+                          family="binomial", SL.library=SL.library, V=V, id=id)
         } else {
-          arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE], family="binomial", SL.library=SL.library, cvControl=list(V=V), id=id)
+          sl_id = id
+          # If IDs are unique we don't need to pass them to SL, which breaks
+          # stratification.
+          if (length(unique(id)) == length(id)) {
+            sl_id = NULL
+          }
+          arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE],
+                          family="binomial", method = method, SL.library=SL.library, cvControl = cvControl, id = sl_id)
         }
         # TODO: are we sure we want to suppress warnings here?
         suppressWarnings({

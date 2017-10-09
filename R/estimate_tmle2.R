@@ -101,12 +101,23 @@ estimate_tmle2 =
     print(table(A))
   }
 
+  min_g_cell = min(table(A))
+  g_V = V
+  if (min_g_cell < V) {
+    g_V = max(min_g_cell, 2)
+    if (verbose) {
+      cat("A's minimum cell sizes", min_g_cell, "is less than the number of CV",
+          "folds", V, "\n. Reducing folds to", g_V,  "\n")
+    }
+  }
+
   # Using modified version of tmle::estimateG
   #g_model = SuperLearner::SuperLearner(Y = A, X = W, SL.library = g.lib,
   #g = tmle_estimate_g(d = cbind(A[delta == 1], W[delta == 1, ]),
   g = tmle_estimate_g(d = cbind(A, W),
                       SL.library = g.lib,
                       verbose = verbose,
+                      V = g_V,
                       outcome = "A",
                       message = "g")
 
@@ -158,6 +169,7 @@ estimate_tmle2 =
                       Delta = delta,
                       SL.library = Q.lib,
                       family = family,
+                      V = V,
                       verbose = verbose,
                       maptoYstar = map_to_ystar,
                       Qbounds = stage1$Qbounds)
@@ -258,6 +270,10 @@ estimate_tmle2 =
                 Qbounds = Qbounds,
                 stage1_Qbounds = stage1$Qbounds,
                 gbounds = g$bound,
+                V = V,
+                # May have had to reduce the # of SL folds for g, due to sparsity
+                # in A.
+                g_V = g_V,
                 fluctuation = fluctuation,
                 map_to_ystar = map_to_ystar, ab = stage1$ab)
 
