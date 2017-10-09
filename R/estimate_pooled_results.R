@@ -5,10 +5,11 @@ estimate_pooled_results = function(fold_results,
 
   # Each fold result should have at least this element:
   # val_preds dataframe, with Y_star, g, Q, H.
-  num_fails = sum(is.na(sapply(fold_results, `[[`, "level")))
-  if (verbose) {
-    cat("Number of fold failures:", num_fails, "of", length(fold_results), "\n")
-  }
+  # TODO: need to change this check, it doesn't work correctly.
+  #num_fails = sum(is.null(sapply(fold_results, `[[`, "level")))
+  #if (verbose) {
+  #  cat("Number of fold failures:", num_fails, "of", length(fold_results), "\n")
+  #}
 
   # Placeholder results to return in case of error.
   results = list(
@@ -17,11 +18,11 @@ estimate_pooled_results = function(fold_results,
     epsilon = NULL
   )
 
-  if (num_fails == length(fold_results)) {
+  #if (num_fails == length(fold_results)) {
     # Every fold failed.
-    if (verbose) cat("Error: every fold failed.\n")
-    return(results)
-  }
+  #  if (verbose) cat("Error: every fold failed.\n")
+  #  return(results)
+  #}
 
   # Extract the results from each CV-TMLE fold and rbind into a single dataframe.
   data = do.call(rbind, lapply(1:length(fold_results), function(i) {
@@ -36,6 +37,12 @@ estimate_pooled_results = function(fold_results,
       df
     }
   }))
+
+  if (is.null(data)) {
+    # Every fold failed.
+    if (verbose) cat("Error: every fold failed.\n")
+    return(results)
+  }
 
   if (min(data$Q_hat) < 0 || max(data$Q_hat) > 1) {
     cat("Error: some predicted values of Q_hat are out of bounds.",
