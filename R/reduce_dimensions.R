@@ -14,22 +14,24 @@
 #' @export
 reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
 
-
   # Identify constant columns in training data.
-  is_constant = sapply(data, function(col) var(col) == 0)
+  is_constant = sapply(data, function(col) var(col, na.rm = TRUE) == 0)
 
-  # Remove constant columns.
-  data = data[, !is_constant, drop = F]
+  if (sum(is_constant) > 0) {
+    if (verbose) cat("First removing", sum(is_constant), "constant columns.\n")
 
-  if (verbose && sum(is_constant) > 0) {
-    cat("First removing", sum(is_constant), "constant columns.\n")
+    # Remove constant columns.
+    data = data[, !is_constant, drop = F]
+
+    # Remove those same constant columns from the test data, if it was provided.
+    if (!is.null(newX)) {
+      # Here we have to operate by names in case the validation data has different columns.
+      newX = newX[, !names(newX) %in% names(is_constant[is_constant]), drop = F]
+    }
   }
 
   # Set this by default, then override it if we do reduce dimensions.
   variables = colnames(data)
-
-  # Remove those same constant columns from the test data, if it was provided.
-  if (!is.null(newX)) newX = newX[, !is_constant, drop = F]
 
   num_columns = ncol(data)
 
@@ -40,6 +42,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
 
     # We still need to restrict validation W to contain only columns that
     # were in the training data. I.e. remove any extra missingness indicators.
+    # TODO: should we do this at the very beginning?
     Wvsht = Wvsht[, colnames(Wvsht) %in% colnames(Wtsht), drop = FALSE]
 
   } else {
