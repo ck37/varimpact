@@ -9,14 +9,18 @@ Alan priorities:
 - Test CV-TMLE with non-binary outcomes. E.g. transform theta?
 
 Mark priorities:
-- Support for 10-fold CV-TMLE
+- Support for 10-fold CV-TMLE - IN PROGRESS
 
 Chris items:
-* PRIORITY: Fix build failure!
 * PRIORITY: for continuous outcomes, need to transform effect size and CIs back to the original scale (multiply by range of the original bounds.)
+* PRIORITY: Track and report why variables are removed from analysis
+ - minCell, minYs, error during estimation, missing values, restrict_by_quantiles(), etc.
+* Simulation study
 * Investigate penalized histogramming of numeric variables
   - Needs more tests and probably its own function.
 * Give a warning if data is a matrix rather than dataframe. Causes an error in separate_factors_numerics.
+* Methods
+   - Rename exportLatex to export_latex; support but deprecate old method name.
 * Arguments
   - Argument for p-value cutoff for consistent results.
 * Coding style
@@ -29,12 +33,10 @@ Chris items:
   - Sort consistent results by p-value then estimate size?
   - Support summary()
   - Return SEs in results tables.
-  - Output the specific variables dropped due to lack of variation (restrict_by_quantiles).
   - Fix exportTable() when vim_result is NULL due to lack of results.
 * Quality
   - Warn/error if there are character columns in the data, as a bonus check.
   - Figure out how to reduce the number of potential failures in various steps.
-  - Count and report how many variables are skipped due to minCell constraint.
   - Automatically handle rows that are all NAs?
   - Automatically remove any data column that is 100% equal to the outcome (so it can stay in df).
 * Prediction Accuracy
