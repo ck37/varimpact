@@ -1669,7 +1669,7 @@ varImpact = function(Y,
         "result elements. Removing those variables from the results.\n")
     # Likely missing EY1V, EY0V, labV, and fold_results.
     print(element_length[element_length < expected_length])
-    browser()
+#     browser()
   }
 
   # Restrict to vim results that have at least 7 elements.
