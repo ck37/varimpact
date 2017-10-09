@@ -55,8 +55,12 @@ tmle_estimate_g <- function (d,
         } else {
           arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE], family="binomial", SL.library=SL.library, cvControl=list(V=V), id=id)
         }
+        # TODO: are we sure we want to suppress warnings here?
         suppressWarnings({
-          m <- try(do.call(SuperLearner::SuperLearner, arglist))
+          # Suppress any package startup messages if we can.
+          suppressPackageStartupMessages({
+            m <- try(do.call(SuperLearner::SuperLearner, arglist))
+          })
           # Set call to null because do.call() messes up that element.
           m$call = NULL
         })
