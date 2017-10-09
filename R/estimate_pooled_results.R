@@ -5,6 +5,23 @@ estimate_pooled_results = function(fold_results,
 
   # Each fold result should have at least this element:
   # val_preds dataframe, with Y_star, g, Q, H.
+  num_fails = sum(is.na(sapply(fold_results, `[[`, "level")))
+  if (verbose) {
+    cat("Number of fold failures:", num_fails, "of", length(fold_results), "\n")
+  }
+
+  # Placeholder results to return in case of error.
+  results = list(
+    thetas = NULL,
+    influence_curves = NULL,
+    epsilon = NULL
+  )
+
+  if (num_fails == length(fold_results)) {
+    # Every fold failed.
+    if (verbose) cat("Error: every fold failed.\n")
+    return(results)
+  }
 
   # Extract the results from each CV-TMLE fold and rbind into a single dataframe.
   data = do.call(rbind, lapply(1:length(fold_results), function(i) {
