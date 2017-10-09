@@ -68,6 +68,8 @@
 #'   output.
 #' @param verbose_tmle Boolean - if TRUE, will display even more detail on the TMLE
 #'   estimation process.
+#' @param verbose_reduction Boolean - if TRUE, will display more detail during
+#'   variable reduction step (clustering).
 #' @param digits Number of digits to round the value labels.
 #'
 #' @return Results object. TODO: add more detail here.
@@ -204,6 +206,7 @@ varImpact = function(Y,
                      quantile_probs_numeric = quantile_probs_factor,
                      verbose = F,
                      verbose_tmle = F,
+                     verbose_reduction = F,
                      parallel = T,
                      digits = 4) {
 
@@ -524,7 +527,7 @@ varImpact = function(Y,
     #vim_factor = lapply(1:xc, function(var_i) {
       nameA = names.fac[var_i]
 
-      if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "factor variables\n")
+      if (verbose) cat("Var:", nameA, var_i, "out of", xc, "factor variables\n")
 
       if (!nameA %in% A_names) {
         if (verbose) cat("Skipping", nameA, "as it is not in A_names.\n")
@@ -610,13 +613,14 @@ varImpact = function(Y,
         }
 
         # Use HOPACH to reduce dimension of W to some level of tree
-        reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
+        reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = verbose_reduction)
 
         Wtsht = reduced_results$data
         Wvsht = reduced_results$newX
 
         # We should have no constant columns after calling reduce_dimensions().
-        is_constant = sapply(Wtsht, function(col) var(col) == 0)
+        # Remove any NA values - but shouldn't these already be imputed?
+        is_constant = sapply(Wtsht, function(col) var(col, na.rm = TRUE) == 0)
         # Restrict to just the TRUE variables - those that are constant.
         is_constant = is_constant[is_constant]
 
@@ -678,6 +682,7 @@ varImpact = function(Y,
         # Create a list to hold the results we calculate in this fold.
         # Set them to default values and update as they are calculated.
         fold_result = list(
+          failed = TRUE,
           # Message should report on the status for this fold.
           message = "",
           obs_training = length(Yt),
@@ -925,6 +930,8 @@ varImpact = function(Y,
                 # Save the result.
                 fold_result$level_max$val_preds = max_preds
                 fold_result$message = "Succcess"
+                # Fold succeeded.
+                fold_result$failed = FALSE
               }
             }
           }
@@ -1102,6 +1109,8 @@ varImpact = function(Y,
         # Create a list to hold the results we calculate in this fold.
         # Set them to default values and update as they are calculated.
         fold_result = list(
+          # Set failed = FALSE at the very end if everything works.
+          failed = TRUE,
           # Message should report on the status for this fold.
           message = "",
           obs_training = length(Yt),
@@ -1266,7 +1275,7 @@ varImpact = function(Y,
           }
 
           # Use HOPACH to reduce dimension of W to some level of tree.
-          reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = F)
+          reduced_results = reduce_dimensions(Wt, Wv, adjust_cutoff, verbose = verbose_reduction)
 
           Wtsht = reduced_results$data
           Wvsht = reduced_results$newX
@@ -1508,6 +1517,7 @@ varImpact = function(Y,
                   # Save the result.
                   fold_result$level_max$val_preds = max_preds
                   fold_result$message = "Succcess"
+                  fold_result$failed = FALSE
                 }
               }
             }
@@ -1644,16 +1654,26 @@ varImpact = function(Y,
   variable_types = c(rep("Ordered", num_numeric), rep("Factor", num_factor))
   variable_names = c(colnames_numeric, colnames_factor)
 
-  vim_combined = c(vim_numeric, vim_factor)
-  names(vim_combined) = variable_names
+  all_vims = c(vim_numeric, vim_factor)
+  names(all_vims) = variable_names
 
-  element_length = sapply(vim_combined, length)
+  element_length = sapply(all_vims, length)
 
   # May increase this to 8, hence >= operator in following lines.
-  expected_length = 7
+  expected_length = 8
+
+  num_short_vars = sum(element_length < expected_length)
+  if (verbose && num_short_vars > 0) {
+    # Identify which variables do not have expected length.
+    cat(num_short_vars, "variables did not contain >=", expected_length,
+        "result elements. Removing those variables from the results.\n")
+    # Likely missing EY1V, EY0V, labV, and fold_results.
+    print(element_length[element_length < expected_length])
+    browser()
+  }
 
   # Restrict to vim results that have at least 7 elements.
-  vim_combined = vim_combined[element_length >= expected_length]
+  vim_combined = all_vims[element_length >= expected_length]
   variable_names = variable_names[element_length >= expected_length]
   variable_types = variable_types[element_length >= expected_length]
 
@@ -1748,6 +1768,7 @@ varImpact = function(Y,
       # Number of significant digits.
       signif_digits = 3
 
+      # TODO: provide ci_lower and ci_upper as separate elements.
       CI95 = paste0("(", signif(ci_lower, signif_digits), " - ", signif(ci_upper, signif_digits), ")")
 
       # 1-sided p-value
@@ -1885,6 +1906,7 @@ varImpact = function(Y,
                  results_all = outres.all,
                  results_by_fold = outres.byV,
                  results_raw = outres,
+                 all_vims = all_vims,
                  V = V, g.library = g.library, Q.library = Q.library,
                  minCell = minCell, minYs = minYs,
                  family = family,  datafac.dumW  = datafac.dumW,

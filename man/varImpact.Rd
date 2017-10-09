@@ -11,7 +11,7 @@ varImpact(Y, data, A_names = colnames(data), V = 2,
   adjust_cutoff = 10, corthres = 0.8, impute = "knn", miss.cut = 0.5,
   bins_numeric = 10, quantile_probs_factor = c(0.1, 0.9),
   quantile_probs_numeric = quantile_probs_factor, verbose = F,
-  verbose_tmle = F, parallel = T, digits = 4)
+  verbose_tmle = F, verbose_reduction = F, parallel = T, digits = 4)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}
@@ -66,6 +66,9 @@ output.}
 
 \item{verbose_tmle}{Boolean - if TRUE, will display even more detail on the TMLE
 estimation process.}
+
+\item{verbose_reduction}{Boolean - if TRUE, will display more detail during
+variable reduction step (clustering).}
 
 \item{parallel}{Use parallel processing if a backend is registered; enabled
 by default.}
