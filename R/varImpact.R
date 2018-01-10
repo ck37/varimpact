@@ -187,28 +187,29 @@
 #' }
 #'
 #' @export
-varImpact = function(Y,
-                     data,
-                     A_names = colnames(data),
-                     V = 2,
-                     Q.library = c("SL.glmnet", "SL.mean"),
-                     g.library = c("SL.glmnet", "SL.mean"),
-                     #g.library = c("SL.stepAIC"),
-                     family = "binomial",
-                     minYs = 15,
-                     minCell = 0,
-                     adjust_cutoff = 10,
-                     corthres = 0.8,
-                     impute = "median",
-                     miss.cut = 0.5,
-                     bins_numeric = 10,
-                     quantile_probs_factor = c(0.1, 0.9),
-                     quantile_probs_numeric = quantile_probs_factor,
-                     verbose = F,
-                     verbose_tmle = F,
-                     verbose_reduction = F,
-                     parallel = T,
-                     digits = 4) {
+varImpact =
+  function(Y,
+           data,
+           A_names = colnames(data),
+           V = 2,
+           Q.library = c("SL.glmnet", "SL.mean"),
+           g.library = c("SL.glmnet", "SL.mean"),
+           #g.library = c("SL.stepAIC"),
+           family = "binomial",
+           minYs = 15,
+           minCell = 0,
+           adjust_cutoff = 10,
+           corthres = 0.8,
+           impute = "median",
+           miss.cut = 0.5,
+           bins_numeric = 10,
+           quantile_probs_factor = c(0.1, 0.9),
+           quantile_probs_numeric = quantile_probs_factor,
+           verbose = FALSE,
+           verbose_tmle = FALSE,
+           verbose_reduction = FALSE,
+           parallel = TRUE,
+           digits = 4) {
 
   # Time the full function execution.
   time_start = proc.time()
