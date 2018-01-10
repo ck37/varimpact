@@ -213,6 +213,14 @@ varImpact = function(Y,
   # Time the full function execution.
   time_start = proc.time()
 
+  ######################
+  # Argument checks.
+
+  # Confirm that data has at least two columns.
+  if (ncol(data) < 2) {
+    stop("Data argument must have at least two columns.")
+  }
+
   # Ensure that Y is numeric; e.g. can't be a factor.
   stopifnot(class(Y) %in% c("numeric", "integer"))
 
@@ -350,6 +358,14 @@ varImpact = function(Y,
 
   ###########################################################
   # Pre-process numeric/continuous variables.
+
+  # TODO: need to convert numeric processing code to its own function so that
+  # we can test it formally.
+  # preprocess_numerics(data.num, quantile_probs, bins_numeric, verbose = verbose)
+  # Return results:
+  # which variables were dropped, and why.
+  # data.cont.dist -
+  # impute info
 
   if (ncol(data.num) > 0) {
     num_cols = ncol(data.num)
