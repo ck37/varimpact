@@ -40,14 +40,17 @@ matrix:
     - os: osx
 
 # Allow build to take up to 40 minutes without returning output (esp. during example testing)
-#script:
-#  - |
-#    R CMD build .
-#    travis_wait 40 R CMD check varImpact*.tar.gz
+# Without this section, travis built will fail to lack of output for 10 minutes.
+script:
+  - |
+    R CMD build .
+    travis_wait 40 R CMD check varImpact*.tar.gz
 
-after_success:
+# code coverage testing is timing out after 10 minutes, also need to
+# enable travis_wait for this.
+#after_success:
   # Only check test coverage for R = release and OS = linux.
-  - test ${TRAVIS_R_VERSION_STRING} == "release" && test ${TRAVIS_OS_NAME} == "linux" && Rscript -e 'covr::codecov()'
+#  - test ${TRAVIS_R_VERSION_STRING} == "release" && test ${TRAVIS_OS_NAME} == "linux" && Rscript -e 'covr::codecov()'
 
 # Get error logs in case of failure.
 after_failure:
