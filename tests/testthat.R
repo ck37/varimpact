@@ -1,4 +1,7 @@
-library(testthat)
 library(varImpact)
 
-test_check("varImpact")
+# Only run tests if testthat package is installed.
+# This is in compliance with "Writing R Extensions" §1.1.3.1.
+if (requireNamespace("testthat", quietly = TRUE)) {
+  testthat::test_check("varImpact", reporter = "check")
+}
