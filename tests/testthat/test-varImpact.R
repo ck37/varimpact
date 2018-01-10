@@ -29,7 +29,7 @@ for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 # Basic test - binary outcome.
 #future::plan("multiprocess")
 future::plan("sequential")
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 2, verbose = T,
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 10, verbose = T,
                 verbose_tmle = F, bins_numeric = 3)
 vim$time
 # Be explict about printing for code coverage of tests.
@@ -94,9 +94,9 @@ summary(X_fac)
 future::plan("sequential")
 
 # Basic factor test.
-# TODO: this generates multiple errors for fac_4
 vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose = T)
 vim
+
 # And gaussian
 vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose = T,
                 family = "gaussian")
@@ -130,7 +130,7 @@ if (F && .Platform$GUI == "RStudio") {
 
   # Run manually when debugging, if the snow cluster was used.
   if (F) {
-    ckTools::stop_cluster(cl)
+    ck37r::stop_cluster(cl)
   }
 
 }
@@ -160,8 +160,8 @@ data = BreastCancer
 
 set.seed(3, "L'Ecuyer-CMRG")
 
-# Reduce to a dataset of 100 observations to speed up testing.
-data = data[sample(nrow(data), 100), ]
+# Reduce to a dataset of 200 observations to speed up testing.
+data = data[sample(nrow(data), 200), ]
 
 # Create a numeric outcome variable.
 data$Y = as.numeric(data$Class == "malignant")
@@ -176,7 +176,7 @@ if (.Platform$GUI == "RStudio") {
   future::plan("multiprocess", workers = 2)
 }
 # This takes 1-2 minutes.
-vim = varImpact(Y = data$Y, X, verbose = T)
+vim = varImpact(Y = data$Y, X, verbose = T, verbose_tmle = F)
 vim$time
 vim
 
