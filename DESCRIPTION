@@ -1,6 +1,6 @@
 Package: varImpact
 Type: Package
-Title: Variable importance estimation using causal inference (TMLE)
+Title: Variable Importance Estimation Using Targeted Causal Inference (TMLE)
 Version: 1.3.0-9001
 Date: 2017-10-08
 Authors@R: as.person(c(
