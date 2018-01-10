@@ -14,7 +14,7 @@ num_normal = 5
 X = data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 
 # Systematic Y generation.
-Y = .2 * X[, 1] + .9 * X[, 2] - 0.8 * X[, 3] + .1 * X[, 3] * X[, 4] - .2 * abs(X[, 4])
+Y = .2 * X[, 1] + 1 * X[, 2] - 0.8 * X[, 3] + .1 * X[, 3] * X[, 4] - .2 * abs(X[, 4])
 
 # Binary distribution via the binomial.
 Y_bin = rbinom(N, 1, plogis(Y))
@@ -29,8 +29,9 @@ for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 # Basic test - binary outcome.
 #future::plan("multiprocess")
 future::plan("sequential")
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 10, verbose = T,
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 3, verbose = T,
                 verbose_tmle = F, bins_numeric = 3)
+# Takes 25 seconds.
 vim$time
 # Be explict about printing for code coverage of tests.
 print(vim)
@@ -42,9 +43,6 @@ exportLatex(vim)
 suppressWarnings({
   file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
 })
-
-# Try larger V.
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 3, verbose = T)
 
 # And try a gaussian outcome.
 vim = varImpact(Y = Y_gaus, data = X[, 1:3], V = 3, verbose = T,
@@ -94,13 +92,11 @@ summary(X_fac)
 future::plan("sequential")
 
 # Basic factor test.
-vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose = T)
-vim
+(vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose = T))
 
 # And gaussian
-vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose = T,
-                family = "gaussian")
-vim
+(vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose = T,
+                family = "gaussian"))
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 # Disabled for now - need to review.
@@ -142,54 +138,11 @@ context("varImpact(). Dataset C: numeric and factor variables")
 X_combined = cbind(X[1:3], X_fac[4:5])
 
 # Basic combined test.
-vim = varImpact(Y = Y_bin, data = X_combined, V = 2, verbose = T)
-vim
+(vim = varImpact(Y = Y_bin, data = X_combined, V = 2, verbose = T))
 
 # And gaussian
-vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose = T,
-                family = "gaussian")
-vim
-
-#################################
-# mlbench BreastCancer dataset.
-
-context("BreastCancer dataset")
-
-data(BreastCancer, package = "mlbench")
-data = BreastCancer
-
-set.seed(3, "L'Ecuyer-CMRG")
-
-# Reduce to a dataset of 200 observations to speed up testing.
-data = data[sample(nrow(data), 200), ]
-
-# Create a numeric outcome variable.
-data$Y = as.numeric(data$Class == "malignant")
-table(data$Y)
-
-X = subset(data, select = -c(Y, Class, Id))
-dim(X)
-
-# Only run in RStudio so that automated CRAN checks don't give errors.
-if (.Platform$GUI == "RStudio") {
-  # Use multicore parallelization to speed up processing.
-  future::plan("multiprocess", workers = 2)
-}
-# This takes 1-2 minutes.
-vim = varImpact(Y = data$Y, X, verbose = T, verbose_tmle = F)
-vim$time
-vim
-
-# Test a subset of columns for A_names.
-colnames(X)[1:3]
-vim = varImpact(Y = data$Y, X, A_names = colnames(X)[1:3], verbose = T)
-vim$time
-vim
-vim$results_all
-
-# Return to single core usage.
-future::plan("sequential")
-
+(vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose = T,
+                family = "gaussian"))
 
 context("varImpact() .Dataset D: basic example")
 
