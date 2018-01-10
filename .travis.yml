@@ -40,7 +40,7 @@ matrix:
     - os: osx
 
 # Allow build to take up to 40 minutes without returning output (esp. during example testing)
-# Without this section, travis built will fail to lack of output for 10 minutes.
+# Without this section, travis build will fail to lack of output for 10 minutes.
 script:
   - |
     R CMD build .
