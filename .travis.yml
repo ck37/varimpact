@@ -1,5 +1,5 @@
-# Sample .travis.yml for R projects.
-# Via https://docs.travis-ci.com/user/languages/r/
+# Docs: https://docs.travis-ci.com/user/languages/r/
+# Validate your .travis.yml file at http://lint.travis-ci.org/
 
 language: r
 cache: packages
@@ -21,14 +21,33 @@ bioc_packages:
  - hopach
  - multtest
 
-#after_success:
- #- Rscript -e 'covr::codecov()'
+# Test on 3 versions of R.
+r:
+  - release
+  - devel
+  - oldrel
+
+env:
+  global:
+    # Allow build to continue even if a suggested package cannot be installed.
+    - _R_CHECK_FORCE_SUGGESTS_=false
+
+matrix:
+  # Report build completion status once non-"allow_failures" builds are done.
+  fast_finish: true
+  # Allow failures on OSX.
+  allow_failures:
+    - os: osx
 
 # Allow build to take up to 40 minutes without returning output (esp. during example testing)
 script:
   - |
     R CMD build .
     travis_wait 40 R CMD check varImpact*.tar.gz
+
+after_success:
+  # Only check test coverage for R = release and OS = linux.
+  - test ${TRAVIS_R_VERSION_STRING} == "release" && test ${TRAVIS_OS_NAME} == "linux" && Rscript -e 'covr::codecov()'
 
 # Get error logs in case of failure.
 after_failure:
