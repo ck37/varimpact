@@ -40,10 +40,10 @@ matrix:
     - os: osx
 
 # Allow build to take up to 40 minutes without returning output (esp. during example testing)
-script:
-  - |
-    R CMD build .
-    travis_wait 40 R CMD check varImpact*.tar.gz
+#script:
+#  - |
+#    R CMD build .
+#    travis_wait 40 R CMD check varImpact*.tar.gz
 
 after_success:
   # Only check test coverage for R = release and OS = linux.
