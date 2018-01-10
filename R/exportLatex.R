@@ -100,5 +100,6 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
                    all = xtable_all,
                    byfold = xtable_byfold
                  ))
-  invisible(results)
+
+  return(invisible(results))
 }
