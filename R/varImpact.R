@@ -233,6 +233,11 @@ varImpact =
     stop('Family must be either "binomial" or "gaussian".')
   }
 
+  if (parallel && verbose) {
+    cat("Future backend set to the following:\n")
+    print(future::plan())
+  }
+
   # Save bounds on the full Y variables for later transformation if Y is not binary.
   if (family == "binomial" || length(unique(Y)) == 2) {
     #Qbounds = NULL
