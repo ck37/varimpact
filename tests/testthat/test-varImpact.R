@@ -1,5 +1,5 @@
 # Make sure we're using the rebuilt package. Suppress any error if it isn't loaded.
-try(detach(package:varImpact), silent = T)
+try(detach(package:varImpact), silent = TRUE)
 library(varImpact)
 library(testthat)
 
@@ -29,7 +29,7 @@ for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 # Basic test - binary outcome.
 #future::plan("multiprocess")
 future::plan("sequential")
-vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 3, verbose = T,
+vim = varImpact(Y = Y_bin, data = X[, 1:3], V = 3, verbose = TRUE,
                 verbose_tmle = F, bins_numeric = 3)
 # Takes 25 seconds.
 vim$time
@@ -45,24 +45,24 @@ suppressWarnings({
 })
 
 # And try a gaussian outcome.
-vim = varImpact(Y = Y_gaus, data = X[, 1:3], V = 3, verbose = T,
+vim = varImpact(Y = Y_gaus, data = X[, 1:3], V = 3, verbose = TRUE,
                 family = "gaussian")
-vim
+print(vim)
 
 # Test imputation
-vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T, impute = "zero")
-vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T, impute = "median")
-vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T, impute = "knn")
+vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = TRUE, impute = "zero")
+vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = TRUE, impute = "median")
+vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = TRUE, impute = "knn")
 
 # Test a subset of columns using A_names.
-vim = varImpact(Y = Y_bin, data = X, A_names = colnames(X)[1:2], verbose = T)
-vim
+vim = varImpact(Y = Y_bin, data = X, A_names = colnames(X)[1:2], verbose = TRUE)
+print(vim)
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
   # Test parallelization
   future::plan("multiprocess", workers = 2)
-  vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = T)
+  vim = varImpact(Y = Y_bin, data = X[, 1:3], verbose = TRUE)
   print(vim)
 }
 
@@ -71,7 +71,7 @@ if (.Platform$GUI == "RStudio") {
   # Test parallelization via snow.
   cl = snow::makeCluster(2L)
   future::plan("cluster", workers = cl)
-  vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = T)
+  vim = varImpact(Y = Y_bin, data = X[, 1:4], verbose = TRUE)
   vim
   snow::stopCluster(cl)
 }
@@ -92,11 +92,13 @@ summary(X_fac)
 future::plan("sequential")
 
 # Basic factor test.
-(vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose = T))
+vim = varImpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose = TRUE)
+print(vim)
 
 # And gaussian
-(vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose = T,
-                family = "gaussian"))
+vim = varImpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose = TRUE,
+                family = "gaussian")
+print(vim)
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 # Disabled for now - need to review.
@@ -119,7 +121,7 @@ if (F && .Platform$GUI == "RStudio") {
   # I think it is due to HOPACH never completing.
   vim = varImpact(Y = Y_bin, data = X_fac[, 1:3],
                   #A_names = c(_4", "fac_2"),
-                  verbose = T)
+                  verbose = TRUE)
   vim
 
   # Return to single core usage.
@@ -138,11 +140,13 @@ context("varImpact(). Dataset C: numeric and factor variables")
 X_combined = cbind(X[1:3], X_fac[4:5])
 
 # Basic combined test.
-(vim = varImpact(Y = Y_bin, data = X_combined, V = 2, verbose = T))
+vim = varImpact(Y = Y_bin, data = X_combined, V = 2, verbose = TRUE)
+print(vim)
 
 # And gaussian
-(vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose = T,
-                family = "gaussian"))
+vim = varImpact(Y = Y_gaus, data = X_combined, V = 2, verbose = TRUE,
+                family = "gaussian")
+print(vim)
 
 context("varImpact() .Dataset D: basic example")
 
@@ -164,8 +168,8 @@ for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 # task 3 failed - "attempt to select less than one element in get1index"
 # X_3 seems to be causing the problem - need to investigate why.
 vim = varImpact(Y = Y, data = X, A_names = colnames(X)[c(1, 2, 4:7)],
-                verbose = T, parallel = F)
-vim
+                verbose = TRUE, parallel = FALSE)
+print(vim)
 vim$results_all
 vim$results_by_fold
 # In this test all variables are significant, which is rare.
