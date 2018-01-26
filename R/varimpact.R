@@ -1,6 +1,6 @@
 #' @title Variable importance estimation using causal inference (targeted learning)
 #'
-#' @description \code{varImpact} returns variable importance statistics ordered
+#' @description \code{varimpact} returns variable importance statistics ordered
 #'   by statistical significance using a combination of data-adaptive target
 #'   parameter
 #'
@@ -47,7 +47,7 @@
 #'   presents the minumum of cells in a 2x2 table of the indicator of that level
 #'   versus outcome, separately by training and validation sample.
 #' @param adjust_cutoff Maximum number of adjustment variables during TMLE. If
-#'   more than this cutoff varImpact will attempt to reduce the dimensions to
+#'   more than this cutoff varimpact will attempt to reduce the dimensions to
 #'   that number (using HOPACH hierarchical clustering). Must not be more than
 #'   15 due to HOPACH constraints. Set to NULL to disable any dimension
 #'   reduction.
@@ -79,7 +79,7 @@
 #' @importFrom future future_lapply
 #'
 #' @seealso
-#' \code{\link[varImpact]{exportLatex}}, \code{\link[varImpact]{print.varImpact}}
+#' \code{\link[varimpact]{exportLatex}}, \code{\link[varimpact]{print.varimpact}}
 #'
 #' @encoding utf8
 #'
@@ -142,21 +142,21 @@
 #' library(future)
 #' plan("multiprocess", workers = 2)
 #'
-#' vim <- varImpact(Y = Y, data = X[, 1:3])
+#' vim <- varimpact(Y = Y, data = X[, 1:3])
 #' vim
 #' vim$results_all
 #' exportLatex(vim)
 #'
 #' # Impute by median rather than knn.
 #' \dontrun{
-#' vim <- varImpact(Y = Y, data = X[, 1:3], impute = "median")
+#' vim <- varimpact(Y = Y, data = X[, 1:3], impute = "median")
 #' }
 #'
 #' ####################################
 #' # Multicore parallel example.
 #' \dontrun{
 
-#' vim <- varImpact(Y = Y, data = X[, 1:3])
+#' vim <- varimpact(Y = Y, data = X[, 1:3])
 #' }
 #'
 #' ####################################
@@ -164,7 +164,7 @@
 #' \dontrun{
 #' cl = parallel::makeCluster(2L)
 #' plan(cluster, workers = cl)
-#' vim <- varImpact(Y = Y, data = X[, 1:3])
+#' vim <- varimpact(Y = Y, data = X[, 1:3])
 #' parallel::stopCluster(cl)
 #' }
 #'
@@ -183,11 +183,11 @@
 #
 #' # Use multicore parallelization to speed up processing.
 #' future::plan("multiprocess", workers = 2)
-#' vim <- varImpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
+#' vim <- varimpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 #' }
 #'
 #' @export
-varImpact =
+varimpact =
   function(Y,
            data,
            A_names = colnames(data),
@@ -1937,6 +1937,6 @@ varImpact =
                  time = time_end - time_start,
                  cv_folds = folds)
   # Set a custom class so that we can override print and summary.
-  class(results) = "varImpact"
+  class(results) = "varimpact"
   invisible(results)
 }

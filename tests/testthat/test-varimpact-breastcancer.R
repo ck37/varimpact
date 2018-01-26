@@ -1,5 +1,5 @@
 library(testthat)
-library(varImpact)
+library(varimpact)
 
 #################################
 # mlbench BreastCancer dataset.
@@ -27,13 +27,13 @@ if (.Platform$GUI == "RStudio") {
   future::plan("multiprocess", workers = 2)
 }
 # This takes 1-2 minutes.
-vim = varImpact(Y = data$Y, X, verbose = T, verbose_tmle = F)
+vim = varimpact(Y = data$Y, X, verbose = T, verbose_tmle = F)
 vim$time
 vim
 
 # Test a subset of columns for A_names.
 colnames(X)[1:3]
-vim = varImpact(Y = data$Y, X, A_names = colnames(X)[1:3], verbose = T)
+vim = varimpact(Y = data$Y, X, A_names = colnames(X)[1:3], verbose = T)
 vim$time
 vim
 vim$results_all

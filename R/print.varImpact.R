@@ -1,13 +1,13 @@
-#' Custom printing of the varImpact results.
+#' Custom printing of the varimpact results.
 #'
 #' Shows the significant and consistent results by default. If there are no
 #' consistent results it shows all results.
 #'
-#' @param x Results object from varImpact.
+#' @param x Results object from varimpact.
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @export
-print.varImpact = function(x, ...) {
+print.varimpact = function(x, ...) {
   # Just print the significant and consistent results.
   if (!is.null(x$results_consistent) && nrow(x$results_consistent) > 0) {
     cat("Significant and consistent results:\n")

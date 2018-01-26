@@ -1,4 +1,4 @@
-library(varImpact)
+library(varimpact)
 library(testthat)
 
 context("factorsToIndicators")

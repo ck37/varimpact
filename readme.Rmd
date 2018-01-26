@@ -14,15 +14,15 @@ knitr::opts_chunk$set(
 )
 ```
 
-# varImpact - variable importance through causal inference
+# varimpact - variable importance through causal inference
 
-[![Build Status](https://travis-ci.org/ck37/varImpact.svg?branch=master)](https://travis-ci.org/ck37/varImpact)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ck37/varImpact?branch=master&svg=true)](https://ci.appveyor.com/project/ck37/varImpact)
-[![codecov](https://codecov.io/gh/ck37/varImpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varImpact)
+[![Build Status](https://travis-ci.org/ck37/varimpact.svg?branch=master)](https://travis-ci.org/ck37/varimpact)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ck37/varimpact?branch=master&svg=true)](https://ci.appveyor.com/project/ck37/varimpact)
+[![codecov](https://codecov.io/gh/ck37/varimpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varimpact)
 
 ## Summary
 
-varImpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. It answers the question: which of my Xs are most related to my Y? Each variable's influence on the outcome is estimated semiparametrically, without assuming a linear relationship or other functional form, and the covariate list is ranked by order of importance. This can be used for exploratory data analysis, for dimensionality reduction, for experimental design (e.g. to determine blocking and re-randomization), to reduce variance in an estimation procedure, etc. See Hubbard & van der Laan (2016) and Hubbard, Kennedy, & van der Laan (2017) for more details.
+varimpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. It answers the question: which of my Xs are most related to my Y? Each variable's influence on the outcome is estimated semiparametrically, without assuming a linear relationship or other functional form, and the covariate list is ranked by order of importance. This can be used for exploratory data analysis, for dimensionality reduction, for experimental design (e.g. to determine blocking and re-randomization), to reduce variance in an estimation procedure, etc. See Hubbard & van der Laan (2016) and Hubbard, Kennedy, & van der Laan (2017) for more details.
 
 ## Details
 
@@ -30,7 +30,7 @@ Each covariate is analyzed using targeted minimum loss-based estimation ([TMLE](
 
 The results provide raw p-values as well as p-values adjusted for false discovery rate using the Benjamini-Hochberg (1995) procedure. Adjustment variables are automatically clustered hierarchically using HOPACH (van der Laan & Pollard 2003) in order to reduce dimensionality.  The package supports multi-core and multi-node parallelization, which are detected and used automatically when a parallel backend is registered. Missing values are automatically imputed using K-nearest neighbors (Troyanskaya et al. 2001, Jerez et al. 2010) and missingness indicator variables are incorporated into the analysis.
 
-varImpact is under active development so please submit any bug reports or feature requests to the [issue queue](https://github.com/ck37/varImpact/issues), or email Alan & Chris directly.
+varimpact is under active development so please submit any bug reports or feature requests to the [issue queue](https://github.com/ck37/varimpact/issues), or email Alan & Chris directly.
 
 ## Installation
 
@@ -39,7 +39,7 @@ varImpact is under active development so please submit any bug reports or featur
 ```{r install, eval=F}
 # Install devtools if necessary:
 # install.packages("devtools")
-devtools::install_github("ck37/varImpact")
+devtools::install_github("ck37/varimpact")
 ```
 
 ### CRAN
@@ -49,7 +49,7 @@ Forthcoming Fall 2017
 ## Examples
 
 ```{r examples}
-library(varImpact)
+library(varimpact)
 
 ####################################
 # Create test dataset.
@@ -63,7 +63,7 @@ for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
 
 ####################################
 # Basic example
-vim <- varImpact(Y = Y, data = X)
+vim <- varimpact(Y = Y, data = X)
 vim
 vim$results_all
 exportLatex(vim)
@@ -73,19 +73,19 @@ suppressWarnings({
 })
 
 # Impute by median rather than knn.
-vim <- varImpact(Y = Y, data = X, impute = "median")
+vim <- varimpact(Y = Y, data = X, impute = "median")
 
 # Customize Q and g libraries for TMLE estimation.
 Q_lib <- c("SL.mean", "SL.glmnet", "SL.ranger", "SL.rpartPrune", "SL.bayesglm")
 g_lib <- c("SL.mean", "SL.glmnet")
-vim <- varImpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
+vim <- varimpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
 vim
 
 ####################################
 # Parallel (multicore) example.
 library(future)
 plan("multiprocess")
-vim <- varImpact(Y = Y, data = X)
+vim <- varimpact(Y = Y, data = X)
 
 ####################################
 # SNOW parallel example.
@@ -93,7 +93,7 @@ library(RhpcBLASctl)
 # Detect the number of physical cores on this computer using RhpcBLASctl.
 cl = parallel::makeCluster(get_num_cores())
 plan("cluster", workers = cl)
-vim <- varImpact(Y = Y, data = X)
+vim <- varimpact(Y = Y, data = X)
 parallel::stopCluster(cl)
 
 ####################################
@@ -106,7 +106,7 @@ data$Y <- as.numeric(data$Class == "malignant")
 
 # Use multicore parallelization to speed up processing.
 plan("multiprocess")
-vim <- varImpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
+vim <- varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
 vim
 
 ```

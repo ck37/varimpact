@@ -1,4 +1,4 @@
-library(varImpact)
+library(varimpact)
 library(SuperLearner)
 library(tmle)
 
@@ -70,7 +70,7 @@ summary(data)
 sl_lib = c("SL.glmnet", "SL.glm", "SL.mean")
 
 # Estimate g and Q
-result = varImpact::estimate_tmle2(Y = data$Y, A = data$A,
+result = varimpact::estimate_tmle2(Y = data$Y, A = data$A,
   W = data[, c("W_1", "W_2")], family = "gaussian",
   Q.lib = sl_lib,
   g.lib = sl_lib,
