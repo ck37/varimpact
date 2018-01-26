@@ -1,7 +1,7 @@
 
-#' Export varImpact results as Latex tables
+#' Export varimpact results as Latex tables
 #'
-#' Outputs results from varImpact() into three Latex tables: consistent results,
+#' Outputs results from varimpact() into three Latex tables: consistent results,
 #' all results, and per-fold results.
 #'
 #' Creates three Latex table files:
@@ -11,14 +11,14 @@
 #'    \item varimpByV.tex - the comparison levels used within each validation sample.  Either integer ordering of factors or short-hand for percentile cut-off (0-1 is the 10th percentile, 10+ is the 100th percentile)
 #' }
 #'
-#' @param impact_results Result object from previous varImpact() call.
+#' @param impact_results Result object from previous varimpact() call.
 #' @param outname (Optional) String that is prepended to filenames.
 #' @param dir (Optional) Directory to save the results, defaults to current directory.
 #' @param digits Digits to round numbers, passed through to xtable.
 #' @param ... Additional parameters passed to print.xtable().
 #'
 #' @seealso
-#' \code{\link[varImpact]{varImpact}}
+#' \code{\link[varimpact]{varimpact}}
 #'
 #' @export
 # TODO: document return object.

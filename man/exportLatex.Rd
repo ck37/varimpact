@@ -2,12 +2,12 @@
 % Please edit documentation in R/exportLatex.R
 \name{exportLatex}
 \alias{exportLatex}
-\title{Export varImpact results as Latex tables}
+\title{Export varimpact results as Latex tables}
 \usage{
 exportLatex(impact_results, outname = "", dir = ".", digits = 4, ...)
 }
 \arguments{
-\item{impact_results}{Result object from previous varImpact() call.}
+\item{impact_results}{Result object from previous varimpact() call.}
 
 \item{outname}{(Optional) String that is prepended to filenames.}
 
@@ -18,7 +18,7 @@ exportLatex(impact_results, outname = "", dir = ".", digits = 4, ...)
 \item{...}{Additional parameters passed to print.xtable().}
 }
 \description{
-Outputs results from varImpact() into three Latex tables: consistent results,
+Outputs results from varimpact() into three Latex tables: consistent results,
 all results, and per-fold results.
 }
 \details{
@@ -30,5 +30,5 @@ Creates three Latex table files:
 }
 }
 \seealso{
-\code{\link[varImpact]{varImpact}}
+\code{\link[varimpact]{varimpact}}
 }

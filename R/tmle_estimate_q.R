@@ -149,7 +149,7 @@ tmle_estimate_q <-
     coef <- coef(m)
     type="glm, main terms model"
   }
-  Q <- varImpact::.bound(Q, Qbounds)
+  Q <- varimpact::.bound(Q, Qbounds)
   if(maptoYstar | identical(Qfamily,"binomial") | identical(Qfamily, binomial)){
     Q <- qlogis(Q)
     Qfamily <- "binomial"
