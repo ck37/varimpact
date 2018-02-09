@@ -46,7 +46,7 @@ apply_tmle_to_validation = function(Y,
   }, error = function(e) {
     print(e)
     print(tmle$q_model)
-    browser()
+    #browser()
     stop("apply_tmle_to_validation() failed during prediction of Q(1, W).")
   })
 
@@ -55,7 +55,7 @@ apply_tmle_to_validation = function(Y,
 
   if (min(Q_hat) < 0 || max(Q_hat) > 1) {
     cat("Error: predicted Q_hat outside of [0, 1] bounds.\n")
-    browser()
+    #browser()
   }
 
   # Predict g
@@ -65,7 +65,7 @@ apply_tmle_to_validation = function(Y,
   }, error = function(e) {
     print(e)
     print(tmle$g_model)
-    browser()
+    #browser()
     stop("apply_tmle_to_validation() failed during prediction of g.")
   })
 
