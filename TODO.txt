@@ -3,7 +3,7 @@ VarImpact TODOs
 Alan priorities:
 - Display true bin ranges for continuous variables in results tables.
 - Unadjusted difference in means estimate (t-test) to compare to TMLE estimate
-- Cell sizes in the groups that it chooses (A = 0 and A = 1)
+- Cell sizes in the bins/levels that it chooses (A = 0 and A = 1)
 - Calculate RR treatment effects (see tmle, ltmle, Ben Arnold's package).
    * OR doesn't need to be in there, byproduct of parametric regression.
 - Test CV-TMLE with non-binary outcomes. E.g. transform theta?
@@ -21,12 +21,17 @@ Chris items:
 * Give a warning if data is a matrix rather than dataframe. Causes an error in separate_factors_numerics.
 * Methods
    - Rename exportLatex to export_latex; support but deprecate old method name.
+   - Data reduction: switch from HOPACH to a more reliable clustering algorithm.
+       - Or upgrade HOPACH to support more than 10 (or 15?) variables.
 * Arguments
   - Argument for p-value cutoff for consistent results.
 * Coding style
   - Create more subfunctions.
 * Output
   - Add "Variable" column name to $results_by_fold.
+  - Results by fold should be divided into two tables:
+     - by_fold_estimates - psi estimates for each fold
+     - by_fold_levels - high and low levels for each fold
   - Show a_L and a_H in consistent results table - critical for interpretation.
      * Unfortunately this requires per-fold results for numeric variables, due to
        the "directionality" definition of consistency.
@@ -46,6 +51,9 @@ Chris items:
   - Need tests with single factors and numerics. Lots of lingering bugs.
   - Add other tests.
 * Visualization
+  - Visualize the treatment-specific means for each level of the treatment, with CIs
+     - Label the high and low level
+     - Layer on the raw density of the variable
   - Plot of BH correction ala figure 10.6 in All of Statistics.
 * Performance
   - Try Rprofvis
