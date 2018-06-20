@@ -1,5 +1,10 @@
-compile_results = function(colnames_numeric, colnames_factor, vim_numeric, vim_factor,
-                           verbose = FALSE) {
+compile_results =
+  function(colnames_numeric,
+           colnames_factor,
+           vim_numeric,
+           vim_factor,
+           V,
+           verbose = FALSE) {
 
   num_numeric = length(colnames_numeric)
   num_factor = length(colnames_factor)

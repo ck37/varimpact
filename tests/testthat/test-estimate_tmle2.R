@@ -1,6 +1,7 @@
 library(varimpact)
 library(SuperLearner)
 library(tmle)
+library(testthat)
 
 # Create test dataset.
 context("Dataset A: continuous variables")
