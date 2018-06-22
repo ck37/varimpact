@@ -12,7 +12,7 @@
 #' @importFrom hopach hopach distancematrix
 #'
 #' @export
-reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
+reduce_dimensions = function(data, newX = NULL, max_variables, verbose = FALSE) {
 
   # Identify constant columns in training data.
   is_constant = sapply(data, function(col) var(col, na.rm = TRUE) == 0)
@@ -21,12 +21,12 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = F) {
     if (verbose) cat("First removing", sum(is_constant), "constant columns.\n")
 
     # Remove constant columns.
-    data = data[, !is_constant, drop = F]
+    data = data[, !is_constant, drop = FALSE]
 
     # Remove those same constant columns from the test data, if it was provided.
     if (!is.null(newX)) {
       # Here we have to operate by names in case the validation data has different columns.
-      newX = newX[, !names(newX) %in% names(is_constant[is_constant]), drop = F]
+      newX = newX[, !names(newX) %in% names(is_constant[is_constant]), drop = FALSE]
     }
   }
 

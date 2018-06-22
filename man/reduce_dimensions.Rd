@@ -4,7 +4,7 @@
 \alias{reduce_dimensions}
 \title{Reduce variables in a dataframe to a target number of covariates.}
 \usage{
-reduce_dimensions(data, newX = NULL, max_variables, verbose = F)
+reduce_dimensions(data, newX = NULL, max_variables, verbose = FALSE)
 }
 \arguments{
 \item{data}{Dataframe}

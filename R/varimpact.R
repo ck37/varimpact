@@ -191,25 +191,25 @@ varimpact =
   function(Y,
            data,
            A_names = colnames(data),
-           V = 2,
+           V = 2L,
            Q.library = c("SL.glmnet", "SL.mean"),
            g.library = c("SL.glmnet", "SL.mean"),
            #g.library = c("SL.stepAIC"),
            family = "binomial",
-           minYs = 15,
-           minCell = 0,
-           adjust_cutoff = 10,
+           minYs = 15L,
+           minCell = 0L,
+           adjust_cutoff = 10L,
            corthres = 0.8,
            impute = "median",
            miss.cut = 0.5,
-           bins_numeric = 10,
+           bins_numeric = 10L,
            quantile_probs_factor = c(0.1, 0.9),
            quantile_probs_numeric = quantile_probs_factor,
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE,
            parallel = TRUE,
-           digits = 4) {
+           digits = 4L) {
 
   # Time the full function execution.
   time_start = proc.time()
@@ -218,7 +218,7 @@ varimpact =
   # Argument checks.
 
   # Confirm that data has at least two columns.
-  if (ncol(data) < 2) {
+  if (ncol(data) < 2L) {
     stop("Data argument must have at least two columns.")
   }
 
@@ -247,7 +247,7 @@ varimpact =
     # This part is duplicated from the TMLE code in tmle_init_stage1.
 
     # Define Qbounds just for continuous (non-binary) outcomes.
-    Qbounds = range(Y, na.rm = T)
+    Qbounds = range(Y, na.rm = TRUE)
     # Extend bounds 10% beyond the observed range.
     # NOTE: if one of the bounds is zero then it won't be extended.
     Qbounds = Qbounds + 0.1 * c(-abs(Qbounds[1]), abs(Qbounds[2]))
@@ -255,7 +255,7 @@ varimpact =
 
   ########
   # Applied to Explanatory (X) data frame
-  sna = apply(data, 2, sum_na)
+  sna = sapply(data, sum_na)
 
   n = nrow(data)
 
@@ -265,19 +265,16 @@ varimpact =
 
   #######
   # Cut-off for eliminating variable for proportion of obs missing.
-  data = data[, mis.prop < miss.cut, drop = F]
+  data = data[, mis.prop < miss.cut, drop = FALSE]
 
   if (verbose) cat("Removed", sum(mis.prop >= miss.cut), "variables due to high",
                    "missing value proportion.\n")
 
-  # Function that counts # of unique values.
-  length_unique = function(x) {
-    length(unique(x))
-  }
 
   # Vector of number of unique values by variable.
   # TODO: run in parallel to support very wide/big datasets.
-  num.values = apply(data, 2, length_unique)
+  # TODO: not used.
+  num.values = sapply(data, length_unique)
 
   # Separate dataframe into factors-only and numerics-only.
   # Also converts characters to factors automatically.
@@ -288,80 +285,11 @@ varimpact =
   # And samesies for numerics.
   data.num = separated_data$df_numerics
 
-  #####################
-  if (ncol(data.fac) > 0) {
 
-    if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
-
-    ######################################
-    # Replace blank factor values with NA's.
-
-    # We re-use this num_cols variable in the next section.
-    num_cols = ncol(data.fac)
-    for (i in 1:num_cols) {
-      new_factor = as.character(data.fac[, i])
-      # The exclude argument replaces any empty strings with NAs.
-      new_factor = factor(new_factor, exclude = "")
-      data.fac[, i] = new_factor
-    }
-
-    ###################
-    # For each factor, apply function and get rid of those where
-    # 'true' data.fac is data frame of variables that are factors
-    if (!is.null(quantile_probs_factor)) {
-      data.fac = restrict_by_quantiles(data.fac, quantile_probs = quantile_probs_factor)
-    }
-
-    dropped_cols = num_cols - ncol(data.fac)
-
-    if (verbose) {
-      if (dropped_cols > 0) {
-        cat("Dropped", dropped_cols, "factors due to lack of variation.\n")
-      } else {
-        cat("No factors dropped due to lack of variation.\n")
-      }
-    }
-
-    # We don't seem to use this yet.
-    num.cat = apply(data.fac, 2, length_unique)
-
-    ######################
-    # Remove columns with missing data % greater than the threshold.
-    sum_nas = apply(data.fac, 2, sum_na)
-
-    if (verbose) cat("Factors with missingness:", sum(sum_nas > 0), "\n")
-
-    miss_pct = sum_nas / nrow(data.fac)
-
-    data.fac = data.fac[, miss_pct < miss.cut, drop = F]
-
-    if (verbose) {
-      cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
-    }
-
-    # Save how many separate factors we have in this dataframe.
-    num_factors = ncol(data.fac)
-
-    factor_results = factors_to_indicators(data.fac, verbose = verbose)
-
-    datafac.dum = factor_results$data
-    # Here 1 = defined, 0 = missing.
-    miss.fac = factor_results$missing_indicators
-
-    if (verbose) {
-      cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
-          "Missing indicators:", ncol(miss.fac), "\n")
-    }
-  } else {
-    n.fac = 0
-    num_factors = 0
-    datafac.dumW = NULL
-    miss.fac = NULL
-    datafac.dum = NULL
-  }
-
-  # Finished pre-processing factor variables.
-  ###########################################################
+  factors = process_factors(data.fac,
+                            quantile_probs_factor = quantile_probs_factor,
+                            miss.cut = miss.cut,
+                            verbose = verbose)
 
   ###########################################################
   # Pre-process numeric/continuous variables.
@@ -374,127 +302,13 @@ varimpact =
   # data.cont.dist -
   # impute info
 
-  if (ncol(data.num) > 0) {
-    num_cols = ncol(data.num)
-    if (verbose) cat("Processing numerics. Start count:", num_cols, "\n")
-
-    # Remove columns where the 0.1 and 0.9 quantiles have the same value, i.e. insufficent variation.
-    # TODO: set this is a configurable setting?
-    if (!is.null(quantile_probs_numeric)) {
-      data.num = restrict_by_quantiles(data.num, quantile_probs = quantile_probs_numeric)
-    }
-
-    if (verbose) {
-      num_dropped = num_cols - ncol(data.num)
-      if (num_dropped > 0) {
-        cat("Dropped", num_dropped, "numerics due to lack of variation.\n")
-      } else {
-        cat("No numerics dropped due to lack of variation.\n")
-      }
-    }
-
-    # Save how many numeric variables we have in this dataframe.
-    num_numeric = ncol(data.num)
-  } else {
-    num_numeric = 0
-  }
-
-  if (num_numeric > 0) {
-    if (verbose) cat("Cleaning up", num_numeric, "numeric variables.\n")
-    # Make deciles for continuous variables
-    X = data.num
-    xc = dim(X)[2]
-    # We don't seem to use this qt variable.
-    qt = apply(na.omit(X), 2, quantile, probs = seq(0.1, 0.9, 0.1))
-    newX = NULL
-    coln = NULL
-    varn = colnames(X)
-
-    num.cat = apply(X, 2, length_unique)
-
-    # Matrix to store the numeric columns converted to bin levels (integer value per quantile).
-    numerics_binned = matrix(nrow = n, ncol = num_numeric)
-
-    # Make a list to store the levels for each numeric variable.
-    numeric_levels = vector("list", num_numeric)
-
-    for (numeric_i in 1:num_numeric) {
-      # Because we do not specify "drop" within the brackets, Xt is now a vector.
-      Xt = X[, numeric_i]
-
-      # Suppress the warning that can occur when there are fewer than the desired
-      # maximum number of bins, as specified by bins_numeric. We should be able to
-      # see this as var_binned containing fewer than bins_numeric columns.
-      # Warning is in .cut2(): min(xx[xx > upper])
-      # "no non-missing arguments to min; returning Inf"
-      suppressWarnings({
-        # Discretize into up to 10 quantiles (by default), configurable based on
-        # bins_numeric argument.
-        # This returns a factor version of the discretized variable.
-        var_binned_names = arules::discretize(Xt,
-                                              method = "frequency",
-                                              categories = bins_numeric,
-                                              ordered = T)
-      })
-      # Save the levels for future usage.
-      numeric_levels[[numeric_i]] = levels(var_binned_names)
-      # This converts the factor variable to just the quantile numbers.
-      var_binned = as.numeric(var_binned_names)
-      numerics_binned[, numeric_i] =  var_binned
-    }
-    colnames(numerics_binned) = varn
-    data.cont.dist = numerics_binned
-
-    ###############
-    # Missing Basis for numeric variables, post-binning.
-
-    n.cont = nrow(data.cont.dist)
-
-    sum_nas = apply(data.cont.dist, 2, sum_na)
-    nmesX = colnames(data.cont.dist)
-    miss.cont = NULL
-    nmesm = NULL
-
-    # Create imputed version of the numeric dataframe.
-    # This is used as the adjustment set, but not used when generating the treatment assignment vector.
-    data.numW = data.num
-
-    # Loop over each binned numeric variable.
-    # TODO: do this as part of the binning process.
-    for (k in 1:num_numeric) {
-      # Check if that variable has any missing values.
-      if (sum_nas[k] > 0) {
-        # The effect is that the basis is set to 1 if it exists and 0 if it's missing.
-        ix = as.numeric(!is.na(data.cont.dist[, k]))
-        miss.cont = cbind(miss.cont, ix)
-        # TODO: convert to paste0
-        nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
-      }
-    }
-    # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
-    colnames(miss.cont) = nmesm
-
-    # Impute missing data in numeric columns.
-    if (impute == "zero") {
-      data.numW[is.na(data.num)] = 0
-      impute_info = 0
-    } else if (impute == "median") {
-      impute_info = caret::preProcess(data.num, method = "medianImpute")
-      data.numW = predict(impute_info, data.num)
-    } else if (impute == "mean") {
-      stop("Mean imputation not implemented yet. Please use another imputation method.")
-    } else if (impute == "knn") {
-      # NOTE: this also results in caret centering and scaling the data.
-      impute_info = caret::preProcess(data.num, method = "knnImpute")
-      data.numW = predict(impute_info, data.num)
-    }
-
-    # Confirm that there are no missing values remaining in data.numW
-    stopifnot(sum(is.na(data.numW)) == 0)
-  } else {
-    impute_info = NULL
-    miss.cont = NULL
-  }
+  numerics =
+    process_numerics(data.num,
+                     quantile_probs_numeric = quantile_probs_numeric,
+                     miss.cut = miss.cut,
+                     bins_numeric = bins_numeric,
+                     impute = impute,
+                     verbose = verbose)
 
   cat("Finished pre-processing variables.\n")
 
@@ -505,26 +319,26 @@ varimpact =
 
   # TODO: print variable summary before we begin analysis.
   cat("\nProcessing results:\n")
-  cat("- Factor variables:", num_factors, "\n")
-  cat("- Numeric variables:", num_numeric, "\n\n")
+  cat("- Factor variables:", factors$num_factors, "\n")
+  cat("- Numeric variables:", numerics$num_numeric, "\n\n")
 
   ###############################################################################
   # VIM for Factors
   # NOTE: we use && so that conditional will short-circuit if num_factors == 0.
-  if (num_factors > 0 && ncol(data.fac) > 0) {
-    cat("Estimating variable importance for", num_factors, "factors.\n")
+  if (factors$num_factors > 0L && ncol(factors$data.fac) > 0L) {
+    cat("Estimating variable importance for", factors$num_factors, "factors.\n")
 
     # Find the level of covariate that has lowest risk
-    datafac.dumW = datafac.dum
+    datafac.dumW = factors$datafac.dum
     # NOTE: can't we skip this line because we already imputed missing data to 0?
-    datafac.dumW[is.na(datafac.dum)] = 0
+    datafac.dumW[is.na(factors$datafac.dum)] = 0
 
     #############################
     # Below is to get indexing vectors so that any basis functions related to current A
     # that are in covariate matrix can be removed.
-    names.fac = colnames(data.fac)
+    names.fac = colnames(factors$data.fac)
     nmes.facW = colnames(datafac.dumW)
-    nmes.mfacW = colnames(miss.fac)
+    nmes.mfacW = colnames(factors$miss.fac)
     nchar.facW = nchar(nmes.facW) + 1
     nchar.mfacW = nchar(nmes.mfacW) + 1
 
@@ -546,7 +360,7 @@ varimpact =
     # Define var_i just to avoid automated NOTEs, will be overwritten by foreach.
     var_i = NULL
     #vim_factor = foreach::foreach(var_i = 1:xc, .verbose = verbose, .errorhandling = "stop") %do_op% {
-    vim_factor = future::future_lapply(1:xc, future.seed = TRUE, function(var_i) {
+    vim_factor = future.apply::future_lapply(1:xc, future.seed = TRUE, function(var_i) {
     #vim_factor = lapply(1:xc, function(var_i) {
       nameA = names.fac[var_i]
 
@@ -575,35 +389,41 @@ varimpact =
         Yt = Y[folds != fold_k]
         Yv = Y[folds == fold_k]
 
+
+        #######################################
+        # Create adjustment dataframe.
+
         ### acit.numW is just same as acit.cont.dist except with NA's replaced by
         ### 0's.
         mtch1 = match(vars.facW, nameA)
         mtch2 = match(vars.mfacW, nameA)
-        Adum = data.frame(datafac.dum[, is.na(mtch1) == F])
-        dumW = datafac.dum[, is.na(mtch1)]
-        missdumW = miss.fac[, is.na(mtch2)]
+        Adum = data.frame(factors$datafac.dum[, is.na(mtch1) == FALSE])
+        dumW = factors$datafac.dum[, is.na(mtch1)]
+        missdumW = factors$miss.fac[, is.na(mtch2)]
 
-        if (!exists("missdumW") || is.null(missdumW)) {
+        if (is.null(missdumW)) {
           missdumW = rep(NA, n.fac)
         }
-        if (!exists("miss.cont") || is.null(miss.cont)) {
-          miss.cont = rep(NA, n.fac)
+        if (is.null(numerics$miss.cont)) {
+          numerics$miss.cont = rep(NA, n.fac)
         }
-        if (!exists("dumW") || is.null(dumW)) {
+        if (is.null(dumW)) {
           dumW = rep(NA, n.fac)
         }
-        if (!exists("data.numW") || is.null(data.numW)) {
-          data.numW = rep(NA, n.fac)
+        if (is.null(numerics$data.numW)) {
+          numerics$data.numW = rep(NA, n.fac)
         }
 
-        W = data.frame(data.numW, miss.cont, dumW, missdumW)
+        W = data.frame(numerics$data.numW, numerics$miss.cont, dumW, missdumW)
 
         # Restrict to columns in which there is less than 100% missingness.
-        W = W[, !apply(is.na(W), 2, all), drop = F]
+        W = W[, !apply(is.na(W), 2, all), drop = FALSE]
+
+        #######################################
 
         # Divide into training and validation subsets.
-        Wt = W[folds != fold_k, , drop = F]
-        Wv = W[folds == fold_k, , drop = F]
+        Wt = W[folds != fold_k, , drop = FALSE]
+        Wv = W[folds == fold_k, , drop = FALSE]
 
         Adum = data.frame(Adum[folds != fold_k, ])
 
@@ -1085,18 +905,18 @@ varimpact =
 
   ######################################################
   # We use && so that the second check will be skipped when num_numeric == 0.
-  if (num_numeric > 0 && ncol(data.cont.dist) > 0) {
-    cat("Estimating variable importance for", num_numeric, "numerics.\n")
+  if (numerics$num_numeric > 0 && ncol(numerics$data.cont.dist) > 0) {
+    cat("Estimating variable importance for", numerics$num_numeric, "numerics.\n")
 
-    xc = ncol(data.cont.dist)
-    names.cont = colnames(data.cont.dist)
-    n.cont = nrow(data.cont.dist)
+    xc = ncol(numerics$data.cont.dist)
+    names.cont = colnames(numerics$data.cont.dist)
+    n.cont = nrow(numerics$data.cont.dist)
 
     # Tally the number of unique values (bins) in each numeric variable; save as a vector.
-    numcat.cont = apply(data.cont.dist, 2, length_unique)
+    numcat.cont = apply(numerics$data.cont.dist, 2, length_unique)
 
     cats.cont = lapply(1:xc, function(i) {
-      sort(unique(data.cont.dist[, i]))
+      sort(unique(numerics$data.cont.dist[, i]))
     })
 
     ### Loop over each numeric variable.
@@ -1104,7 +924,7 @@ varimpact =
     var_i = NULL
     #vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = verbose,
     #                               .errorhandling = "stop") %do_op% {
-    vim_numeric = future::future_lapply(1:num_numeric, future.seed = TRUE,
+    vim_numeric = future.apply::future_lapply(1:numerics$num_numeric, future.seed = TRUE,
                                         function(var_i) {
     #vim_numeric = lapply(1:num_numeric, function(var_i) {
       nameA = names.cont[var_i]
@@ -1124,8 +944,8 @@ varimpact =
         if (verbose) cat("Fold", fold_k, "of", V, "\n")
 
         # data.cont.dist is the discretized version of the numeric variables of size bins_numeric
-        At = data.cont.dist[folds != fold_k, var_i]
-        Av = data.cont.dist[folds == fold_k, var_i]
+        At = numerics$data.cont.dist[folds != fold_k, var_i]
+        Av = numerics$data.cont.dist[folds == fold_k, var_i]
         Yt = Y[folds != fold_k]
         Yv = Y[folds == fold_k]
 
@@ -1161,13 +981,13 @@ varimpact =
         # Conduct penalized histogramming by looking at the distribution of the rare outcome over
         # the treatment variable. So we create A_Y1 as the conditional distribution of treatment given Y = 1.
         # P(A | Y = 1).
-        if (length(unique(Yt)) == 2) {
+        if (length(unique(Yt)) == 2L) {
           # Binary outcome.
 
           A_Y1 = At[Yt == 1 & !is.na(At)]
 
           # Check if AY1 has only a single value. If so, skip histogramming to avoid an error.
-          singleAY1 = length(unique(na.omit(A_Y1))) == 1
+          singleAY1 = length(unique(na.omit(A_Y1))) == 1L
         } else {
           # Continuous outcome - just restricted to non-missing treatment.
           A_Y1 = At[!is.na(At)]
@@ -1185,14 +1005,14 @@ varimpact =
 
           # Check if the final cut-off is less that the maximum possible level; if so extend to slightly
           # larger than the maximimum possible level.
-          if (hh[length(hh)] < max(At, na.rm = T)) {
-            hh[length(hh)] = max(At, na.rm = T) + 0.1
+          if (hh[length(hh)] < max(At, na.rm = TRUE)) {
+            hh[length(hh)] = max(At, na.rm = TRUE) + 0.1
           }
 
           # Check if the lowest cut-off is greater than the minimum possible bin; if so extend to slightly
           # below the minimum level.
-          if (hh[1] > min(At[At > 0], na.rm = T)) {
-            hh[1] = min(At[At > 0], na.rm = T) - 0.1
+          if (hh[1] > min(At[At > 0], na.rm = TRUE)) {
+            hh[1] = min(At[At > 0], na.rm = TRUE) - 0.1
           }
 
           # Re-bin the training and validation vectors for the treatment variable based on the penalized
@@ -1241,37 +1061,43 @@ varimpact =
 
           ### acit.numW is just same as data.cont.dist except with NA's replaced by
           ### 0's.
-          if (!exists("miss.cont") || is.null(miss.cont)) {
-            miss.cont = rep(NA, n.cont)
+          # TODO: cbind iteratively to create W matrix below, so that we don't
+          # need these extra NA vectors.
+          if (is.null(numerics$miss.cont)) {
+            numerics$miss.cont = rep(NA, n.cont)
           }
-          if (!exists("miss.fac") || is.null(miss.fac)) {
-            miss.fac = rep(NA, n.cont)
+          if (is.null(factors$miss.fac)) {
+            factors$miss.fac = rep(NA, n.cont)
           }
-          if (!exists("datafac.dumW") || is.null(datafac.dumW)) {
-            datafac.dumW = rep(NA, n.cont)
+          if (is.null(factors$datafac.dumW)) {
+            factors$datafac.dumW = rep(NA, n.cont)
           }
-          if (!exists("data.numW") || is.null(data.numW)) {
-            data.numW = rep(NA, n.cont)
+          if (is.null(numerics$data.numW)) {
+            numerics$data.numW = rep(NA, n.cont)
           }
 
           # Construct a matrix of adjustment variables in which we use the imputed dataset
           # but remove the current treatment variable.
-          W = data.frame(data.numW[, -var_i, drop = F], miss.cont, datafac.dumW, miss.fac)
+          W = data.frame(numerics$data.numW[, -var_i, drop = FALSE],
+                         numerics$miss.cont,
+                         factors$datafac.dumW,
+                         factors$miss.fac)
 
           # Remove any columns in which all values are NA.
           # CK: but we're using imputed data, so there should be no NAs actually.
-          W = W[, !apply(is.na(W), 2, all), drop = F]
+          # (With the exception of the NA vectors possibly added above.
+          W = W[, !apply(is.na(W), 2, all), drop = FALSE]
 
           # Separate adjustment matrix into the training and test folds.
-          Wt = W[folds != fold_k, , drop = F]
-          Wv = W[folds == fold_k, , drop = F]
+          Wt = W[folds != fold_k, , drop = FALSE]
+          Wv = W[folds == fold_k, , drop = FALSE]
 
           # Identify the missingness indicator for this treatment.
           miss_ind_name = paste0("Imiss_", nameA)
 
           # Remove the missingness indicator for this treatment (if it exists) from the adjustment set.
-          Wt = Wt[, colnames(Wt) != miss_ind_name, drop = F]
-          Wv = Wv[, colnames(Wt) != miss_ind_name, drop = F]
+          Wt = Wt[, colnames(Wt) != miss_ind_name, drop = FALSE]
+          Wv = Wv[, colnames(Wt) != miss_ind_name, drop = FALSE]
 
           # Pull out any variables that are overly correlated with At (corr coef > corthes)
 
@@ -1288,8 +1114,8 @@ varimpact =
             cat("Removed", sum(!keep_vars), "columns based on correlation threshold", corthres, "\n")
           }
 
-          Wv = Wv[, keep_vars, drop = F]
-          Wt = Wt[, keep_vars, drop = F]
+          Wv = Wv[, keep_vars, drop = FALSE]
+          Wt = Wt[, keep_vars, drop = FALSE]
 
           if (verbose) {
             cat("Columns:", ncol(Wt))
@@ -1650,15 +1476,15 @@ varimpact =
     if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
 
     # Confirm that we have the correct number of results, otherwise fail out.
-    if (length(vim_numeric) != num_numeric) {
+    if (length(vim_numeric) != numerics$num_numeric) {
       # TODO: remove this.
       save(vim_numeric, file = "varimpact.RData")
       # TEMP remove this:
-      stop(paste("We have", num_numeric, "continuous variables but only",
+      stop(paste("We have", numerics$num_numeric, "continuous variables but only",
                  length(vim_numeric), "results."))
     }
 
-    colnames_numeric = colnames(data.cont.dist)
+    colnames_numeric = colnames(numerics$data.cont.dist)
   } else {
     colnames_numeric = NULL
     vim_numeric = NULL
@@ -1689,8 +1515,8 @@ varimpact =
               list(V = V, g.library = g.library, Q.library = Q.library,
                    minCell = minCell, minYs = minYs,
                    family = family,  datafac.dumW  = datafac.dumW,
-                   miss.fac = miss.fac,
-                   data.numW = data.numW, impute_info = impute_info,
+                   miss.fac = factors$miss.fac,
+                   data.numW = data.numW, impute_info = numerics$impute_info,
                    time = time_end - time_start,
                    cv_folds = folds))
 

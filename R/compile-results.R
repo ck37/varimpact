@@ -1,4 +1,5 @@
 compile_results = function(colnames_numeric, colnames_factor, vim_numeric, vim_factor,
+                           V,
                            verbose = FALSE) {
 
   num_numeric = length(colnames_numeric)
@@ -196,11 +197,11 @@ compile_results = function(colnames_numeric, colnames_factor, vim_numeric, vim_f
         sorted_rows = res$index
         # This indexing sorts the results in ascending order of unadjusted p-value.
         outres = data.frame(var_type = variable_types[sorted_rows],
-                            theta[sorted_rows, , drop = F],
+                            theta[sorted_rows, , drop = FALSE],
                             psi[sorted_rows],
                             CI95[sorted_rows],
                             res$adj,
-                            labels[sorted_rows, , drop = F],
+                            labels[sorted_rows, , drop = FALSE],
                             consist[sorted_rows])
       } else if (num_vars == 1) {
         # No need for multiple testing adjustment.

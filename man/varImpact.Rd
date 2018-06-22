@@ -5,14 +5,14 @@
 \alias{varimpact}
 \title{Variable importance estimation using causal inference (targeted learning)}
 \usage{
-varimpact(Y, data, A_names = colnames(data), V = 2,
+varimpact(Y, data, A_names = colnames(data), V = 2L,
   Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.glmnet",
-  "SL.mean"), family = "binomial", minYs = 15, minCell = 0,
-  adjust_cutoff = 10, corthres = 0.8, impute = "median", miss.cut = 0.5,
-  bins_numeric = 10, quantile_probs_factor = c(0.1, 0.9),
+  "SL.mean"), family = "binomial", minYs = 15L, minCell = 0L,
+  adjust_cutoff = 10L, corthres = 0.8, impute = "median",
+  miss.cut = 0.5, bins_numeric = 10L, quantile_probs_factor = c(0.1, 0.9),
   quantile_probs_numeric = quantile_probs_factor, verbose = FALSE,
   verbose_tmle = FALSE, verbose_reduction = FALSE, parallel = TRUE,
-  digits = 4)
+  digits = 4L)
 }
 \arguments{
 \item{Y}{outcome of interest (numeric vector)}

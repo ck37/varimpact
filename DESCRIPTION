@@ -20,6 +20,7 @@ Imports:
     caret,
     cvTools,
     future,
+    future.apply,
     glmnet,
     histogram,
     hopach,
