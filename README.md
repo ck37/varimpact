@@ -61,7 +61,7 @@ devtools::install_github("ck37/varimpact")
 
 ### CRAN
 
-Forthcoming Fall 2017
+Forthcoming Summer 2018
 
 ## Examples
 
@@ -75,7 +75,7 @@ library(varimpact)
 
 ####################################
 # Create test dataset.
-set.seed(1)
+set.seed(1, "L'Ecuyer-CMRG")
 N <- 200
 num_normal <- 5
 X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
@@ -96,26 +96,28 @@ vim <- varimpact(Y = Y, data = X)
 #> 
 #> Estimating variable importance for 5 numerics.
 vim
-#> No significant and consistent results.
-#> All results:
-#>       Type   Estimate              CI95    P-value Adj. p-value Consistent
-#> V2 Ordered 0.16148119 (-0.0521 - 0.375) 0.06922588    0.1993721       TRUE
-#> V4 Ordered 0.15593140 (-0.0822 - 0.394) 0.09968604    0.1993721       TRUE
-#> V3 Ordered 0.09938841  (-0.135 - 0.333) 0.20260915    0.2701455       TRUE
-#> V5 Ordered 0.04426032  (-0.195 - 0.284) 0.35867560    0.3586756       TRUE
+#> Significant and consistent results:
+#>       Type  Estimate     P-value Adj. P-value            CI 95
+#> V2 Ordered 0.2501553 0.004721456   0.02360728 (0.0613 - 0.439)
 vim$results_all
-#>       Type   Estimate              CI95    P-value Adj. p-value Consistent
-#> V2 Ordered 0.16148119 (-0.0521 - 0.375) 0.06922588    0.1993721       TRUE
-#> V4 Ordered 0.15593140 (-0.0822 - 0.394) 0.09968604    0.1993721       TRUE
-#> V3 Ordered 0.09938841  (-0.135 - 0.333) 0.20260915    0.2701455       TRUE
-#> V5 Ordered 0.04426032  (-0.195 - 0.284) 0.35867560    0.3586756       TRUE
+#>       Type    Estimate              CI95     P-value Adj. p-value
+#> V2 Ordered  0.25015526  (0.0613 - 0.439) 0.004721456   0.02360728
+#> V5 Ordered  0.14126628 (-0.0724 - 0.355) 0.097520684   0.24380171
+#> V3 Ordered  0.15309902  (-0.136 - 0.443) 0.150010821   0.25001804
+#> V1 Ordered  0.03420408  (-0.224 - 0.293) 0.397651895   0.49706487
+#> V4 Ordered -0.16142012 (-0.383 - 0.0602) 0.923254928   0.92325493
+#>    Consistent
+#> V2       TRUE
+#> V5       TRUE
+#> V3      FALSE
+#> V1       TRUE
+#> V4      FALSE
 exportLatex(vim)
-#> NULL
 # Clean up - will get a warning if there were no consistent results.
 suppressWarnings({
   file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
 })
-#> [1]  TRUE  TRUE FALSE
+#> [1] TRUE TRUE TRUE
 
 # Impute by median rather than knn.
 vim <- varimpact(Y = Y, data = X, impute = "median")
@@ -143,13 +145,9 @@ vim <- varimpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
 #> 
 #> Estimating variable importance for 5 numerics.
 vim
-#> No significant and consistent results.
-#> All results:
-#>       Type   Estimate              CI95    P-value Adj. p-value Consistent
-#> V2 Ordered 0.15881033 (-0.0544 - 0.372) 0.07216024    0.2132031       TRUE
-#> V4 Ordered 0.15289173 (-0.0878 - 0.394) 0.10660155    0.2132031       TRUE
-#> V3 Ordered 0.09847141  (-0.135 - 0.332) 0.20384216    0.2717895       TRUE
-#> V5 Ordered 0.04334562  (-0.197 - 0.283) 0.36161390    0.3616139       TRUE
+#> Significant and consistent results:
+#>       Type  Estimate     P-value Adj. P-value            CI 95
+#> V2 Ordered 0.2563156 0.004167914   0.02083957 (0.0659 - 0.447)
 
 ####################################
 # Parallel (multicore) example.
@@ -205,10 +203,11 @@ vim <- varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
 #> No numeric variables for variable importance estimation.
 vim
 #> Significant and consistent results:
-#>                Type  Estimate      P-value Adj. P-value           CI 95
-#> Mitoses      Factor 0.2462282 1.972367e-11 1.308508e-10 (0.173 - 0.319)
-#> Cl.thickness Factor 0.3795067 9.757049e-09 2.927115e-08 (0.247 - 0.512)
-#> Cell.size    Factor 0.2698360 2.849144e-05 3.663185e-05 (0.138 - 0.401)
+#>                 Type  Estimate      P-value Adj. P-value           CI 95
+#> Mitoses       Factor 0.3177571 0.000000e+00 0.000000e+00  (0.255 - 0.38)
+#> Marg.adhesion Factor 0.3807888 5.184742e-14 2.333134e-13  (0.28 - 0.481)
+#> Cell.size     Factor 0.5512742 2.247580e-10 6.742740e-10 (0.378 - 0.725)
+#> Cl.thickness  Factor 0.3793746 8.141966e-09 1.465554e-08 (0.248 - 0.511)
 ```
 
 ## Authors

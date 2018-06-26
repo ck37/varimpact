@@ -44,7 +44,7 @@ devtools::install_github("ck37/varimpact")
 
 ### CRAN
 
-Forthcoming Fall 2017
+Forthcoming Summer 2018
 
 ## Examples
 
@@ -53,7 +53,7 @@ library(varimpact)
 
 ####################################
 # Create test dataset.
-set.seed(1)
+set.seed(1, "L'Ecuyer-CMRG")
 N <- 200
 num_normal <- 5
 X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
