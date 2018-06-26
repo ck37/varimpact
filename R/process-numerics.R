@@ -30,7 +30,7 @@ process_numerics =
     # Save how many numeric variables we have in this dataframe.
     num_numeric = ncol(data.num)
   } else {
-    num_numeric = 0
+    num_numeric = 0L
   }
 
   if (num_numeric > 0) {
@@ -126,8 +126,10 @@ process_numerics =
     # Confirm that there are no missing values remaining in data.numW
     stopifnot(sum(is.na(data.numW)) == 0)
   } else {
-    impute_info = NULL
+    data.cont.dist = NULL
     miss.cont = NULL
+    data.numW = NULL
+    impute_info = NULL
   }
 
   (results =

@@ -488,7 +488,7 @@ varimpact =
         if (sum(deltat == 0) < 10) {
           Yt = Yt[deltat == 1]
           At = At[deltat == 1]
-          Wtsht = Wtsht[deltat == 1, , drop = F]
+          Wtsht = Wtsht[deltat == 1, , drop = FALSE]
           deltat = deltat[deltat == 1]
         }
 
@@ -557,12 +557,13 @@ varimpact =
         # 2) if missingness pattern for A is such that there are few death events left
         # in either (< minYs)
         # Applies only to binary outcomes, not continuous.
-        if ((length(unique(Yt)) == 2 && (num.cat < 2 || min(nYt, nYv) < minYs)) ||
+        if ((length(unique(Yt)) == 2L &&
+             (num.cat < 2L || min(nYt, nYv) < minYs)) ||
             (length(is_constant) > 0 && mean(is_constant) == 1)) {
           if (length(is_constant) > 0 && mean(is_constant) == 1) {
             error_msg = paste("Skipping", nameA, "because HOPACH reduced W to",
                               "all constant columns.")
-          } else if (num.cat < 2) {
+          } else if (num.cat < 2L) {
             error_msg = paste("Skipping", nameA, "due to lack of variation.")
           } else {
             error_msg = paste("Skipping", nameA, "due to minY constraint.", min(nYt, nYv), "<", minYs)
@@ -1512,11 +1513,16 @@ varimpact =
   results = c(results,
               # Append additional settings to the results object.
               # TODO: make this a sublist?
-              list(V = V, g.library = g.library, Q.library = Q.library,
-                   minCell = minCell, minYs = minYs,
-                   family = family,  datafac.dumW  = datafac.dumW,
+              list(V = V,
+                   g.library = g.library,
+                   Q.library = Q.library,
+                   minCell = minCell,
+                   minYs = minYs,
+                   family = family,
+                   datafac.dumW  = factors$datafac.dumW,
                    miss.fac = factors$miss.fac,
-                   data.numW = data.numW, impute_info = numerics$impute_info,
+                   data.numW = numerics$data.numW,
+                   impute_info = numerics$impute_info,
                    time = time_end - time_start,
                    cv_folds = folds))
 

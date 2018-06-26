@@ -29,8 +29,8 @@ for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 # Basic test - binary outcome.
 #future::plan("multiprocess")
 future::plan("sequential")
-vim = varimpact(Y = Y_bin, data = X[, 1:3], V = 3, verbose = TRUE,
-                verbose_tmle = F, bins_numeric = 3)
+vim = varimpact(Y = Y_bin, data = X[, 1:3], V = 3L, verbose = TRUE,
+                verbose_tmle = FALSE, bins_numeric = 3L)
 # Takes 25 seconds.
 vim$time
 # Be explict about printing for code coverage of tests.
@@ -81,8 +81,9 @@ context("varimpact(). Dataset B: factor variables")
 # Set a new multicore-compatible seed.
 set.seed(2, "L'Ecuyer-CMRG")
 
-X_fac = data.frame(lapply(1:ncol(X), FUN=function(col_i)
-  as.factor(floor(abs(pmin(pmax(X[, col_i], -1), 1)*3)))))
+X_fac = data.frame(lapply(1:ncol(X),
+                          function(col_i)
+                        as.factor(floor(abs(pmin(pmax(X[, col_i], -1), 1) * 3)))))
 dim(X_fac)
 colnames(X_fac) = paste0("fac_", 1:ncol(X_fac))
 colnames(X_fac)
@@ -92,11 +93,11 @@ summary(X_fac)
 future::plan("sequential")
 
 # Basic factor test.
-vim = varimpact(Y = Y_bin, data = X_fac[, 1:3], V = 2, verbose = TRUE)
+vim = varimpact(Y = Y_bin, data = X_fac[, 1:3], V = 2L, verbose = TRUE)
 print(vim)
 
 # And gaussian
-vim = varimpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2, verbose = TRUE,
+vim = varimpact(Y = Y_gaus, data = X_fac[, 1:3], V = 2L, verbose = TRUE,
                 family = "gaussian")
 print(vim)
 
