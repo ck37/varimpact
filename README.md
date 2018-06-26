@@ -26,9 +26,8 @@ details.
 ## Details
 
 Each covariate is analyzed using targeted minimum loss-based estimation
-([TMLE](https://cran.r-project.org/web/packages/tmle/index.html)) as
-though it were a treatment, with all other variables serving as
-adjustment variables via
+([TMLE](https://CRAN.R-project.org/package=tmle)) as though it were a
+treatment, with all other variables serving as adjustment variables via
 [SuperLearner](https://github.com/ecpolley/SuperLearner). Then the
 statistical significance of the estimated treatment effect for each
 covariate determines the variable importance ranking. This formulation
@@ -71,8 +70,8 @@ library(varimpact)
 #> Loading required package: SuperLearner
 #> Loading required package: nnls
 #> Super Learner
-#> Version: 2.0-23-9000
-#> Package created on 2017-11-29
+#> Version: 2.0-24-9000
+#> Package created on 2018-03-09
 
 ####################################
 # Create test dataset.
@@ -100,16 +99,16 @@ vim
 #> No significant and consistent results.
 #> All results:
 #>       Type   Estimate              CI95    P-value Adj. p-value Consistent
-#> V2 Ordered 0.16552760 (-0.0461 - 0.377) 0.06267365    0.2246464       TRUE
-#> V4 Ordered 0.14671863 (-0.0901 - 0.384) 0.11232321    0.2246464       TRUE
-#> V3 Ordered 0.10060179  (-0.132 - 0.334) 0.19874142    0.2649886       TRUE
-#> V5 Ordered 0.04319858  (-0.197 - 0.283) 0.36208471    0.3620847       TRUE
+#> V2 Ordered 0.16148119 (-0.0521 - 0.375) 0.06922588    0.1993721       TRUE
+#> V4 Ordered 0.15593140 (-0.0822 - 0.394) 0.09968604    0.1993721       TRUE
+#> V3 Ordered 0.09938841  (-0.135 - 0.333) 0.20260915    0.2701455       TRUE
+#> V5 Ordered 0.04426032  (-0.195 - 0.284) 0.35867560    0.3586756       TRUE
 vim$results_all
 #>       Type   Estimate              CI95    P-value Adj. p-value Consistent
-#> V2 Ordered 0.16552760 (-0.0461 - 0.377) 0.06267365    0.2246464       TRUE
-#> V4 Ordered 0.14671863 (-0.0901 - 0.384) 0.11232321    0.2246464       TRUE
-#> V3 Ordered 0.10060179  (-0.132 - 0.334) 0.19874142    0.2649886       TRUE
-#> V5 Ordered 0.04319858  (-0.197 - 0.283) 0.36208471    0.3620847       TRUE
+#> V2 Ordered 0.16148119 (-0.0521 - 0.375) 0.06922588    0.1993721       TRUE
+#> V4 Ordered 0.15593140 (-0.0822 - 0.394) 0.09968604    0.1993721       TRUE
+#> V3 Ordered 0.09938841  (-0.135 - 0.333) 0.20260915    0.2701455       TRUE
+#> V5 Ordered 0.04426032  (-0.195 - 0.284) 0.35867560    0.3586756       TRUE
 exportLatex(vim)
 #> NULL
 # Clean up - will get a warning if there were no consistent results.
@@ -147,10 +146,10 @@ vim
 #> No significant and consistent results.
 #> All results:
 #>       Type   Estimate              CI95    P-value Adj. p-value Consistent
-#> V2 Ordered 0.16124224 (-0.0522 - 0.375) 0.06931306    0.1978804       TRUE
-#> V4 Ordered 0.14400789 (-0.0752 - 0.363) 0.09894022    0.1978804       TRUE
-#> V3 Ordered 0.10026236  (-0.133 - 0.334) 0.19976115    0.2663482       TRUE
-#> V5 Ordered 0.04277468  (-0.197 - 0.283) 0.36333370    0.3633337       TRUE
+#> V2 Ordered 0.15881033 (-0.0544 - 0.372) 0.07216024    0.2132031       TRUE
+#> V4 Ordered 0.15289173 (-0.0878 - 0.394) 0.10660155    0.2132031       TRUE
+#> V3 Ordered 0.09847141  (-0.135 - 0.332) 0.20384216    0.2717895       TRUE
+#> V5 Ordered 0.04334562  (-0.197 - 0.283) 0.36161390    0.3616139       TRUE
 
 ####################################
 # Parallel (multicore) example.
@@ -206,11 +205,10 @@ vim <- varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
 #> No numeric variables for variable importance estimation.
 vim
 #> Significant and consistent results:
-#>                 Type  Estimate      P-value Adj. P-value           CI 95
-#> Mitoses       Factor 0.2716277 1.776357e-15 1.598721e-14 (0.204 - 0.339)
-#> Marg.adhesion Factor 0.3930811 2.563505e-13 1.153577e-12   (0.286 - 0.5)
-#> Cl.thickness  Factor 0.3654080 8.381405e-08 1.508653e-07 (0.229 - 0.502)
-#> Cell.size     Factor 0.2656308 4.016866e-05 5.164542e-05 (0.134 - 0.398)
+#>                Type  Estimate      P-value Adj. P-value           CI 95
+#> Mitoses      Factor 0.2462282 1.972367e-11 1.308508e-10 (0.173 - 0.319)
+#> Cl.thickness Factor 0.3795067 9.757049e-09 2.927115e-08 (0.247 - 0.512)
+#> Cell.size    Factor 0.2698360 2.849144e-05 3.663185e-05 (0.138 - 0.401)
 ```
 
 ## Authors

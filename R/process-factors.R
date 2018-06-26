@@ -39,13 +39,13 @@ process_factors = function(data.fac,
     }
 
     # We don't seem to use this yet.
-    num.cat = sapply(data.fac, length_unique)
+    # num.cat = sapply(data.fac, length_unique)
 
     ######################
     # Remove columns with missing data % greater than the threshold.
     sum_nas = sapply(data.fac, sum_na)
 
-    if (verbose) cat("Factors with missingness:", sum(sum_nas > 0), "\n")
+    if (verbose) cat("Factors with missingness:", sum(sum_nas > 0L), "\n")
 
     miss_pct = sum_nas / nrow(data.fac)
 
@@ -69,7 +69,7 @@ process_factors = function(data.fac,
           "Missing indicators:", ncol(miss.fac), "\n")
     }
   } else {
-    num_factors = 0
+    num_factors = 0L
     miss.fac = NULL
     datafac.dum = NULL
     data.fac = NULL
