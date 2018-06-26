@@ -130,6 +130,7 @@ process_numerics =
     miss.cont = NULL
     data.numW = NULL
     impute_info = NULL
+    data.num = NULL
   }
 
   (results =
@@ -137,6 +138,7 @@ process_numerics =
         data.cont.dist = data.cont.dist,
         num_numeric = num_numeric,
         miss.cont = miss.cont,
+        data.num = data.num,
         data.numW = data.numW,
         impute_info = impute_info
   ))
