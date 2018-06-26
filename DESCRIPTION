@@ -3,10 +3,11 @@ Type: Package
 Title: Variable Importance Estimation Using Targeted Causal Inference (TMLE)
 Version: 1.3.0-9003
 Date: 2018-06-26
-Authors@R: as.person(c(
-  "Alan Hubbard <hubbard@berkeley.edu> [aut, cre]",
-  "Chris Kennedy <chrisken@gmail.com> [aut]"
-  ))
+Authors@R: c(
+  person("Alan", "Hubbard", email = "hubbard@berkeley.edu",
+    role = c("aut")),
+  person("Chris", "Kennedy", email = "chrisken@gmail.com",
+    role = c("aut", "cre")))
 URL: http://github.com/ck37/varimpact
 BugReports: https://github.com/ck37/varimpact/issues
 Description: Automated data processing and variable importance using data-
