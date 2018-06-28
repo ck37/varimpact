@@ -23,6 +23,7 @@ Imports:
     dplyr,
     future,
     future.apply,
+    ggplot2,
     glmnet,
     histogram,
     hopach,
