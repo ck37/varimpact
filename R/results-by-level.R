@@ -1,4 +1,8 @@
 #' Aggregate the results_by_fold_and_level df into a results_by_level df.
+#'
+#' @param results_by_fold_and_level Dataframe containing the VIM results for
+#' all levels of each variable across all CV folds.
+#' @param verbose If true, display extra output.
 #' @importFrom magrittr %>%
 #' @importFrom dplyr group_by summarize_all select funs mutate first
 #' @importFrom modeest mlv

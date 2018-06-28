@@ -6,6 +6,12 @@
 \usage{
 results_by_level(results_by_fold_and_level, verbose = FALSE)
 }
+\arguments{
+\item{results_by_fold_and_level}{Dataframe containing the VIM results for
+all levels of each variable across all CV folds.}
+
+\item{verbose}{If true, display extra output.}
+}
 \description{
 Aggregate the results_by_fold_and_level df into a results_by_level df.
 }

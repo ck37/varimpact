@@ -1,3 +1,11 @@
+#' Plot the varimpact results for a given variable
+#'
+#' Displays the adjusted treatment-specific means and the impact estimate.
+#' @param var_name String name of the variable
+#' @param vim Varimpact result object that contains the variable
+#' @param digits Number of digits for rounding purposes.
+#' @param verbose If true, display extra output.
+# TODO: @example
 #' @import ggplot2
 #' @export
 plot_var =
