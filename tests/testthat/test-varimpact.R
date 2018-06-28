@@ -45,7 +45,7 @@ suppressWarnings({
 })
 
 # And try a gaussian outcome.
-vim = varimpact(Y = Y_gaus, data = X[, 1:3], V = 3, verbose = TRUE,
+vim = varimpact(Y = Y_gaus, data = X[, 1:3], V = 3L, verbose = TRUE,
                 family = "gaussian")
 print(vim)
 

@@ -64,7 +64,7 @@ estimate_pooled_results = function(fold_results,
     #if (length(unique(data$Y)) == 2) {
 
     # Look at thetas prior to fluctuation.
-    pre_thetas = tapply(data$Q_hat, data$fold_num, mean, na.rm = T)
+    pre_thetas = tapply(data$Q_hat, data$fold_num, mean, na.rm = TRUE)
     if (verbose) cat("Pre-fluctuation thetas:", pre_thetas, "\n")
 
     # If Q is binary or continuous we still want to take logit of predicted values.
@@ -152,7 +152,8 @@ estimate_pooled_results = function(fold_results,
                    "Q_star:", length(Q_star), "\n"))
         }
         #with(fold_data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)
-        result = with(fold_data, (A / g1W_hat) * (Y_star - Q_star) + Q_star - mean(Q_star, na.rm=T))
+        result = with(fold_data, (A / g1W_hat) * (Y_star - Q_star) +
+                        Q_star - mean(Q_star, na.rm = TRUE))
         #if (verbose) cat("Result:", class(result), "Length:", length(result), "\n")
         result
       })

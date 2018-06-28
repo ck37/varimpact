@@ -43,7 +43,8 @@ vim_numerics =
     #                               .errorhandling = "stop") %do_op% {
     vim_numeric = future.apply::future_lapply(1:numerics$num_numeric, future.seed = TRUE,
                                         function(var_i) {
-    #vim_numeric = lapply(1:num_numeric, function(var_i) {
+    # TODO: reenable future_lapply
+    #vim_numeric = lapply(1:numerics$num_numeric, function(var_i) {
       nameA = names.cont[var_i]
 
       if (verbose) cat("i =", var_i, "Var =", nameA, "out of", xc, "numeric variables\n")
@@ -56,6 +57,7 @@ vim_numerics =
       #for (fold_k in 1:V) {
       # This is looping sequentially for now.
       #fold_results = foreach (fold_k = 1:V) %do% {
+
       # TODO: convert to future_lapply
       fold_results = lapply(1:V, function(fold_k) {
         if (verbose) cat("Fold", fold_k, "of", V, "\n")
@@ -76,6 +78,10 @@ vim_numerics =
           obs_training = length(Yt),
           obs_validation = length(Yv),
           error_count = 0,
+          # To hold the level-specific results.
+          levels = list(),
+          # A dataframe to compile the level-specific results.
+          bin_df = NULL,
           # Results for estimating the maximum level / treatment.
           level_max = list(
             # Level is which bin was chosen.
@@ -97,15 +103,18 @@ vim_numerics =
 
         # Conduct penalized histogramming by looking at the distribution of the rare outcome over
         # the treatment variable. So we create A_Y1 as the conditional distribution of treatment given Y = 1.
-        # P(A | Y = 1).
+        # Pr(A | Y = 1).
         if (length(unique(Yt)) == 2L) {
           # Binary outcome.
 
+          # Conditional distribution of A given Y = 1.
+          # F(A | Y = 1)
           A_Y1 = At[Yt == 1 & !is.na(At)]
 
-          # Check if AY1 has only a single value. If so, skip histogramming to avoid an error.
+          # Check if AY1 has only a single observation. If so, skip histogramming to avoid an error.
           singleAY1 = length(unique(na.omit(A_Y1))) == 1L
         } else {
+
           # Continuous outcome - just restricted to non-missing treatment.
           A_Y1 = At[!is.na(At)]
           singleAY1 = F
@@ -149,7 +158,8 @@ vim_numerics =
           #warning(error_msg)
         } else {
 
-          # These labels are simply the quantiles right now.
+          # These labels are simply the quantiles right now, not yet accounting
+          # for the penalized histogramming.
           At_bin_labels = names(table(Atnew))
 
           # Non-discretized version of A in the training data; converted to a vector.
@@ -299,14 +309,70 @@ vim_numerics =
 
             if (verbose) cat("Estimating training TMLEs", paste0("(", numcat.cont[var_i], " bins)"))
 
+            # TODO: stop using training_estimates and switch to using bin_results.
             training_estimates = list()
+            bin_results = list()
 
-            # Loop over each bin for this variable.
-            for (j in 1:numcat.cont[var_i]) {
+            ###########################################
+            # Loop over each bin/level for this variable.
+
+            # TODO: move into its own function?
+
+            for (bin_j in 1:numcat.cont[var_i]) {
+
+              # Create a list to hold the results for this level.
+              bin_result = list(
+                name = nameA,
+                cv_fold = fold_k,
+                level = bin_j,
+                level_label = At_bin_labels[bin_j],
+
+                # Training: Estimates
+                # Our default value needs to be NA rather than NULL,
+                # to allow rbinding into a dataframe later on.
+                train_theta_tmle = NA,
+                # TODO: implement these.
+                #train_theta_iptw = NA,
+                #train_theta_gcomp = NA,
+                train_theta_unadj = NA,
+
+                # Training: Misc
+                train_cell_size = NA,
+                train_msg = NA,
+
+                # Test: Estimates
+                test_theta_tmle = NA,
+                # TODO: implement these.
+                #test_theta_iptw = NA,
+                #test_theta_gcomp = NA,
+                test_theta_unadj = NA,
+
+                # Test: Misc
+                test_cell_size = NA,
+                test_msg = NA,
+
+                # Test: Predicted values (g, Q_bar, h)
+                test_predictions = NULL
+                #test_pred_g = NULL,
+                #test_pred_Q_bar = NULL,
+                #test_pred_h = NULL
+              )
+
 
               # Create a treatment indicator, where 1 = obs in this bin
               # and 0 = obs not in this bin.
-              IA = as.numeric(Atnew == vals[j])
+              IA = as.numeric(Atnew == vals[bin_j])
+
+              # Save how many obs have this level/bin in this training fold.
+              bin_result$train_cell_size = sum(IA)
+
+              ###############################################
+              # TODO: send to calculate_estimates first, which would calculate
+              # TMLE, IPTW, G-Comp, and Unadj estimates.
+
+              # Save unadjusted estimate: outcome mean among observations
+              # at the desired treatment level, who are not missing their outcome value.
+              bin_result$train_theta_unadj = mean(Yt[IA & deltat])
 
               # CV-TMLE: we are using this for three reasons:
               # 1. Estimate Y_a on training data.
@@ -333,15 +399,87 @@ vim_numerics =
                 # TMLE succeeded (hopefully).
 
                 # Save bin label.
-                tmle_result$label = At_bin_labels[j]
+                tmle_result$label = At_bin_labels[bin_j]
 
-                training_estimates[[j]] = tmle_result
+                training_estimates[[bin_j]] = tmle_result
+
+                # TODO: may also want to save the TMLE object to this bin_result list.
+                bin_result$train_theta_tmle = tmle_result$theta
 
                 if (verbose) cat(".")
               }
+
+              #######################################################
+              # NEW: also run code on corresponding validation fold.
+
+              # TODO: remove the later validation code and use these results instead.
+
+              # Indicator for having the desired treatment bin on validation
+              IA = as.numeric(Avnew == vals[bin_j])
+
+              # Missing values are not taken to be in this level.
+              IA[is.na(IA)] = 0
+
+              # Save how many obs have this level/bin in this validation fold.
+              bin_result$test_cell_size = sum(IA)
+
+              ##################
+              # Run estimates on validation data (TMLE, IPTW, G-Comp, Unadj)
+              # TODO: move into its own function.
+
+              # Save unadjusted estimate: outcome mean among observations
+              # at the desired treatment level, who are not missing their outcome value.
+              bin_result$test_theta_unadj = mean(Yv[IA & deltav])
+
+              # CV-TMLE: predict g, Q, and clever covariate on validation data.
+              if (!is.null(training_estimates[[bin_j]])) {
+                preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
+                                                   deltav, training_estimates[[bin_j]],
+                                                   verbose = verbose))
+                if (class(preds) == "try-error") {
+                  bin_result$test_msg = paste("CV-TMLE prediction on validation failed")
+                } else {
+                  # Save the result.
+                  bin_result$test_predictions = preds
+                }
+              }
+
+              bin_result$test_msg = "success"
+
+              # Save to the main list.
+              bin_results[[bin_j]] = bin_result
             }
-            # Finished looping over each level of the assignment variable.
+
+            # Finished looping over each level of the assignment variable
+            # (primarily training fold, but now also some val fold work).
             if (verbose) cat(" done.\n")
+
+            # Save individual bin results.
+            fold_result$bin_results = bin_results
+
+            # Create a dataframe version of the bin results.
+            fold_result$bin_df =
+              do.call(rbind, lapply(bin_results, function(result) {
+                # Exclude certain elements from the list - here the prediction vectors.
+                # These should be saved separately.
+                data.frame(result[!names(result) %in% c("test_predictions")],
+                          stringsAsFactors = FALSE)
+            }))
+
+            # Save test_predictions for each bin into a combined dataframe.
+            fold_result$test_predictions =
+              do.call(rbind, lapply(1:length(bin_results), function(bin) {
+                result = bin_results[[bin]]
+                data.frame(bin = bin,
+                           bin_label = At_bin_labels[bin],
+                           fold = fold_k,
+                           result$test_predictions,
+                           stringsAsFactors = FALSE)
+              })
+            )
+
+            #####################################
+            # Resume normal varimpact algorithm.
 
             fold_result$error_count = error_count
 
@@ -422,6 +560,7 @@ vim_numerics =
             } else {
 
               # Turn to validation data.
+              # TODO: use the validation results already saved in bin_result
 
               # Estimate minimum level (control).
 
@@ -495,8 +634,87 @@ vim_numerics =
         # Return results for this fold.
         fold_result
       }) # End lapply
+
       # Done looping over each fold.
 
+      ########################
+      # Reconstruct CV-TMLE treatment-specific mean estimate for each validation fold.
+      # Loop over bins and calculate bin-specific CV-TMLE estimate.
+      if (T) {
+      if (verbose) cat("Estimating CV-TMLE treatment-specific means.\n")
+      for (bin in 1:numcat.cont[var_i]) {
+
+        if (verbose) {
+          cat("Bin", bin, "of", numcat.cont[var_i], "\n")
+        }
+        # Expects a list of results by fold.
+        # Each element of that list should have the val_preds list, which
+        # is calculated by apply_tmle_to_validation and currently saved in
+        # fold_results[[*]]$test_predictions (separately by fold * level).
+        bin_df = do.call(rbind, lapply(fold_results, function(fold_r) {
+          # Extract the rows specific to this bin/level.
+          rows = fold_r$test_predictions[fold_r$test_predictions$bin == bin, ]
+          if (verbose) cat("Rows:", nrow(rows), " ")
+          # If we have 0 rows for this bin in this fold, we need to debug.
+          # if (nrow(rows) == 0) browser()
+          rows
+        }))
+        if (verbose) cat("\n")
+
+        # Create a list with one element ($val_preds df) per fold.
+        bin_list = lapply(1:V, function(fold_i) {
+          # Return with an enclosing list.
+          list(bin_df[bin_df$fold == fold_i, ])
+        })
+
+        # Rename the element to be $val_preds
+        for (fold in 1:V) {
+          names(bin_list[[fold]]) = c("val_preds")
+        }
+
+
+        if (nrow(bin_df) > 0L) {
+          pooled_bin = estimate_pooled_results(bin_list, verbose = verbose)
+          # Now we have $thetas and $influence_curves
+
+          # Save the vector of estimates into the appropriate spot.
+          # $thetas has the treatment-specific means
+          # $influence_curves can be used to calculate the SE's, but shouldn't those
+          # already be calculated by estimate_pooled_results()
+
+          # Loop over fold results and insert the thetas into appropriate df.
+          for (fold in 1:length(bin_list)) {
+            bin_df = fold_results[[fold]]$bin_df
+            row = bin_df$level == bin & bin_df$cv_fold == fold
+            fold_results[[fold]]$bin_df[row, "test_theta_tmle"] = pooled_bin$thetas[fold]
+            fold_results[[fold]]$bin_df[row, "test_var_tmle"] = var(pooled_bin$influence_curves[[fold]])
+          }
+
+        } else {
+          cat("Skipping bin", bin, "- no rows are available.\n")
+          # We have no val_preds for this bin, so skip pooled result estimation.
+
+          # Temporary simplification for debugging purposes.
+          #pooled_bin = list(thetas = 1:V)
+          pooled_bin = list(thetas = rep(NA, V))
+        }
+
+
+      }
+
+        if (verbose) {
+          cat("\n")
+        }
+      }
+
+      # Combine results for each fold into a single dataframe.
+      results_by_fold_and_level = do.call(rbind, lapply(fold_results, `[[`, "bin_df"))
+
+      # Aggregate into a results_by_level dataframe.
+      results_by_level = results_by_level(results_by_fold_and_level,
+                                          verbose = verbose)
+
+      ###########
       # Create list to save results for this variable.
       var_results = list(
         EY1V = NULL,
@@ -506,22 +724,22 @@ vim_numerics =
         labV = NULL,
         nV = NULL,
         fold_results = fold_results,
-        type = "factor",
+        type = "numeric",
+        results_by_fold_and_level = results_by_fold_and_level,
+        results_by_level = results_by_level,
         name = nameA
       )
 
-
       # TODO: compile results into the new estimate.
 
-      # if (verbose) cat("Estimating pooled min.\n")
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
                                            verbose = verbose)
-      # if (verbose) cat("Estimating pooled max.\n")
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
                                            verbose = verbose)
 
       var_results$EY0V = pooled_min$thetas
       var_results$EY1V = pooled_max$thetas
+
       if (length(var_results$EY1V) == length(var_results$EY0V)) {
         var_results$thetaV = var_results$EY1V - var_results$EY0V
       } else {
@@ -532,7 +750,6 @@ vim_numerics =
         var_results$thetaV = rep(NA, max(length(var_results$EY1V),
                                          length(var_results$EY0V)))
       }
-
 
       # Save how many observations were in each validation fold.
       var_results$nV = sapply(fold_results, function(x) x$obs_validation)
@@ -552,6 +769,7 @@ vim_numerics =
         var_results$varICV = sapply(1:V, function(index) {
           if (length(pooled_max$influence_curves) >= index &&
               length(pooled_min$influence_curves) >= index) {
+            # Variance for the risk difference (maximal contrast parameter).
             var(pooled_max$influence_curves[[index]] - pooled_min$influence_curves[[index]])
           } else {
             NA
@@ -602,10 +820,17 @@ vim_numerics =
                  length(vim_numeric), "results."))
     }
 
+
+    # Dataframe to hold all of the variable-by-fold-by-level results.
+    results_by_fold_and_level = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_fold_and_level"))
+    results_by_level = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_level"))
+
     colnames_numeric = colnames(numerics$data.cont.dist)
   } else {
     colnames_numeric = NULL
     vim_numeric = NULL
+    results_by_fold_and_level = NULL
+    results_by_level = NULL
     cat("No numeric variables for variable importance estimation.\n")
   }
 
@@ -614,6 +839,8 @@ vim_numerics =
   # Compile and return results.
   (results = list(
     vim_numeric = vim_numeric,
+    results_by_fold_and_level = results_by_fold_and_level,
+    results_by_level = results_by_level,
     colnames_numeric = colnames_numeric
     #, data.numW = numerics$data.numW
   ))

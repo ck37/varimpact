@@ -357,10 +357,11 @@ varimpact =
                    datafac.dumW  = factors$datafac.dumW,
                    miss.fac = factors$miss.fac,
                    data.numW = numerics$data.numW,
+                   numeric_vims = numeric_vims,
+                   factor_vims = factor_vims,
                    impute_info = numerics$impute_info,
                    time = time_end - time_start,
                    cv_folds = folds))
-
 
   # Set a custom class so that we can override print and summary.
   class(results) = "varimpact"

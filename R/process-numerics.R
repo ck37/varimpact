@@ -56,20 +56,35 @@ process_numerics =
       # Because we do not specify "drop" within the brackets, Xt is now a vector.
       Xt = X[, numeric_i]
 
+      name = colnames(data.num)[numeric_i]
+
       # Suppress the warning that can occur when there are fewer than the desired
       # maximum number of bins, as specified by bins_numeric. We should be able to
       # see this as var_binned containing fewer than bins_numeric columns.
       # Warning is in .cut2(): min(xx[xx > upper])
       # "no non-missing arguments to min; returning Inf"
-      suppressWarnings({
-        # Discretize into up to 10 quantiles (by default), configurable based on
-        # bins_numeric argument.
-        # This returns a factor version of the discretized variable.
-        var_binned_names = arules::discretize(Xt,
-                                              method = "frequency",
-                                              categories = bins_numeric,
-                                              ordered = TRUE)
-      })
+      unique_vals = length(setdiff(unique(Xt), NA))
+
+      # No need to apply tiling, we already have a limited # of unique vals.
+      if (unique_vals <= bins_numeric) {
+        var_binned_names = factor(Xt)
+      } else {
+        suppressWarnings({
+          # Discretize into up to 10 quantiles (by default), configurable based on
+          # bins_numeric argument.
+          # This returns a factor version of the discretized variable.
+          tryCatch({ var_binned_names = arules::discretize(Xt,
+                                                method = "frequency",
+                                                categories = bins_numeric,
+                                                ordered = TRUE)
+          }, error = function(error) {
+            cat("Error: could not discretize numeric", numeric_i, "", name, "\n")
+            cat("Unique values:", length(unique(Xt)), "\n")
+            var_binned_names = Xt
+          })
+        })
+      }
+
       # Save the levels for future usage.
       numeric_levels[[numeric_i]] = levels(var_binned_names)
       # This converts the factor variable to just the quantile numbers.
