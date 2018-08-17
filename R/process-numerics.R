@@ -58,38 +58,51 @@ process_numerics =
 
       name = colnames(data.num)[numeric_i]
 
+      if (verbose) {
+        cat("Processing", name, numeric_i, "of", num_numeric, "\n")
+      }
+
       # Suppress the warning that can occur when there are fewer than the desired
       # maximum number of bins, as specified by bins_numeric. We should be able to
       # see this as var_binned containing fewer than bins_numeric columns.
       # Warning is in .cut2(): min(xx[xx > upper])
       # "no non-missing arguments to min; returning Inf"
-      unique_vals = length(setdiff(unique(Xt), NA))
+      num_unique_vals = length(setdiff(unique(Xt), NA))
+
+      num_breaks = min(bins_numeric, num_unique_vals)
+
+      arules_method = "frequency"
 
       # No need to apply tiling, we already have a limited # of unique vals.
-      if (unique_vals <= bins_numeric) {
-        var_binned_names = factor(Xt)
-      } else {
-        suppressWarnings({
-          # Discretize into up to 10 quantiles (by default), configurable based on
-          # bins_numeric argument.
-          # This returns a factor version of the discretized variable.
-          tryCatch({ var_binned_names = arules::discretize(Xt,
-                                                method = "frequency",
-                                                categories = bins_numeric,
-                                                ordered = TRUE)
-          }, error = function(error) {
-            cat("Error: could not discretize numeric", numeric_i, "", name, "\n")
-            cat("Unique values:", length(unique(Xt)), "\n")
-            var_binned_names = Xt
-          })
-        })
+      # TODO: return info on this, and possible a notice message.
+      if (num_unique_vals <= bins_numeric) {
+        arules_method = "interval"
       }
+
+      suppressWarnings({
+        # Discretize into up to 10 quantiles (by default), configurable based on
+        # bins_numeric argument.
+        # This returns a factor version of the discretized variable.
+        tryCatch({ var_binned_names = arules::discretize(Xt,
+                                              method = arules_method,
+                                              breaks = num_breaks,
+                                              ordered = TRUE)
+        }, error = function(error) {
+          cat("Error: could not discretize numeric", numeric_i, "", name, "\n")
+          cat("Unique values:", length(unique(Xt)), "\n")
+          var_binned_names = Xt
+        })
+      })
 
       # Save the levels for future usage.
       numeric_levels[[numeric_i]] = levels(var_binned_names)
       # This converts the factor variable to just the quantile numbers.
       var_binned = as.numeric(var_binned_names)
       numerics_binned[, numeric_i] =  var_binned
+
+      if (verbose) {
+        cat("New levels:", paste(levels(var_binned_names), collapse = ", "), "\n")
+      }
     }
     colnames(numerics_binned) = varn
     data.cont.dist = numerics_binned
