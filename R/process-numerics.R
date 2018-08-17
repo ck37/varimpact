@@ -53,8 +53,35 @@ process_numerics =
     numeric_levels = vector("list", num_numeric)
 
     for (numeric_i in 1:num_numeric) {
+      var_name = names(data.num)[numeric_i]
+
+      if (verbose) {
+        cat("Processing", var_name, numeric_i, "of", num_numeric, "\n")
+      }
+
       # Because we do not specify "drop" within the brackets, Xt is now a vector.
       Xt = X[, numeric_i]
+
+      # Count the number of unique values other than missingness, aka cardinality.
+      num_unique_vals = length(setdiff(unique(Xt), NA))
+
+      # If the var's number of unique levels (not counting NAs) is less than
+      # bins_numeric, just tell discretize() to use the number of unique levels - 1.
+      # This will not effectively change the discretization, but will apply
+      # the same procedure as for when discretize() is actually needed.
+      #num_breaks = min(bins_numeric - 1, length(setdiff(unique(Xt), NA)) - 1L)
+      num_breaks = min(bins_numeric, num_unique_vals)
+
+#      num_breaks = bins_numeric
+
+      arules_method = "frequency"
+
+      # If we have fewer unique values than the target # of bins.
+      # TODO: return info on this, and possible a notice message.
+      if (num_unique_vals < bins_numeric) {
+        arules_method = "interval"
+        #num_breaks = num_unique_vals
+      }
 
       # Suppress the warning that can occur when there are fewer than the desired
       # maximum number of bins, as specified by bins_numeric. We should be able to
@@ -66,15 +93,23 @@ process_numerics =
         # bins_numeric argument.
         # This returns a factor version of the discretized variable.
         var_binned_names = arules::discretize(Xt,
-                                              method = "frequency",
-                                              categories = bins_numeric,
+                                              method = arules_method,
+                                              breaks = num_breaks,
                                               ordered = TRUE)
       })
+
       # Save the levels for future usage.
       numeric_levels[[numeric_i]] = levels(var_binned_names)
       # This converts the factor variable to just the quantile numbers.
       var_binned = as.numeric(var_binned_names)
       numerics_binned[, numeric_i] =  var_binned
+      if (verbose) {
+        cat("New levels:", paste(levels(var_binned_names), collapse = ", "), "\n")
+      }
+
+      #if (length(levels(var_binned_names)) == 1L) {
+      #  browser()
+      #}
     }
     colnames(numerics_binned) = varn
     data.cont.dist = numerics_binned
