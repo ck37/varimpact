@@ -645,7 +645,7 @@ vim_numerics =
       for (bin in 1:numcat.cont[var_i]) {
 
         if (verbose) {
-          cat("Bin", bin, "of", numcat.cont[var_i], "\n")
+          cat("Var:", var_i, "Bin", bin, "of", numcat.cont[var_i], "\n")
         }
         # Expects a list of results by fold.
         # Each element of that list should have the val_preds list, which
