@@ -53,8 +53,8 @@ vim_factors =
     # Define var_i just to avoid automated NOTEs, will be overwritten by foreach.
     var_i = NULL
     #vim_factor = foreach::foreach(var_i = 1:xc, .verbose = verbose, .errorhandling = "stop") %do_op% {
-    #vim_factor = future.apply::future_lapply(1:xc, future.seed = TRUE, function(var_i) {
-    vim_factor = lapply(1:xc, function(var_i) {
+    vim_factor = future.apply::future_lapply(1:xc, future.seed = TRUE, function(var_i) {
+    #vim_factor = lapply(1:xc, function(var_i) {
       nameA = names.fac[var_i]
 
       if (verbose) cat("Var:", nameA, var_i, "out of", xc, "factor variables\n")
