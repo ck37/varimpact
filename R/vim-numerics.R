@@ -124,30 +124,34 @@ vim_numerics =
           # Within this CV-TMLE fold look at further combining bins of the treatment based on the
           # penalized histogram.
           # Note that this is only examining the already discretized version of the treatment variable.
-          penalized_hist = histogram::histogram(A_Y1, verbose = F, type = "irregular", plot = F)
-          hh = penalized_hist$breaks
+          penalized_hist = histogram::histogram(A_Y1, verbose = FALSE, type = "irregular", plot = FALSE)
+          hist_breaks = penalized_hist$breaks
 
           # TODO: see if these next two steps are ever used/needed.
 
           # Check if the final cut-off is less that the maximum possible level; if so extend to slightly
           # larger than the maximimum possible level.
-          if (hh[length(hh)] < max(At, na.rm = TRUE)) {
-            hh[length(hh)] = max(At, na.rm = TRUE) + 0.1
+          if (hist_breaks[length(hist_breaks)] < max(At, na.rm = TRUE)) {
+            hist_breaks[length(hist_breaks)] = max(At, na.rm = TRUE) + 0.1
           }
 
           # Check if the lowest cut-off is greater than the minimum possible bin; if so extend to slightly
           # below the minimum level.
-          if (hh[1] > min(At[At > 0], na.rm = TRUE)) {
-            hh[1] = min(At[At > 0], na.rm = TRUE) - 0.1
+          if (hist_breaks[1] > min(At[At > 0], na.rm = TRUE)) {
+            hist_breaks[1] = min(At[At > 0], na.rm = TRUE) - 0.1
           }
 
           # Re-bin the training and validation vectors for the treatment variable based on the penalized
           # histogram.
           # This is creating factors, with levels specific to this CV-TMLE fold.
-          Atnew = cut(At, breaks = hh)
-          Avnew = cut(Av, breaks = hh)
+          Atnew = cut(At, breaks = hist_breaks)
+          Avnew = cut(Av, breaks = hist_breaks)
 
           # TODO: check if the binning results in no-variation, and handle separately from the below situation.
+          if (length(unique(Atnew)) == 1L) {
+            warning(paste0(nameA, "has been converted to a single level after penalized histogramming."))
+            #browser()
+          }
 
         }
         if (singleAY1 || length(na.omit(unique(Atnew))) <= 1 ||
