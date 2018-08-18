@@ -31,9 +31,9 @@ plot_var =
                         "test_var_tmle")]
 
   # Create color column based on min, max, and other.
-  plot_data$color = "other"
-  plot_data$color[which.min(plot_data$test_theta_tmle)] = "min"
-  plot_data$color[which.max(plot_data$test_theta_tmle)] = "max"
+  plot_data$color = ""
+  plot_data$color[which.min(plot_data$test_theta_tmle)] = "Low risk"
+  plot_data$color[which.max(plot_data$test_theta_tmle)] = "High risk"
 
   # Add "Impact" row to dataframe.
   result_row = rownames(vim$results_all) == var_name
@@ -43,12 +43,15 @@ plot_var =
                          test_theta_tmle = vim$results_all$Estimate[result_row],
                          # Don't have this yet.
                          test_var_tmle = NA,
-                         color = "impact"
+                         color = "Impact"
                          ))
 
   # red, blue, orange, gray
   # impact, max, min, other
+  # New:
+  # high risk, impact, low risk, "other"
   plot_palette = c("#d09996", "#95b4df", "#f2c197", "#d9d9d9")
+  plot_palette = plot_palette[c(2, 1, 3, 4)]
 
   # Plot TSMs from $numeric_vims$results_by_level and the varimpact estimate.
   p = ggplot(data = plot_data,
@@ -75,7 +78,9 @@ plot_var =
           plot.background = element_rect(fill = "#f2f2f2"),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
-          legend.position = "none") +
+          legend.title = element_blank(),
+          #legend.position = "none") +
+          NULL) +
     geom_hline(yintercept = 0, color = "gray90") +
     scale_x_discrete(limits = c("Impact", rev(setdiff(unique(plot_data$level_label), "Impact")))) +
     scale_y_continuous(expand = c(0.05, 0.08)) +
