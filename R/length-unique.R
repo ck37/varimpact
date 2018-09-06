@@ -1,5 +1,6 @@
 # Function that counts # of unique values.
 # Do not export.
 length_unique = function(x) {
-  length(unique(x))
+  # Skip NAs.
+  length(setdiff(unique(x), NA))
 }
