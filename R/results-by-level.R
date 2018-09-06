@@ -21,8 +21,12 @@ results_by_level =
     mutate(level_label = first(level_label)) %>%
     # Now we can also group by level_label because they will be the same for a given level.
     group_by(name, level, level_label) %>%
+    # Remove test_msg for now.
+    # TODO: take mode of test_msg or first value, rather than mean.
+    select(-c(test_msg, train_msg)) %>%
+    # this generates a warning in mean() because test_msg is a character not a numeric.
     summarize_all(funs(mean)) %>%
-    select(-c(cv_fold, train_msg, test_msg, train_cell_size, test_cell_size))
+    select(-c(cv_fold, train_cell_size, test_cell_size))
 
   # Don't keep this as a tibble.
   as.data.frame(results)
