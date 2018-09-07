@@ -637,8 +637,9 @@ vim_factors =
           names(bin_list[[fold]]) = c("val_preds")
         }
 
-
-        if (nrow(bin_df) > 0L) {
+        # bin_df can be NULL if the variable is skipped due to errors,
+        # e.g. lack of variation.
+        if (!is.null(bin_df) && nrow(bin_df) > 0L) {
           pooled_bin = estimate_pooled_results(bin_list, verbose = verbose)
           # Now we have $thetas and $influence_curves
 
@@ -670,11 +671,21 @@ vim_factors =
       }
 
       # Combine results for each fold into a single dataframe.
-      results_by_fold_and_level = do.call(rbind, lapply(fold_results, `[[`, "bin_df"))
+      # This can fail if all bins for this variable failed.
+      tryCatch({
+        results_by_fold_and_level = do.call(rbind, lapply(fold_results, `[[`, "bin_df"))
+      }, error = function(e) {
+        results_by_fold_and_level = NULL
+      })
 
       # Aggregate into a results_by_level dataframe.
-      results_by_level = results_by_level(results_by_fold_and_level,
-                                          verbose = verbose)
+      # This can fail if all bins for this variable failed.
+      tryCatch({
+        results_by_level = results_by_level(results_by_fold_and_level,
+                                            verbose = verbose)
+      }, error = function(e) {
+        results_by_level = NULL
+      })
 
       # Create list to save results for this variable.
       var_results = list(
@@ -780,24 +791,63 @@ vim_factors =
     # Confirm that we have the correct number of results, otherwise fail out.
     stopifnot(length(vim_factor) == xc)
 
+
     # Dataframe to hold all of the variable-by-fold-by-level results.
-    results_by_fold_and_level = do.call(rbind, lapply(vim_factor, `[[`, "results_by_fold_and_level"))
-    results_by_level = do.call(rbind, lapply(vim_factor, `[[`, "results_by_level"))
+    results_by_fold_and_level_obj = do.call(rbind, lapply(vim_factor, function(result) {
+      # Only extract results_by_fold_and_level if it's not NULL
+      if ("results_by_fold_and_level" %in% names(result) &&
+          !is.null(result$results_by_fold_and_level)# &&
+          #!is.na(result$results_by_fold_and_level)
+          ) {
+        result$results_by_fold_and_level
+      } else {
+        NULL
+      }
+    }))
+   #"results_by_fold_and_level"))
+
+   #results_by_level = do.call(rbind, lapply(vim_factor, `[[`, "results_by_level"))
+   compile_results_by_level = lapply(vim_factor, function(result) {
+      # Only extract results_by_fold_and_level if it's not NULL
+      if ("results_by_level" %in% names(result) &&
+          !is.null(result$results_by_level) &&
+          # TODO: figure out why expressions are going into this element.
+          !is.expression(result$results_by_level)
+         # !is.na(result$results_by_level)
+          ) {
+        result$results_by_level
+      } else {
+        NULL
+      }
+    })
+
+    results_by_level_obj = NULL
+    tryCatch({
+      results_by_level_obj = do.call(rbind, compile_results_by_level)
+    }, error = function(e) {
+
+      # TODO: add browser?
+      # TODO: figure out why this happens - presumably due to covariate that failed.
+      # Error message:
+      # Error in rep(xi, length.out = nvar) :
+      #  attempt to replicate an object of type 'closure'
+      cat("Errored while compiling results by level.\n")
+    })
 
     colnames_factor = colnames(factors$data.fac)
   } else {
     colnames_factor = NULL
     vim_factor = NULL
-    results_by_fold_and_level = NULL
-    results_by_level = NULL
+    results_by_fold_and_level_obj = NULL
+    results_by_level_obj = NULL
     cat("No factor variables - skip VIM estimation.\n\n")
   }
 
   # Compile and return results.
   (results = list(
     vim_factor = vim_factor,
-    results_by_fold_and_level = results_by_fold_and_level,
-    results_by_level = results_by_level,
+    results_by_fold_and_level = results_by_fold_and_level_obj,
+    results_by_level = results_by_level_obj,
     colnames_factor = colnames_factor
   ))
 }

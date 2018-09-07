@@ -30,7 +30,13 @@ vim_numerics =
     n.cont = nrow(numerics$data.cont.dist)
 
     # Tally the number of unique values (bins) in each numeric variable; save as a vector.
+    # ignore NAs though.
     numcat.cont = apply(numerics$data.cont.dist, 2, length_unique)
+
+    if (verbose) {
+      cat("Unique values by variable:\n")
+      print(numcat.cont)
+    }
 
     cats.cont = lapply(1:xc, function(i) {
       sort(unique(numerics$data.cont.dist[, i]))
@@ -41,8 +47,7 @@ vim_numerics =
     var_i = NULL
     #vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = verbose,
     #                               .errorhandling = "stop") %do_op% {
-    vim_numeric = future.apply::future_lapply(1:numerics$num_numeric, future.seed = TRUE,
-                                        function(var_i) {
+    vim_numeric = future.apply::future_lapply(1:numerics$num_numeric, future.seed = TRUE, function(var_i) {
     # TODO: reenable future_lapply
     #vim_numeric = lapply(1:numerics$num_numeric, function(var_i) {
       nameA = names.cont[var_i]
@@ -127,6 +132,10 @@ vim_numerics =
           penalized_hist = histogram::histogram(A_Y1, verbose = FALSE, type = "irregular", plot = FALSE)
           hist_breaks = penalized_hist$breaks
 
+          if (verbose) {
+            cat(nameA, "revised breaks:", hist_breaks, "\n")
+          }
+
           # TODO: see if these next two steps are ever used/needed.
 
           # Check if the final cut-off is less that the maximum possible level; if so extend to slightly
@@ -184,6 +193,10 @@ vim_numerics =
           # Update the number of bins for this numeric variable.
           # CK: note though, this is specific to this CV-TMLE fold - don't we
           # need to differentiate which fold we're in?
+          if (verbose) {
+            cat("Updating numcat.cont for", nameA, "to be", length(At_bin_labels), "\n")
+            print(At_bin_labels)
+          }
           numcat.cont[var_i] = length(At_bin_labels)
 
           # change this to match what was done for factors - once
@@ -644,8 +657,9 @@ vim_numerics =
       ########################
       # Reconstruct CV-TMLE treatment-specific mean estimate for each validation fold.
       # Loop over bins and calculate bin-specific CV-TMLE estimate.
+      # TODO: move this code into its own function
       if (T) {
-      if (verbose) cat("Estimating CV-TMLE treatment-specific means.\n")
+      if (verbose) cat(paste0(nameA, ":"), "Estimating CV-TMLE treatment-specific means.\n")
       for (bin in 1:numcat.cont[var_i]) {
 
         if (verbose) {
@@ -826,15 +840,15 @@ vim_numerics =
 
 
     # Dataframe to hold all of the variable-by-fold-by-level results.
-    results_by_fold_and_level = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_fold_and_level"))
-    results_by_level = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_level"))
+    results_by_fold_and_level_obj = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_fold_and_level"))
+    results_by_level_obj = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_level"))
 
     colnames_numeric = colnames(numerics$data.cont.dist)
   } else {
     colnames_numeric = NULL
     vim_numeric = NULL
-    results_by_fold_and_level = NULL
-    results_by_level = NULL
+    results_by_fold_and_level_obj = NULL
+    results_by_level_obj = NULL
     cat("No numeric variables for variable importance estimation.\n")
   }
 
@@ -843,8 +857,8 @@ vim_numerics =
   # Compile and return results.
   (results = list(
     vim_numeric = vim_numeric,
-    results_by_fold_and_level = results_by_fold_and_level,
-    results_by_level = results_by_level,
+    results_by_fold_and_level = results_by_fold_and_level_obj,
+    results_by_level = results_by_level_obj,
     colnames_numeric = colnames_numeric
     #, data.numW = numerics$data.numW
   ))
