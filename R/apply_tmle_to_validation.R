@@ -60,7 +60,11 @@ apply_tmle_to_validation = function(Y,
 
   # Predict g
   tryCatch({
-    sl_pred = predict(tmle$g_model, W, type = "response", onlySL = T)
+    # Check specifically for a g_model that doesn't exist.
+    if (class(tmle$g_model) == "NULL") {
+      stop("tmle$g_model has class = NULL")
+    }
+    sl_pred = predict(tmle$g_model, W, type = "response", onlySL = TRUE)
     g1W_hat = sl_pred$pred
   }, error = function(e) {
     print(e)

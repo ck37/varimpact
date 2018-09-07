@@ -425,13 +425,17 @@ vim_factors =
           fold_result$test_predictions =
             do.call(rbind, lapply(1:length(bin_results), function(bin) {
               result = bin_results[[bin]]
-              data.frame(bin = bin,
-                         bin_label = vals[bin],
-                         fold = fold_k,
-                         result$test_predictions,
-                         stringsAsFactors = FALSE)
+              tryCatch({
+                data.frame(bin = bin,
+                           bin_label = vals[bin],
+                           fold = fold_k,
+                           result$test_predictions,
+                           stringsAsFactors = FALSE)
+              }, error = function(error) {
+                NULL
+              })
             })
-            )
+           )
 
           #####################################
           # Resume normal varimpact algorithm.
