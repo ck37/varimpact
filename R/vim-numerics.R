@@ -487,11 +487,15 @@ vim_numerics =
             fold_result$test_predictions =
               do.call(rbind, lapply(1:length(bin_results), function(bin) {
                 result = bin_results[[bin]]
-                data.frame(bin = bin,
-                           bin_label = At_bin_labels[bin],
-                           fold = fold_k,
-                           result$test_predictions,
-                           stringsAsFactors = FALSE)
+                tryCatch({
+                  data.frame(bin = bin,
+                             bin_label = At_bin_labels[bin],
+                             fold = fold_k,
+                             result$test_predictions,
+                             stringsAsFactors = FALSE)
+                 }, error = function(error) {
+                   NULL
+                 })
               })
             )
 
@@ -669,14 +673,29 @@ vim_numerics =
         # Each element of that list should have the val_preds list, which
         # is calculated by apply_tmle_to_validation and currently saved in
         # fold_results[[*]]$test_predictions (separately by fold * level).
-        bin_df = do.call(rbind, lapply(fold_results, function(fold_r) {
+        combine_rows = lapply(fold_results, function(fold_r) {
           # Extract the rows specific to this bin/level.
-          rows = fold_r$test_predictions[fold_r$test_predictions$bin == bin, ]
+          rows = fold_r$test_predictions[fold_r$test_predictions$bin == bin, , drop = FALSE]
           if (verbose) cat("Rows:", nrow(rows), " ")
           # If we have 0 rows for this bin in this fold, we need to debug.
-          # if (nrow(rows) == 0) browser()
-          rows
-        }))
+          if (class(rows) != "data.frame" || nrow(rows) == 0) {
+            #browser()
+            NULL
+          } else {
+            rows
+          }
+        })
+
+        # Remove elements that are NULL or 0 rows.
+        for (element_i in length(combine_rows)) {
+          item = combine_rows[[element_i]]
+          if (class(item) != "data.frame" || nrow(item) == 0) {
+            combine_rows[[element_i]] = NULL
+          }
+        }
+
+        tryCatch({
+        bin_df = do.call(rbind, combine_rows)
         if (verbose) cat("\n")
 
         # Create a list with one element ($val_preds df) per fold.
@@ -690,8 +709,10 @@ vim_numerics =
           names(bin_list[[fold]]) = c("val_preds")
         }
 
+        # bin_df can be NULL if the variable is skipped due to errors,
+        # e.g. lack of variation.
 
-        if (nrow(bin_df) > 0L) {
+        if (!is.null(bin_df) && nrow(bin_df) > 0L) {
           pooled_bin = estimate_pooled_results(bin_list, verbose = verbose)
           # Now we have $thetas and $influence_curves
 
@@ -716,6 +737,10 @@ vim_numerics =
           #pooled_bin = list(thetas = 1:V)
           pooled_bin = list(thetas = rep(NA, V))
         }
+
+        }, error = function(error) {
+          pooled_bin = list(thetas = rep(NA, V))
+        })
 
 
       }
@@ -832,7 +857,7 @@ vim_numerics =
     # Confirm that we have the correct number of results, otherwise fail out.
     if (length(vim_numeric) != numerics$num_numeric) {
       # TODO: remove this.
-      save(vim_numeric, file = "varimpact.RData")
+      # save(vim_numeric, file = "varimpact.RData")
       # TEMP remove this:
       stop(paste("We have", numerics$num_numeric, "continuous variables but only",
                  length(vim_numeric), "results."))
@@ -840,8 +865,60 @@ vim_numerics =
 
 
     # Dataframe to hold all of the variable-by-fold-by-level results.
-    results_by_fold_and_level_obj = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_fold_and_level"))
-    results_by_level_obj = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_level"))
+    #results_by_fold_and_level_obj = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_fold_and_level"))
+
+    # Dataframe to hold all of the variable-by-fold-by-level results.
+    compile_results_by_fold_and_level = lapply(vim_numeric, function(result) {
+      # Only extract results_by_fold_and_level if it's not NULL
+      if ("results_by_fold_and_level" %in% names(result) &&
+          !is.null(result$results_by_fold_and_level)# &&
+          #!is.na(result$results_by_fold_and_level)
+      ) {
+        result$results_by_fold_and_level
+      } else {
+        NULL
+      }
+    })
+
+    results_by_fold_and_level_obj = NULL
+    # TODO: this shouldn't fail as easily - need to remove problematic results so that
+    # the remainder can be used.
+    tryCatch( {
+      results_by_fold_and_level_obj = do.call(rbind, compile_results_by_fold_and_level)
+    }, error = function(error) {
+      cat("Errored while compiling results by fold and level.\n")
+    })
+
+    #results_by_level_obj = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_level"))
+
+    #results_by_level = do.call(rbind, lapply(vim_factor, `[[`, "results_by_level"))
+    compile_results_by_level = lapply(vim_numeric, function(result) {
+      # Only extract results_by_fold_and_level if it's not NULL
+      if ("results_by_level" %in% names(result) &&
+          !is.null(result$results_by_level) &&
+          # TODO: figure out why expressions are going into this element.
+          !is.expression(result$results_by_level)
+          # !is.na(result$results_by_level)
+      ) {
+        result$results_by_level
+      } else {
+        NULL
+      }
+    })
+
+    # TODO: this shouldn't fail as easily - need to remove problematic results so that
+    # the remainder can be used.
+    results_by_level_obj = NULL
+    tryCatch({
+      results_by_level_obj = do.call(rbind, compile_results_by_level)
+    }, error = function(e) {
+      # TODO: add browser?
+      # TODO: figure out why this happens - presumably due to covariate that failed.
+      # Error message:
+      # Error in rep(xi, length.out = nvar) :
+      #  attempt to replicate an object of type 'closure'
+      cat("Errored while compiling results by level.\n")
+    })
 
     colnames_numeric = colnames(numerics$data.cont.dist)
   } else {

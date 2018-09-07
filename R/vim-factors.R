@@ -622,7 +622,7 @@ vim_factors =
         # fold_results[[*]]$test_predictions (separately by fold * level).
         bin_df = do.call(rbind, lapply(fold_results, function(fold_r) {
           # Extract the rows specific to this bin/level.
-          rows = fold_r$test_predictions[fold_r$test_predictions$bin == bin, ]
+          rows = fold_r$test_predictions[fold_r$test_predictions$bin == bin, , drop = FALSE]
           if (verbose) cat("Rows:", nrow(rows), " ")
           # If we have 0 rows for this bin in this fold, we need to debug.
           # if (nrow(rows) == 0) browser()
