@@ -12,6 +12,11 @@ plot_var =
   function(var_name, vim, digits = 2L, verbose = FALSE) {
 
   # Confirm that we can plot this variable.
+  if (is.null(vim$numeric_vims$results_by_level) &&
+      is.null(vim$factor_vims$results_by_level)) {
+    stop(paste("No results_by_level found in vim object.",
+               "Please post an issue to github if this is persistent."))
+  }
 
   # Can only plot numerics currently, need to expand to factors.
   numeric_vars = unique(vim$numeric_vims$results_by_level$name)
