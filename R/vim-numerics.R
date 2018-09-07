@@ -47,6 +47,7 @@ vim_numerics =
     var_i = NULL
     #vim_numeric = foreach::foreach(var_i = 1:num_numeric, .verbose = verbose,
     #                               .errorhandling = "stop") %do_op% {
+
     vim_numeric = future.apply::future_lapply(1:numerics$num_numeric, future.seed = TRUE, function(var_i) {
     # TODO: reenable future_lapply
     #vim_numeric = lapply(1:numerics$num_numeric, function(var_i) {
@@ -158,7 +159,8 @@ vim_numerics =
 
           # TODO: check if the binning results in no-variation, and handle separately from the below situation.
           if (length(unique(Atnew)) == 1L) {
-            warning(paste0(nameA, "has been converted to a single level after penalized histogramming."))
+            # TODO: don't use penalized histogramming if this happens.
+            cat(paste0(nameA, "has been converted to a single level after penalized histogramming."))
             #browser()
           }
 
@@ -751,10 +753,10 @@ vim_numerics =
       }
 
       # Combine results for each fold into a single dataframe.
-      results_by_fold_and_level = do.call(rbind, lapply(fold_results, `[[`, "bin_df"))
+      results_by_fold_and_level_df = do.call(rbind, lapply(fold_results, `[[`, "bin_df"))
 
       # Aggregate into a results_by_level dataframe.
-      results_by_level = results_by_level(results_by_fold_and_level,
+      results_by_level_df = results_by_level(results_by_fold_and_level_df,
                                           verbose = verbose)
 
       ###########
@@ -768,8 +770,8 @@ vim_numerics =
         nV = NULL,
         fold_results = fold_results,
         type = "numeric",
-        results_by_fold_and_level = results_by_fold_and_level,
-        results_by_level = results_by_level,
+        results_by_fold_and_level = results_by_fold_and_level_df,
+        results_by_level = results_by_level_df,
         name = nameA
       )
 

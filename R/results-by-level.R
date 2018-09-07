@@ -9,7 +9,7 @@
 results_by_level =
   function(results_by_fold_and_level,
            verbose = FALSE) {
-
+  tryCatch({
   results = results_by_fold_and_level %>%
     # NOTE: because we group by level_label, we are assuming that any histogram
     # penalization happened outside of the CV to ensure that the levels are
@@ -28,6 +28,11 @@ results_by_level =
     summarize_all(funs(mean)) %>%
     select(-c(cv_fold, train_cell_size, test_cell_size))
 
-  # Don't keep this as a tibble.
-  as.data.frame(results)
+    # Don't keep this as a tibble.
+    as.data.frame(results)
+  }, error = function(error) {
+    cat("Failed in results_by_level()\n")
+    print(error)
+    NULL
+  })
 }
