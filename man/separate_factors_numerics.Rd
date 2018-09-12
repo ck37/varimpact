@@ -4,13 +4,15 @@
 \alias{separate_factors_numerics}
 \title{Split df into one of only factors and one of only numerics.}
 \usage{
-separate_factors_numerics(data, strings_to_factors = T)
+separate_factors_numerics(data, strings_to_factors = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{data}{A dataframe or matrix.}
 
 \item{strings_to_factors}{Convert character strings to factors if True,
 otherwise ignore character string variables.}
+
+\item{verbose}{If TRUE output additional details during execution.}
 }
 \value{
 Results list.
