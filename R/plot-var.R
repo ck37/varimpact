@@ -53,9 +53,13 @@ plot_var =
 
   # red, blue, orange, gray
   # impact, max, min, other
+  plot_palette = c("#d09996", # red
+                   "#95b4df", # blue
+                   "#f2c197", # orange
+                   "#d9d9d9") # gray
+
   # New:
   # high risk, impact, low risk, "other"
-  plot_palette = c("#d09996", "#95b4df", "#f2c197", "#d9d9d9")
   plot_palette = plot_palette[c(2, 1, 3, 4)]
 
   # Plot TSMs from $numeric_vims$results_by_level and the varimpact estimate.
