@@ -4,12 +4,14 @@
 \alias{restrict_by_quantiles}
 \title{Remove columns from a dataframe if they do not have sufficient variation.}
 \usage{
-restrict_by_quantiles(data, quantile_probs = c(0.1, 0.9))
+restrict_by_quantiles(data, quantile_probs = c(0.1, 0.9), verbose = FALSE)
 }
 \arguments{
 \item{data}{Dataframe or matrix}
 
 \item{quantile_probs}{The probabilities corresponding to the quantiles that will be compared.}
+
+\item{verbose}{If TRUE output additional details during execution.}
 }
 \value{
 New dataframe with the restriction applied.
