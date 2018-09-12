@@ -632,7 +632,9 @@ vim_factors =
         if (verbose) cat("\n")
 
         if (class(bin_df) != "data.frame" || nrow(bin_df) == 0L) {
-          cat("Skipping bin", bin, "- no rows are available.\n")
+          if (verbose) {
+            cat("Skipping bin", bin, "- no rows are available.\n")
+          }
           # We have no val_preds for this bin, so skip pooled result estimation.
 
           # Temporary simplification for debugging purposes.
@@ -671,7 +673,9 @@ vim_factors =
           }
 
         } else {
-          cat("Skipping bin", bin, "- no rows are available.\n")
+          if (verbose) {
+            cat("Skipping bin", bin, "- no rows are available.\n")
+          }
           # We have no val_preds for this bin, so skip pooled result estimation.
 
           # Temporary simplification for debugging purposes.

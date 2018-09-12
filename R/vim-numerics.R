@@ -160,7 +160,9 @@ vim_numerics =
           # TODO: check if the binning results in no-variation, and handle separately from the below situation.
           if (length(unique(Atnew)) == 1L) {
             # TODO: don't use penalized histogramming if this happens.
-            cat(paste0(nameA, "has been converted to a single level after penalized histogramming."))
+            if (verbose) {
+              cat(paste0(nameA, "has been converted to a single level after penalized histogramming."))
+            }
             #browser()
           }
 
@@ -732,7 +734,9 @@ vim_numerics =
           }
 
         } else {
-          cat("Skipping bin", bin, "- no rows are available.\n")
+          if (verbose) {
+            cat("Skipping bin", bin, "- no rows are available.\n")
+          }
           # We have no val_preds for this bin, so skip pooled result estimation.
 
           # Temporary simplification for debugging purposes.
@@ -888,7 +892,10 @@ vim_numerics =
     tryCatch( {
       results_by_fold_and_level_obj = do.call(rbind, compile_results_by_fold_and_level)
     }, error = function(error) {
-      cat("Errored while compiling results by fold and level.\n")
+      if (verbose) {
+        cat("Errored while compiling results by fold and level.\n")
+        print(error)
+      }
     })
 
     #results_by_level_obj = do.call(rbind, lapply(vim_numeric, `[[`, "results_by_level"))
@@ -919,7 +926,10 @@ vim_numerics =
       # Error message:
       # Error in rep(xi, length.out = nvar) :
       #  attempt to replicate an object of type 'closure'
-      cat("Errored while compiling results by level.\n")
+      if (verbose) {
+        cat("Errored while compiling results by level.\n")
+        print(e)
+      }
     })
 
     colnames_numeric = colnames(numerics$data.cont.dist)
@@ -928,7 +938,9 @@ vim_numerics =
     vim_numeric = NULL
     results_by_fold_and_level_obj = NULL
     results_by_level_obj = NULL
-    cat("No numeric variables for variable importance estimation.\n")
+    if (verbose) {
+      cat("No numeric variables for variable importance estimation.\n")
+    }
   }
 
   if (verbose) cat("Completed numeric variable importance estimation.\n")
