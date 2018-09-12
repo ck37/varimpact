@@ -620,15 +620,25 @@ vim_factors =
         # Each element of that list should have the val_preds list, which
         # is calculated by apply_tmle_to_validation and currently saved in
         # fold_results[[*]]$test_predictions (separately by fold * level).
-        bin_df = do.call(rbind, lapply(fold_results, function(fold_r) {
+        compile_rows = lapply(fold_results, function(fold_r) {
           # Extract the rows specific to this bin/level.
           rows = fold_r$test_predictions[fold_r$test_predictions$bin == bin, , drop = FALSE]
           if (verbose) cat("Rows:", nrow(rows), " ")
           # If we have 0 rows for this bin in this fold, we need to debug.
           # if (nrow(rows) == 0) browser()
           rows
-        }))
+        })
+        bin_df = do.call(rbind, compile_rows)
         if (verbose) cat("\n")
+
+        if (class(bin_df) != "data.frame" || nrow(bin_df) == 0L) {
+          cat("Skipping bin", bin, "- no rows are available.\n")
+          # We have no val_preds for this bin, so skip pooled result estimation.
+
+          # Temporary simplification for debugging purposes.
+          #pooled_bin = list(thetas = 1:V)
+          pooled_bin = list(thetas = rep(NA, V))
+        } else {
 
         # Create a list with one element ($val_preds df) per fold.
         bin_list = lapply(1:V, function(fold_i) {
@@ -671,6 +681,8 @@ vim_factors =
 
         if (verbose) {
           cat("\n")
+        }
+
         }
       }
 
