@@ -36,12 +36,13 @@ plot_var =
                         "test_var_tmle")]
 
   # Create color column based on min, max, and other.
-  plot_data$color = ""
+  plot_data$color = "Other"
   plot_data$color[which.min(plot_data$test_theta_tmle)] = "Low risk"
   plot_data$color[which.max(plot_data$test_theta_tmle)] = "High risk"
 
   # Add "Impact" row to dataframe.
   result_row = rownames(vim$results_all) == var_name
+  uniq_vals = nrow(plot_data)
   plot_data = rbind(plot_data,
                     list(level = NA,
                          level_label = "Impact",
@@ -60,7 +61,7 @@ plot_var =
 
   # New:
   # high risk, impact, low risk, "other"
-  plot_palette = plot_palette[c(2, 1, 3, 4)]
+  plot_palette = plot_palette[c(1, 3, 2, 4)]
 
   # Plot TSMs from $numeric_vims$results_by_level and the varimpact estimate.
   p = ggplot(data = plot_data,
@@ -68,7 +69,7 @@ plot_var =
                  y = test_theta_tmle,
                  #label = round(test_theta_tmle, 1L),
                  fill = factor(color))) +
-    geom_col(width = 0.5) +
+    geom_col(width = 0.4) +
     geom_label(aes(label = round(test_theta_tmle, digits)),
                size = 6,
                fill = "white",
@@ -90,11 +91,25 @@ plot_var =
           legend.title = element_blank(),
           #legend.position = "none") +
           NULL) +
+    theme(legend.position = "bottom",
+         plot.title = element_text(size = 15),
+         axis.title.y = element_text(size = 14, angle = 270,
+                                     # This should center the var label vertically.
+                                     hjust = (uniq_vals / (uniq_vals + 1)) / 2,
+                                     color = "gray30"),
+         axis.title.x = element_text(size = 12, color = "gray40"),
+         #margin = margin(t = 1)),
+         legend.spacing.x = unit(0.2, 'cm'),
+         plot.margin = unit(c(0.5, 1, 0, 0.5), "lines"),
+         axis.text.x = element_text(size = 14, color = "gray40")) +
     geom_hline(yintercept = 0, color = "gray90") +
     scale_x_discrete(limits = c("Impact", rev(setdiff(unique(plot_data$level_label), "Impact")))) +
-    scale_y_continuous(expand = c(0.05, 0.08)) +
+    scale_y_continuous(expand = c(0, 0.15)) +
     scale_fill_manual(values = plot_palette) +
-    labs(title = paste("Impact of", var_name))
+    guides(fill = guide_legend(label.position = "bottom")) +
+    labs(title = paste("Impact of", var_name),
+         y = "Adjusted outcome mean",
+         x = var_name)
 
   p
 }
