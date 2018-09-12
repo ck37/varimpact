@@ -8,6 +8,7 @@ context("BreastCancer dataset")
 
 data(BreastCancer, package = "mlbench")
 data = BreastCancer
+names(data) = tolower(names(data))
 
 set.seed(3, "L'Ecuyer-CMRG")
 
@@ -15,11 +16,11 @@ set.seed(3, "L'Ecuyer-CMRG")
 data = data[sample(nrow(data), 200), ]
 
 # Create a numeric outcome variable.
-data$Y = as.numeric(data$Class == "malignant")
-table(data$Y)
+data$y = as.numeric(data$class == "malignant")
+table(data$y)
 
-X = subset(data, select = -c(Y, Class, Id))
-dim(X)
+x = subset(data, select = -c(y, class, id))
+dim(x)
 
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
@@ -27,13 +28,13 @@ if (.Platform$GUI == "RStudio") {
   future::plan("multiprocess", workers = 2)
 }
 # This takes 1-2 minutes.
-vim = varimpact(Y = data$Y, X, verbose = T, verbose_tmle = F)
+vim = varimpact(Y = data$y, x, verbose = TRUE, verbose_tmle = FALSE)
 vim$time
 vim
 
 # Test a subset of columns for A_names.
-colnames(X)[1:3]
-vim = varimpact(Y = data$Y, X, A_names = colnames(X)[1:3], verbose = T)
+colnames(x)[1:3]
+vim = varimpact(Y = data$y, x, A_names = colnames(x)[1:3], verbose = TRUE)
 vim$time
 vim
 vim$results_all
