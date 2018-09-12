@@ -8,6 +8,7 @@
 
 # Misc.
 ^TODO.txt$
+^images$
 
 # Github files.
 ^readme.Rmd$

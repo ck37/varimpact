@@ -19,9 +19,9 @@ assuming a linear relationship or other functional form, and the
 covariate list is ranked by order of importance. This can be used for
 exploratory data analysis, for dimensionality reduction, for
 experimental design (e.g. to determine blocking and re-randomization),
-to reduce variance in an estimation procedure, etc. See Hubbard & van
-der Laan (2016) and Hubbard, Kennedy, & van der Laan (2017) for more
-details.
+to reduce variance in an estimation procedure, etc. See Hubbard,
+Kennedy, & van der Laan (2018) for more details, or Hubbard & van der
+Laan (2016) for an earlier description.
 
 ## Details
 
@@ -46,8 +46,8 @@ incorporated into the analysis.
 
 varimpact is under active development so please submit any bug reports
 or feature requests to the [issue
-queue](https://github.com/ck37/varimpact/issues), or email Alan & Chris
-directly.
+queue](https://github.com/ck37/varimpact/issues), or email Alan and/or
+Chris directly.
 
 ## Installation
 
@@ -61,17 +61,22 @@ devtools::install_github("ck37/varimpact")
 
 ### CRAN
 
-Forthcoming Summer 2018
+Forthcoming fall 2018
 
 ## Examples
+
+### Example: basic functionality
 
 ``` r
 library(varimpact)
 #> Loading required package: SuperLearner
 #> Loading required package: nnls
 #> Super Learner
-#> Version: 2.0-24-9000
-#> Package created on 2018-03-09
+#> Version: 2.0-25-9000
+#> Package created on 2018-07-10
+#> 
+#> This is package 'modeest' written by P. PONCET.
+#> For a complete list of functions, use 'library(help = "modeest")' or 'help.start()'.
 
 ####################################
 # Create test dataset.
@@ -95,10 +100,14 @@ vim <- varimpact(Y = Y, data = X)
 #> No factor variables - skip VIM estimation.
 #> 
 #> Estimating variable importance for 5 numerics.
+
+# Review consistent and significant results.
 vim
 #> Significant and consistent results:
 #>       Type  Estimate     P-value Adj. P-value            CI 95
 #> V2 Ordered 0.2501553 0.004721456   0.02360728 (0.0613 - 0.439)
+
+# Look at all results.
 vim$results_all
 #>       Type    Estimate              CI95     P-value Adj. p-value
 #> V2 Ordered  0.25015526  (0.0613 - 0.439) 0.004721456   0.02360728
@@ -112,26 +121,28 @@ vim$results_all
 #> V3      FALSE
 #> V1       TRUE
 #> V4      FALSE
+
+# Plot the V2 impact.
+plot_var("V2", vim)
+```
+
+![](images/README-example_1-1.png)<!-- -->
+
+``` r
+
+# Generate latex tables with results.
 exportLatex(vim)
+
 # Clean up - will get a warning if there were no consistent results.
 suppressWarnings({
   file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
 })
 #> [1] TRUE TRUE TRUE
+```
 
-# Impute by median rather than knn.
-vim <- varimpact(Y = Y, data = X, impute = "median")
-#> Finished pre-processing variables.
-#> 
-#> Processing results:
-#> - Factor variables: 0 
-#> - Numeric variables: 5 
-#> 
-#> No factor variables - skip VIM estimation.
-#> 
-#> Estimating variable importance for 5 numerics.
+### Example: customize outcome and propensity score estimation
 
-# Customize Q and g libraries for TMLE estimation.
+``` r
 Q_lib <- c("SL.mean", "SL.glmnet", "SL.ranger", "SL.rpartPrune", "SL.bayesglm")
 g_lib <- c("SL.mean", "SL.glmnet")
 vim <- varimpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
@@ -147,10 +158,12 @@ vim <- varimpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
 vim
 #> Significant and consistent results:
 #>       Type  Estimate     P-value Adj. P-value            CI 95
-#> V2 Ordered 0.2563156 0.004167914   0.02083957 (0.0659 - 0.447)
+#> V2 Ordered 0.2545269 0.004149422   0.02074711 (0.0655 - 0.444)
+```
 
-####################################
-# Parallel (multicore) example.
+### Example: parallel via multicore
+
+``` r
 library(future)
 plan("multiprocess")
 vim <- varimpact(Y = Y, data = X)
@@ -163,9 +176,11 @@ vim <- varimpact(Y = Y, data = X)
 #> No factor variables - skip VIM estimation.
 #> 
 #> Estimating variable importance for 5 numerics.
+```
 
-####################################
-# SNOW parallel example.
+### Example: parallel via SNOW
+
+``` r
 library(RhpcBLASctl)
 # Detect the number of physical cores on this computer using RhpcBLASctl.
 cl = parallel::makeCluster(get_num_cores())
@@ -181,9 +196,11 @@ vim <- varimpact(Y = Y, data = X)
 #> 
 #> Estimating variable importance for 5 numerics.
 parallel::stopCluster(cl)
+```
 
-####################################
-# mlbench BreastCancer example.
+### Example: mlbench breast cancer
+
+``` r
 data(BreastCancer, package = "mlbench")
 data <- BreastCancer
 
@@ -200,15 +217,16 @@ vim <- varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
 #> - Numeric variables: 0 
 #> 
 #> Estimating variable importance for 9 factors.
-#> No numeric variables for variable importance estimation.
 vim
 #> Significant and consistent results:
-#>                 Type  Estimate      P-value Adj. P-value           CI 95
-#> Mitoses       Factor 0.3177571 0.000000e+00 0.000000e+00  (0.255 - 0.38)
-#> Marg.adhesion Factor 0.3807888 5.184742e-14 2.333134e-13  (0.28 - 0.481)
-#> Cell.size     Factor 0.5512742 2.247580e-10 6.742740e-10 (0.378 - 0.725)
-#> Cl.thickness  Factor 0.3793746 8.141966e-09 1.465554e-08 (0.248 - 0.511)
+#>                Type  Estimate      P-value Adj. P-value           CI 95
+#> Mitoses      Factor 0.3168938 0.000000e+00 0.000000e+00 (0.251 - 0.383)
+#> Cell.size    Factor 0.5683672 4.511602e-11 2.030221e-10  (0.397 - 0.74)
+#> Cl.thickness Factor 0.4006083 1.088584e-09 2.449314e-09 (0.269 - 0.532)
+plot_var("Mitoses", vim)
 ```
+
+![](images/README-example_5-1.png)<!-- -->
 
 ## Authors
 
@@ -224,10 +242,9 @@ Gruber, S., & van der Laan, M. J. (2012). tmle: An R Package for
 Targeted Maximum Likelihood Estimation. Journal of Statistical Software,
 51(i13).
 
-Hubbard, A. E., Kennedy, C. J., van der Laan, M. J. (2017).
-Data-adaptive Variable Importance Using Cross-validated Targeted Maximum
-Likelihood Estimation. In M. van der Laan & S. Rose (2017) Targeted
-Learning in Data Science. Springer.
+Hubbard, A. E., Kennedy, C. J., van der Laan, M. J. (2018).
+Data-adaptive target parameters. In M. van der Laan & S. Rose (2018)
+Targeted Learning in Data Science. Springer.
 
 Hubbard, A. E., Kherad-Pajouh, S., & van der Laan, M. J. (2016).
 Statistical Inference for Data Adaptive Target Parameters. The

@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 
 ## Summary
 
-varimpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. It answers the question: which of my Xs are most related to my Y? Each variable's influence on the outcome is estimated semiparametrically, without assuming a linear relationship or other functional form, and the covariate list is ranked by order of importance. This can be used for exploratory data analysis, for dimensionality reduction, for experimental design (e.g. to determine blocking and re-randomization), to reduce variance in an estimation procedure, etc. See Hubbard & van der Laan (2016) and Hubbard, Kennedy, & van der Laan (2017) for more details.
+varimpact uses causal inference statistics to generate variable importance estimates for a given dataset and outcome. It answers the question: which of my Xs are most related to my Y? Each variable's influence on the outcome is estimated semiparametrically, without assuming a linear relationship or other functional form, and the covariate list is ranked by order of importance. This can be used for exploratory data analysis, for dimensionality reduction, for experimental design (e.g. to determine blocking and re-randomization), to reduce variance in an estimation procedure, etc. See Hubbard, Kennedy, & van der Laan (2018) for more details, or Hubbard & van der Laan (2016) for an earlier description.
 
 ## Details
 
@@ -30,13 +30,13 @@ Each covariate is analyzed using targeted minimum loss-based estimation ([TMLE](
 
 The results provide raw p-values as well as p-values adjusted for false discovery rate using the Benjamini-Hochberg (1995) procedure. Adjustment variables are automatically clustered hierarchically using HOPACH (van der Laan & Pollard 2003) in order to reduce dimensionality.  The package supports multi-core and multi-node parallelization, which are detected and used automatically when a parallel backend is registered. Missing values are automatically imputed using K-nearest neighbors (Troyanskaya et al. 2001, Jerez et al. 2010) and missingness indicator variables are incorporated into the analysis.
 
-varimpact is under active development so please submit any bug reports or feature requests to the [issue queue](https://github.com/ck37/varimpact/issues), or email Alan & Chris directly.
+varimpact is under active development so please submit any bug reports or feature requests to the [issue queue](https://github.com/ck37/varimpact/issues), or email Alan and/or Chris directly.
 
 ## Installation
 
 ### Github
 
-```{r install, eval=F}
+```{r install, eval=FALSE}
 # Install devtools if necessary:
 # install.packages("devtools")
 devtools::install_github("ck37/varimpact")
@@ -44,11 +44,13 @@ devtools::install_github("ck37/varimpact")
 
 ### CRAN
 
-Forthcoming Summer 2018
+Forthcoming fall 2018
 
 ## Examples
 
-```{r examples}
+### Example: basic functionality
+
+```{r example_1, fig.width = 6.5, fig.height = 3.5}
 library(varimpact)
 
 ####################################
@@ -64,40 +66,56 @@ for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
 ####################################
 # Basic example
 vim <- varimpact(Y = Y, data = X)
+
+# Review consistent and significant results.
 vim
+
+# Look at all results.
 vim$results_all
+
+# Plot the V2 impact.
+plot_var("V2", vim)
+
+# Generate latex tables with results.
 exportLatex(vim)
+
 # Clean up - will get a warning if there were no consistent results.
 suppressWarnings({
   file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
 })
+```
 
-# Impute by median rather than knn.
-vim <- varimpact(Y = Y, data = X, impute = "median")
+### Example: customize outcome and propensity score estimation
 
-# Customize Q and g libraries for TMLE estimation.
+```{r example_2}
 Q_lib <- c("SL.mean", "SL.glmnet", "SL.ranger", "SL.rpartPrune", "SL.bayesglm")
 g_lib <- c("SL.mean", "SL.glmnet")
 vim <- varimpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
 vim
+```
 
-####################################
-# Parallel (multicore) example.
+### Example: parallel via multicore
+
+```{r example_3}
 library(future)
 plan("multiprocess")
 vim <- varimpact(Y = Y, data = X)
+```
 
-####################################
-# SNOW parallel example.
+### Example: parallel via SNOW
+
+```{r example_4}
 library(RhpcBLASctl)
 # Detect the number of physical cores on this computer using RhpcBLASctl.
 cl = parallel::makeCluster(get_num_cores())
 plan("cluster", workers = cl)
 vim <- varimpact(Y = Y, data = X)
 parallel::stopCluster(cl)
+```
 
-####################################
-# mlbench BreastCancer example.
+### Example: mlbench breast cancer
+
+```{r example_5, fig.width = 6, fig.height = 3.5}
 data(BreastCancer, package = "mlbench")
 data <- BreastCancer
 
@@ -108,7 +126,7 @@ data$Y <- as.numeric(data$Class == "malignant")
 plan("multiprocess")
 vim <- varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
 vim
-
+plot_var("Mitoses", vim)
 ```
 
 ## Authors
@@ -121,7 +139,7 @@ Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: a pr
 
 Gruber, S., & van der Laan, M. J. (2012). tmle: An R Package for Targeted Maximum Likelihood Estimation. Journal of Statistical Software, 51(i13).
 
-Hubbard, A. E., Kennedy, C. J., van der Laan, M. J. (2017). Data-adaptive Variable Importance Using Cross-validated Targeted Maximum Likelihood Estimation. In M. van der Laan & S. Rose (2017) Targeted Learning in Data Science. Springer.
+Hubbard, A. E., Kennedy, C. J., van der Laan, M. J. (2018). Data-adaptive target parameters. In M. van der Laan & S. Rose (2018) Targeted Learning in Data Science. Springer.
 
 Hubbard, A. E., Kherad-Pajouh, S., & van der Laan, M. J. (2016). Statistical Inference for Data Adaptive Target Parameters. The international journal of biostatistics, 12(1), 3-19.
 
