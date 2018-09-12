@@ -3,9 +3,14 @@ process_factors = function(data.fac,
                            miss.cut,
                            verbose = FALSE) {
 
+  # Set some default return values.
+  # TODO: improve names for these objects.
+  num_factors = 0L
+  miss.fac = NULL
+  datafac.dum = NULL
+
   #####################
   if (ncol(data.fac) > 0L) {
-
 
     if (verbose) cat("Processing factors. Start count:", ncol(data.fac), "\n")
 
@@ -45,33 +50,38 @@ process_factors = function(data.fac,
     # Remove columns with missing data % greater than the threshold.
     sum_nas = sapply(data.fac, sum_na)
 
-    if (verbose) cat("Factors with missingness:", sum(sum_nas > 0L), "\n")
+    if (length(sum_nas) == 0L) {
+      if (verbose) {
+        cat("All factors were dropped.\n")
+      }
+      data.fac = NULL
+    } else {
 
-    miss_pct = sum_nas / nrow(data.fac)
+      if (verbose) cat("Factors with missingness:", sum(sum_nas > 0L), "\n")
 
-    data.fac = data.fac[, miss_pct < miss.cut, drop = FALSE]
+      miss_pct = sum_nas / nrow(data.fac)
 
-    if (verbose) {
-      cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
-    }
+      data.fac = data.fac[, miss_pct < miss.cut, drop = FALSE]
 
-    # Save how many separate factors we have in this dataframe.
-    num_factors = ncol(data.fac)
+      if (verbose) {
+        cat("Dropped", sum(miss_pct >= miss.cut), "factors due to the missingness threshold.\n")
+      }
 
-    factor_results = factors_to_indicators(data.fac, verbose = verbose)
+      # Save how many separate factors we have in this dataframe.
+      num_factors = ncol(data.fac)
 
-    datafac.dum = factor_results$data
-    # Here 1 = defined, 0 = missing.
-    miss.fac = factor_results$missing_indicators
+      factor_results = factors_to_indicators(data.fac, verbose = verbose)
 
-    if (verbose) {
-      cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
-          "Missing indicators:", ncol(miss.fac), "\n")
+      datafac.dum = factor_results$data
+      # Here 1 = defined, 0 = missing.
+      miss.fac = factor_results$missing_indicators
+
+      if (verbose) {
+        cat("End factor count:", num_factors, "Indicators:", ncol(datafac.dum),
+            "Missing indicators:", ncol(miss.fac), "\n")
+      }
     }
   } else {
-    num_factors = 0L
-    miss.fac = NULL
-    datafac.dum = NULL
     data.fac = NULL
   }
 
