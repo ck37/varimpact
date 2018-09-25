@@ -198,8 +198,10 @@ compile_results =
       if (num_vars > 1) {
         # Adjust p-values for multiple testing.
         res = multtest::mt.rawp2adjp(pvalue, procedures)
-        sorted_rows = res$index
-        # This indexing sorts the results in ascending order of unadjusted p-value.
+
+        # This indexing sorts the results in ascending order of unadjusted p-value,
+        # then descending by impact estimate.
+        sorted_rows = order(res$index, -psi)
         outres = data.frame(var_type = variable_types[sorted_rows],
                             theta[sorted_rows, , drop = FALSE],
                             psi[sorted_rows],
