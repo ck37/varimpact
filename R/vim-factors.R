@@ -627,7 +627,7 @@ vim_factors =
           # Check if we even have test predictions for this fold.
           # We may not if the estimation failed on the training data.
           if (!"test_predictions" %in% names(fold_r)) {
-            if (verbose) cat("(failed)" )
+            if (verbose) cat("(failed) ")
             return(NULL)
           }
           # Extract the rows specific to this bin/level.
