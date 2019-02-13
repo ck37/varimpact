@@ -624,6 +624,12 @@ vim_factors =
         # is calculated by apply_tmle_to_validation and currently saved in
         # fold_results[[*]]$test_predictions (separately by fold * level).
         compile_rows = lapply(fold_results, function(fold_r) {
+          # Check if we even have test predictions for this fold.
+          # We may not if the estimation failed on the training data.
+          if (!"test_predictions" %in% names(fold_r)) {
+            if (verbose) cat("(failed)" )
+            return(NULL)
+          }
           # Extract the rows specific to this bin/level.
           rows = fold_r$test_predictions[fold_r$test_predictions$bin == bin, , drop = FALSE]
           if (verbose) cat("Rows:", nrow(rows), " ")
