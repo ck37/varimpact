@@ -349,6 +349,9 @@ vim_factors =
               # TMLE estimation failed.
               if (verbose) cat("X")
               error_count = error_count + 1
+
+              # TODO: not sure if this will be handled appropriately.
+              training_estimates[[bin_j]] = NA
             } else {
               # TMLE estimation successed.
 
