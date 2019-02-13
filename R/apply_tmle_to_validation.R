@@ -1,11 +1,12 @@
-apply_tmle_to_validation = function(Y,
-                                    A,
-                                    W,
-                                    family,
-                                    delta = rep(1, length(Y)),
-                                    tmle,
-                                    id = 1:length(Y),
-                                    verbose = F) {
+apply_tmle_to_validation =
+  function(Y,
+           A,
+           W,
+           family,
+           delta = rep(1, length(Y)),
+           tmle,
+           id = 1:length(Y),
+           verbose = FALSE) {
 
   ###########
   # Transform Y to Y_star, needed for later fluctuation step.

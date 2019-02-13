@@ -85,7 +85,7 @@ compile_results =
       variable_names = variable_names[theta_sum_na == 0]
       variable_types = variable_types[theta_sum_na == 0]
 
-      # Extact the various components of the results.
+      # Extract the various components of the results.
       EY1 = do.call(rbind, lapply(results_no_na, function(x) x$EY1))
       EY0 = do.call(rbind, lapply(results_no_na, function(x) x$EY0))
       theta = do.call(rbind, lapply(results_no_na, function(x) x$thetaV))

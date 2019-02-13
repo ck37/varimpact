@@ -88,7 +88,7 @@ estimate_pooled_results = function(fold_results,
         reg = try(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
                   data = data, family = "binomial"))
         if (class(reg) == "try-error") {
-          cat("Error in epsilon rgression.\n")
+          cat("Error in epsilon regression.\n")
           browser()
         }
         epsilon = try(coef(reg))
