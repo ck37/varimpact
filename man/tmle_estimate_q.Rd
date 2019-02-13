@@ -4,8 +4,8 @@
 \alias{tmle_estimate_q}
 \title{purpose: estimate Q=E(Y |Z, A,W) data-adaptively,}
 \usage{
-tmle_estimate_q(Y, Z = rep(0, length(Y)), A, W, Delta, Q = NULL, Qbounds,
-  Qform = NULL, maptoYstar, SL.library, cvQinit = F, family,
+tmle_estimate_q(Y, Z = rep(0, length(Y)), A, W, Delta, Q = NULL,
+  Qbounds, Qform = NULL, maptoYstar, SL.library, cvQinit = F, family,
   id = 1:length(Y), V = 10, verbose = F)
 }
 \arguments{

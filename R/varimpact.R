@@ -76,7 +76,6 @@
 #'
 #' @importFrom stats cor model.matrix na.omit pnorm quantile var
 #' @importFrom SuperLearner All
-#' @importFrom future future_lapply
 #'
 #' @seealso
 #' \code{\link[varimpact]{exportLatex}}, \code{\link[varimpact]{print.varimpact}}
