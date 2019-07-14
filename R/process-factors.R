@@ -30,7 +30,8 @@ process_factors = function(data.fac,
     # For each factor, apply function and get rid of those where
     # 'true' data.fac is data frame of variables that are factors
     if (!is.null(quantile_probs_factor)) {
-      data.fac = restrict_by_quantiles(data.fac, quantile_probs = quantile_probs_factor)
+      data.fac = restrict_by_quantiles(data.fac, quantile_probs = quantile_probs_factor,
+                                       verbose = verbose)
     }
 
     dropped_cols = num_cols - ncol(data.fac)
