@@ -20,6 +20,10 @@ restrict_by_quantiles =
   drop_cols = sapply(1:ncol(data),
                      function(i) quantiles_equivalent(data[, i], quantile_probs))
 
+  if (verbose) {
+    cat("restrict_by_quantiles(): dropping", paste(drop_cols, collapse = ", "), "\n")
+  }
+
   # Restrict to variables with sufficient variation.
   data = data[, !drop_cols, drop = FALSE]
 
