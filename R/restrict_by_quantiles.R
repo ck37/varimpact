@@ -21,7 +21,9 @@ restrict_by_quantiles =
                      function(i) quantiles_equivalent(data[, i], quantile_probs))
 
   if (verbose) {
-    cat("restrict_by_quantiles(): dropping", paste(drop_cols, collapse = ", "), "\n")
+    if (sum(drop_cols) > 0) {
+      cat("restrict_by_quantiles(): dropping", paste(names(data)[drop_cols], collapse = ", "), "\n")
+    }
   }
 
   # Restrict to variables with sufficient variation.
