@@ -721,6 +721,7 @@ vim_factors =
         EY1V = NULL,
         EY0V = NULL,
         thetaV = NULL,
+        thetaV_rr = NULL,
         varICV = NULL,
         labV = NULL,
         nV = NULL,
@@ -747,6 +748,11 @@ vim_factors =
 
       if (length(var_results$EY1V) == length(var_results$EY0V)) {
         var_results$thetaV = var_results$EY1V - var_results$EY0V
+
+        # Calculate relative risk parameter (aka risk ratio).
+        # This only makes sense if Y is binary.
+        var_results$thetaV_rr = var_results$EY1V / var_results$EY0V
+
       } else {
         if (verbose) {
           cat("Error: EY1V and EY0V are different lengths. EY1V =",
@@ -754,6 +760,9 @@ vim_factors =
         }
         var_results$thetaV = rep(NA, max(length(var_results$EY1V),
                                          length(var_results$EY0V)))
+
+        var_results$thetaV_rr = rep(NA, max(length(var_results$EY1V),
+                                            length(var_results$EY0V)))
       }
 
 
@@ -776,6 +785,20 @@ vim_factors =
           if (length(pooled_max$influence_curves) >= index &&
               length(pooled_min$influence_curves) >= index) {
             var(pooled_max$influence_curves[[index]] - pooled_min$influence_curves[[index]])
+          } else {
+            NA
+          }
+        })
+
+        # Parameter: relative risk
+        # TODO: only calculate if Y is binary.
+        var_results$varICV_log_rr = sapply(1:V, function(index) {
+          if (length(pooled_max$influence_curves) >= index &&
+              length(pooled_min$influence_curves) >= index) {
+            # Variance for the risk difference (maximal contrast parameter).
+            # TODO: double-check this.
+            var(pooled_max$influence_curves[[index]] / pooled_max$thetas[[index]] -
+                  pooled_min$influence_curves[[index]] / pooled_min$thetas[[index]])
           } else {
             NA
           }
@@ -806,6 +829,9 @@ vim_factors =
           cat("Variances:", signif(var_results$varICV, signif_digits), "\n")
           cat("Labels:\n")
           print(labels)
+          cat("\n")
+          cat("RRs:", signif(var_results$thetaV_rr, signif_digits), "\n")
+          cat("Variances:", signif(var_results$varICV_log_rr, signif_digits), "\n")
           cat("\n")
         }
       }

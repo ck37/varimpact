@@ -88,12 +88,23 @@ compile_results =
       # Extract the various components of the results.
       EY1 = do.call(rbind, lapply(results_no_na, function(x) x$EY1))
       EY0 = do.call(rbind, lapply(results_no_na, function(x) x$EY0))
+
+      # Risk difference
       theta = do.call(rbind, lapply(results_no_na, function(x) x$thetaV))
       varIC = do.call(rbind, lapply(results_no_na, function(x) x$varICV))
+
+      # Relative risk
+      theta_rr = do.call(rbind, lapply(results_no_na, function(x) x$thetaV_rr))
+      varIC_log_rr = do.call(rbind, lapply(results_no_na, function(x) x$varICV_log_rr))
+
       nV = do.call(rbind, lapply(results_no_na, function(x) x$nV))
       n = sum(nV[1, ])
 
+      # SE: Risk difference
       SEV = sqrt(varIC / nV)
+
+      # SE: relative risk
+      SEV_log_rr = sqrt(varIC_log_rr / nV)
 
       # Get labels for each of the training samples.
       extract_labels = function(x, total_folds) {
@@ -114,23 +125,40 @@ compile_results =
       tst = lapply(tst, extract_labels, total_folds = V)
       labels = do.call(rbind, tst)
 
+      # Parameteter: risk difference
+      psi = apply(theta, 1, mean)
       # Each row is a variable and each column in a fold estimate.
       meanvarIC = apply(varIC, 1, mean)
-
-      psi = apply(theta, 1, mean)
       SE = sqrt(meanvarIC / n)
 
       ci_lower = psi - 1.96 * SE
       ci_upper = psi + 1.96 * SE
+      # 1-sided p-value
+      pvalue = 1 - pnorm(psi / SE)
+
+      # Parameter: relative risk
+      psi_rr = apply(theta_rr, 1, mean)
+      # Each row is a variable and each column in a fold estimate.
+      meanvarIC_log_rr = apply(varIC_log_rr, 1, mean)
+      se_log_rr = sqrt(meanvarIC_log_rr / n)
+      # Calculate CI on log-RR scale.
+      ci_lower_rr = exp(log(psi_rr) - 1.96 * se_log_rr)
+      ci_upper_rr = exp(log(psi_rr) + 1.96 * se_log_rr)
+
+      # TODO: double-check this.
+      #pvalue_rr = 1 - pnorm(abs(log(psi_rr)) / se_log_rr)
+      pvalue_rr = 1 - pnorm(log(psi_rr) / se_log_rr)
+
 
       # Number of significant digits.
       signif_digits = 3
 
       # TODO: provide ci_lower and ci_upper as separate elements.
-      CI95 = paste0("(", signif(ci_lower, signif_digits), " - ", signif(ci_upper, signif_digits), ")")
+      CI95 = paste0("(", signif(ci_lower, signif_digits), " - ",
+                    signif(ci_upper, signif_digits), ")")
+      CI95_rr = paste0("(", signif(ci_lower_rr, signif_digits), " - ",
+                       signif(ci_upper_rr, signif_digits), ")")
 
-      # 1-sided p-value
-      pvalue = 1 - pnorm(psi / SE)
 
       ##### FOR THETA (generalize to chi-square test?)
       # TT = (theta[,1] - theta[,2]) / sqrt(SEV[,1]^2 + SEV[,2]^2)
@@ -149,6 +177,7 @@ compile_results =
       cons = NULL
       if (num_continuous > 0) {
         dir = NULL
+        # Check for consistency.
         for (i in 1:V) {
           lower_temp = labels[1:num_continuous, i * 2 - 1]
           xx = regexpr(",", lower_temp)
@@ -198,9 +227,14 @@ compile_results =
       if (num_vars > 1) {
         # Adjust p-values for multiple testing.
         res = multtest::mt.rawp2adjp(pvalue, procedures)
+        res_rr = multtest::mt.rawp2adjp(pvalue_rr, procedures)
+
+        # Attempt to prepend these names with "rr_" for the relative risk version.
+        colnames(res_rr$adj) = paste0("rr_", colnames(res_rr$adj))
 
         # This indexing sorts the results in ascending order of unadjusted p-value,
         # then descending by impact estimate.
+        # TODO: this may need to be fixed.
         sorted_rows = order(res$index, -psi)
         outres = data.frame(var_type = variable_types[sorted_rows],
                             theta[sorted_rows, , drop = FALSE],
@@ -208,6 +242,11 @@ compile_results =
                             CI95[sorted_rows],
                             res$adj,
                             labels[sorted_rows, , drop = FALSE],
+                            # Relative risk parameter.
+                            "AvePsi_rr" = psi_rr[sorted_rows],
+                            "CI95_rr" = CI95_rr[sorted_rows],
+                            res_rr$adj,
+                            # Consistency
                             consist[sorted_rows])
       } else if (num_vars == 1) {
         # No need for multiple testing adjustment.
@@ -220,6 +259,12 @@ compile_results =
                             Holm = pvalue,
                             BH = pvalue,
                             labels,
+                            # TODO: implement these.
+                            "AvePsi_rr" = NA,
+                            "CI95_rr" = NA,
+                            "rr_rawp" = NA,
+                            "rr_Holm" = NA,
+                            "rr_BH" = NA,
                             consist)
       } else {
         outres = NULL
@@ -228,33 +273,46 @@ compile_results =
       # TODO: this will give an error if we have no results.
 
       # Restrict to variables that aren't missing their p-value.
-      outres = outres[!is.na(outres[, "rawp"]), , drop = F]
+      outres = outres[!is.na(outres[, "rawp"]), , drop = FALSE]
       #print(colnames(outres))
       #print(ncol(outres))
 
       #names(outres)[1:(1 + 2*V)] = c("VarType", paste0("Est_v", 1:V), "AvePsi", "CI95")
       names(outres)[1:(3 + V)] = c("VarType", paste0("Est_v", 1:V), "AvePsi", "CI95")
+
       #names(outres)[(9 + 2 * V)] = "Consistent"
       names(outres)[ncol(outres)] = "Consistent"
 
       #print(colnames(outres))
       #print(ncol(outres))
 
-      ################
-      # Get Consistency Measure and only significant
-      # TODO: Make BH cut-off flexible in future versions (default at 0.05)
-      outres.cons = outres[outres[, "BH"] < 0.05, , drop = F]
-      outres.cons = outres.cons[outres.cons[, "Consistent"],
-                                c("VarType", "AvePsi", "rawp", "BH", "CI95"), drop = F]
-      colnames(outres.cons) = c("Type", "Estimate", "P-value", "Adj. P-value", "CI 95")
 
 
       # drops = c('VarType','description','Holm,')
       # outres.all=outres[,!(names(outres) %in% drops)]
       # We want to extract the per-fold psi estimates, per-fold levels, and consistency flag.
-      outres.byV = outres[, c(2:(2 + V - 1), (7 + V):(7 + 3 * V)), drop = F]
-      outres.all = outres[, c("VarType", "AvePsi", "CI95", "rawp", "BH", "Consistent"), drop = F]
-      colnames(outres.all) = c("Type", "Estimate", "CI95", "P-value", "Adj. p-value", "Consistent")
+      # TODO: update for relative risk parameter.
+      outres.byV = outres[, c(2:(2 + V - 1), (7 + V):(7 + 3 * V)), drop = FALSE]
+
+      outres.all = outres[, c("VarType",
+                              # Risk difference:
+                              "AvePsi", "CI95", "rawp", "BH",
+                              # Relative risk:
+                              "AvePsi_rr", "CI95_rr", "rr_rawp", "rr_BH",
+                              "Consistent"), drop = FALSE]
+
+      colnames(outres.all) = c("Type",
+                               # Risk difference:
+                               "Estimate", "CI95", "P-value", "Adj. p-value",
+                               # Relative risk:
+                               "Est. RR", "CI95 RR", "P-value RR", "Adj. p-value RR",
+                               "Consistent")
+
+      ################
+      # Get Consistency Measure and only significant
+      # TODO: Make BH cut-off flexible in future versions (default at 0.05)
+      outres.cons = outres.all[outres[, "BH"] < 0.05, , drop = FALSE]
+      outres.cons = subset(outres.cons, select = -c(Consistent))
     }
   }
 

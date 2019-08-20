@@ -24,6 +24,8 @@ estimate_pooled_results = function(fold_results,
   #  return(results)
   #}
 
+  # browser()
+
   # Extract the results from each CV-TMLE fold and rbind into a single dataframe.
   data = do.call(rbind, lapply(1:length(fold_results), function(i) {
     fold = fold_results[[i]]
@@ -129,8 +131,9 @@ estimate_pooled_results = function(fold_results,
       #}
 
       if (verbose) cat("Estimating per-fold thetas: ")
-      # Estimate parameter on every validation fold.
-      thetas = tapply(Q_star, data$fold_num, mean, na.rm = T)
+
+      # Estimate treatment-specific mean parameter on every validation fold.
+      thetas = tapply(Q_star, data$fold_num, mean, na.rm = TRUE)
       if (verbose) cat(thetas, "\n")
 
       # Take average across folds to get final estimate.
@@ -141,7 +144,8 @@ estimate_pooled_results = function(fold_results,
       rm(Q_star)
 
       if (verbose) cat("Calculating per-fold influence curves\n")
-      # Get influence curve per fold.
+
+      # Get influence curve per fold - for treatment-specific mean.
       # Influence_curves here is a list, where each element is a result.
       # We can't convert to a matrix because lengths are different.
       # TODO: figure out why this can generate NaNs
