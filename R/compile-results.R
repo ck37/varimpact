@@ -235,7 +235,10 @@ compile_results =
         # This indexing sorts the results in ascending order of unadjusted p-value,
         # then descending by impact estimate.
         # TODO: this may need to be fixed.
-        sorted_rows = order(res$index, -psi)
+        #sorted_rows = base::order(res$index, -psi)
+        sorted_rows = res$index
+
+        #browser()
         outres = data.frame(var_type = variable_types[sorted_rows],
                             theta[sorted_rows, , drop = FALSE],
                             psi[sorted_rows],
