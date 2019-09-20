@@ -315,7 +315,7 @@ compile_results =
       # Get Consistency Measure and only significant
       # TODO: Make BH cut-off flexible in future versions (default at 0.05)
       outres.cons = outres.all[outres[, "BH"] < 0.05 &
-                               outres$Consisent, , drop = FALSE]
+                               outres$Consistent, , drop = FALSE]
       outres.cons = subset(outres.cons, select = -c(Consistent))
     }
   }

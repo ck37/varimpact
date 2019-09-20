@@ -6,7 +6,7 @@
 \title{Variable importance estimation using causal inference (targeted learning)}
 \usage{
 varimpact(Y, data, A_names = colnames(data), V = 2L,
-  Q.library = c("SL.glmnet", "SL.mean"), g.library = c("SL.glmnet",
+  Q.library = c("SL.glm", "SL.mean"), g.library = c("SL.glm",
   "SL.mean"), family = "binomial", minYs = 15L, minCell = 0L,
   adjust_cutoff = 10L, corthres = 0.8, impute = "median",
   miss.cut = 0.5, bins_numeric = 10L, quantile_probs_factor = c(0.1,
