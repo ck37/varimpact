@@ -29,7 +29,10 @@ for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 # Basic test - binary outcome.
 #future::plan("multiprocess")
 future::plan("sequential")
-vim = varimpact(Y = Y_bin, data = X[, 1:3], V = 3L, verbose = TRUE,
+vim = varimpact(Y = Y_bin, data = X[, 1:3], V = 3L,
+                Q.library = c("SL.mean", "SL.glm"),
+                g.library = c("SL.mean", "SL.glm"),
+                verbose = TRUE,
                 verbose_tmle = FALSE, bins_numeric = 3L)
 # Takes 25 seconds.
 vim$time
