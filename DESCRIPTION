@@ -39,4 +39,4 @@ Suggests:
     mlbench,
     RhpcBLASctl,
     testthat
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2

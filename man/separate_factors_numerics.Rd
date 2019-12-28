@@ -4,8 +4,7 @@
 \alias{separate_factors_numerics}
 \title{Split df into one of only factors and one of only numerics.}
 \usage{
-separate_factors_numerics(data, strings_to_factors = TRUE,
-  verbose = FALSE)
+separate_factors_numerics(data, strings_to_factors = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{data}{A dataframe or matrix.}

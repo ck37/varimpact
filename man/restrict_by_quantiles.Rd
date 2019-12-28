@@ -4,8 +4,7 @@
 \alias{restrict_by_quantiles}
 \title{Remove columns from a dataframe if they do not have sufficient variation.}
 \usage{
-restrict_by_quantiles(data, quantile_probs = c(0.1, 0.9),
-  verbose = FALSE)
+restrict_by_quantiles(data, quantile_probs = c(0.1, 0.9), verbose = FALSE)
 }
 \arguments{
 \item{data}{Dataframe or matrix}

@@ -4,8 +4,7 @@
 \alias{factors_to_indicators}
 \title{Convert a dataframe of factor into separate indicators.}
 \usage{
-factors_to_indicators(factor_df, miss_name_prefix = "Imiss_",
-  verbose = F)
+factors_to_indicators(factor_df, miss_name_prefix = "Imiss_", verbose = F)
 }
 \arguments{
 \item{factor_df}{Dataframe consisting only of factor variables.}

@@ -4,9 +4,22 @@
 \alias{estimate_tmle2}
 \title{Get TMLE estimate: E[Y | A = 1, W].}
 \usage{
-estimate_tmle2(Y, A, W, family, delta = rep(1, length(Y)), Q.lib, g.lib,
-  id = 1:length(Y), Qbounds = NULL, gbound = 0.025, alpha = 0.995,
-  fluctuation = "logistic", V = 10, verbose = F)
+estimate_tmle2(
+  Y,
+  A,
+  W,
+  family,
+  delta = rep(1, length(Y)),
+  Q.lib,
+  g.lib,
+  id = 1:length(Y),
+  Qbounds = NULL,
+  gbound = 0.025,
+  alpha = 0.995,
+  fluctuation = "logistic",
+  V = 10,
+  verbose = F
+)
 }
 \arguments{
 \item{Y}{Outcome variable}
