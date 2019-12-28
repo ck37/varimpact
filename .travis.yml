@@ -25,7 +25,8 @@ bioc_packages:
 r:
   - release
   - devel
-  - oldrel
+  # glmnet no longer works on R 3.5 :/
+  #- oldrel
 
 env:
   global:
