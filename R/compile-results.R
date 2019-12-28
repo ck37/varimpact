@@ -289,7 +289,8 @@ compile_results =
       #print(colnames(outres))
       #print(ncol(outres))
 
-
+      # Sort by raw p-value, then BH p-value, then effect size.
+      outres = outres %>% dplyr::arrange(rawp, BH, desc(AvePsi)) %>% as.data.frame()
 
       # drops = c('VarType','description','Holm,')
       # outres.all=outres[,!(names(outres) %in% drops)]
