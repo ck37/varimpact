@@ -45,7 +45,7 @@ matrix:
 script:
   - |
     R CMD build .
-    travis_wait 40 R CMD check varImpact*.tar.gz
+    travis_wait 40 R CMD check varimpact*.tar.gz
 
 # code coverage testing is timing out after 10 minutes, also need to
 # enable travis_wait for this.
