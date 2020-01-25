@@ -289,8 +289,15 @@ compile_results =
       #print(colnames(outres))
       #print(ncol(outres))
 
+      #  Save rownames, because dplyr will discard them.
+      outres$varname = rownames(outres)
+
       # Sort by raw p-value, then BH p-value, then effect size.
       outres = outres %>% dplyr::arrange(rawp, BH, desc(AvePsi)) %>% as.data.frame()
+
+      # Restore rownames.
+      rownames(outres) = outres$varname
+      outres$varname = NULL
 
       # drops = c('VarType','description','Holm,')
       # outres.all=outres[,!(names(outres) %in% drops)]
