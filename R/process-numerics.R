@@ -88,9 +88,14 @@ process_numerics =
                                               breaks = num_breaks,
                                               ordered = TRUE)
         }, error = function(error) {
+          # This can happen with skewed distributions where multiple breaks are not unique.
+          print(error)
           cat("Error: could not discretize numeric", numeric_i, "", name, "\n")
           cat("Unique values:", length(unique(Xt)), "\n")
-          var_binned_names = Xt
+          cat("Switching to cluster-based discretization.\n")
+          var_binned_names = arules::discretize(Xt, method = "cluster",
+                                                breaks = num_breaks,
+                                                ordered = TRUE)
         })
       })
 
