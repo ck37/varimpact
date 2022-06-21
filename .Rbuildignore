@@ -12,3 +12,4 @@
 
 # Github files.
 ^readme.Rmd$
+^\.github$
