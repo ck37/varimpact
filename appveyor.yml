@@ -17,7 +17,7 @@ build_script:
   - git config --global user.email "travis@example.org"
   - travis-tool.sh install_bioc_deps
   - travis-tool.sh install_deps
-  - travis-tool.sh github_package jimhester/covr
+ #- travis-tool.sh github_package jimhester/covr
 
 test_script:
   - travis-tool.sh run_tests
@@ -26,8 +26,8 @@ on_failure:
   - 7z a failure.zip *.Rcheck\*
   - appveyor PushArtifact failure.zip
 
-on_success:
-  - Rscript -e 'covr::codecov()'
+#on_success:
+#  - Rscript -e 'covr::codecov()'
 
 environment:
   global:
