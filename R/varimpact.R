@@ -139,7 +139,7 @@
 #'
 #' # Setup multicore parallelization.
 #' library(future)
-#' plan("multiprocess", workers = 2)
+#' plan("multisession", workers = 2)
 #'
 #' vim <- varimpact(Y = Y, data = X[, 1:3])
 #' vim
