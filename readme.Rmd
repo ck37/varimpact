@@ -12,6 +12,9 @@ knitr::opts_chunk$set(
   fig.width = 5,
   fig.height = 3.5
 )
+
+# Hide warnings when knitting.
+options(warn = -1)
 ```
 
 # varimpact - variable importance through causal inference
@@ -34,17 +37,17 @@ varimpact is under active development so please submit any bug reports or featur
 
 ## Installation
 
-### Github
+### GitHub
 
 ```{r install, eval=FALSE}
-# Install devtools if necessary:
-# install.packages("devtools")
-devtools::install_github("ck37/varimpact")
+# Install remotes if necessary:
+# install.packages("remotes")
+remotes::install_github("ck37/varimpact")
 ```
 
 ### CRAN
 
-Forthcoming fall 2018
+Forthcoming fall 2022
 
 ## Examples
 
@@ -57,7 +60,7 @@ library(varimpact)
 # Create test dataset.
 set.seed(1, "L'Ecuyer-CMRG")
 N <- 200
-num_normal <- 5
+num_normal <- 4
 X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 Y <- rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
 # Add some missing data to X so we can test imputation.
@@ -88,10 +91,10 @@ suppressWarnings({
 ### Example: customize outcome and propensity score estimation
 
 ```{r example_2}
-Q_lib <- c("SL.mean", "SL.glmnet", "SL.ranger", "SL.rpartPrune", "SL.bayesglm")
-g_lib <- c("SL.mean", "SL.glmnet")
-vim <- varimpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib)
-vim
+Q_lib = c("SL.mean", "SL.glmnet", "SL.ranger", "SL.rpartPrune")
+g_lib = c("SL.mean", "SL.glmnet")
+set.seed(1, "L'Ecuyer-CMRG")
+(vim = varimpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib))
 ```
 
 ### Example: parallel via multicore
@@ -99,7 +102,7 @@ vim
 ```{r example_3}
 library(future)
 plan("multiprocess")
-vim <- varimpact(Y = Y, data = X)
+vim = varimpact(Y = Y, data = X)
 ```
 
 ### Example: parallel via SNOW
@@ -109,7 +112,7 @@ library(RhpcBLASctl)
 # Detect the number of physical cores on this computer using RhpcBLASctl.
 cl = parallel::makeCluster(get_num_cores())
 plan("cluster", workers = cl)
-vim <- varimpact(Y = Y, data = X)
+vim = varimpact(Y = Y, data = X)
 parallel::stopCluster(cl)
 ```
 
@@ -117,15 +120,14 @@ parallel::stopCluster(cl)
 
 ```{r example_5, fig.width = 6, fig.height = 3.5}
 data(BreastCancer, package = "mlbench")
-data <- BreastCancer
+data = BreastCancer
 
 # Create a numeric outcome variable.
-data$Y <- as.numeric(data$Class == "malignant")
+data$Y = as.integer(data$Class == "malignant")
 
 # Use multicore parallelization to speed up processing.
 plan("multiprocess")
-vim <- varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id)))
-vim
+(vim = varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id))))
 plot_var("Mitoses", vim)
 ```
 
