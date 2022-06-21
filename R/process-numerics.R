@@ -93,9 +93,17 @@ process_numerics =
           cat("Error: could not discretize numeric", numeric_i, "", name, "\n")
           cat("Unique values:", length(unique(Xt)), "\n")
           cat("Switching to cluster-based discretization.\n")
+          tryCatch({
           var_binned_names = arules::discretize(Xt, method = "cluster",
                                                 breaks = num_breaks,
-                                                ordered = TRUE)
+                                                ordered = TRUE)},
+            error = function(error2) {
+              # TODO: use another package/function to discretize.
+              print(error2)
+              cat("Cluster-based discretization failed - using all levels.")
+              var_binned_names = factor(Xt)
+            })
+
         })
       })
 
