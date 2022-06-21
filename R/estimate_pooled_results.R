@@ -71,7 +71,7 @@ estimate_pooled_results = function(fold_results,
 
     # If Q is binary or continuous we still want to take logit of predicted values.
     # See tmle::estimateQ where it does this after predicting Q.
-    data$logit_Q_hat = try(qlogis(data$Q_hat))
+    data$logit_Q_hat = try(stats::qlogis(data$Q_hat))
     if (class(data$logit_Q_hat) == "try-error") {
       cat("Error in estimate_pooled_results() with qlogis()\n")
       print(summary(data$Q_hat))
@@ -87,13 +87,13 @@ estimate_pooled_results = function(fold_results,
         #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + H1W,
         #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
         #                 data = data, family = "binomial"))
-        reg = try(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
+        reg = try(stats::glm(Y_star ~ -1 + stats::offset(logit_Q_hat) + HAW,
                   data = data, family = "binomial"))
-        if (class(reg) == "try-error") {
+        if ("try-error" %in% class(reg)) {
           cat("Error in epsilon regression.\n")
           browser()
         }
-        epsilon = try(coef(reg))
+        epsilon = try(stats::coef(reg))
       })
       # Use more stable version where clever covariate is the weight, and now we
       # have an intercept. Causal 2, Lecture 3, slide 51.
@@ -113,7 +113,7 @@ estimate_pooled_results = function(fold_results,
       # TBD.
     }
 
-    if (class(epsilon) == "try-error") {
+    if ("try-error" %in% class(epsilon)) {
       if (verbose) cat("Error when estimating epsilon.\n")
       print(summary(data$Y_star))
       browser()
