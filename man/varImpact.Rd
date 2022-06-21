@@ -186,7 +186,7 @@ for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
 
 # Setup multicore parallelization.
 library(future)
-plan("multiprocess", workers = 2)
+plan("multisession", workers = 2)
 
 vim <- varimpact(Y = Y, data = X[, 1:3])
 vim
