@@ -184,10 +184,6 @@ for (i in 1:10) X[sample(nrow(X), 1), sample(ncol(X), 1)] <- NA
 ####################################
 # Basic example
 
-# Setup multicore parallelization.
-library(future)
-plan("multisession", workers = 2)
-
 vim <- varimpact(Y = Y, data = X[, 1:3])
 vim
 vim$results_all
@@ -201,6 +197,10 @@ vim <- varimpact(Y = Y, data = X[, 1:3], impute = "median")
 ####################################
 # Multicore parallel example.
 \dontrun{
+# Setup multicore parallelization.
+library(future)
+plan("multisession", workers = 2)
+
 vim <- varimpact(Y = Y, data = X[, 1:3])
 }
 

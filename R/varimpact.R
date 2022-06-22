@@ -137,10 +137,6 @@
 #' ####################################
 #' # Basic example
 #'
-#' # Setup multicore parallelization.
-#' library(future)
-#' plan("multisession", workers = 2)
-#'
 #' vim <- varimpact(Y = Y, data = X[, 1:3])
 #' vim
 #' vim$results_all
@@ -154,7 +150,10 @@
 #' ####################################
 #' # Multicore parallel example.
 #' \dontrun{
-
+#' # Setup multicore parallelization.
+#' library(future)
+#' plan("multisession", workers = 2)
+#'
 #' vim <- varimpact(Y = Y, data = X[, 1:3])
 #' }
 #'
