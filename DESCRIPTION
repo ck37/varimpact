@@ -16,6 +16,7 @@ Description: Automated data processing and variable importance using data-
     adaptive target parameter methods combined with TMLE. Returns an ordered
     variable list of importance.
 License: GPL (>= 2)
+Encoding: UTF-8
 Depends:
     SuperLearner
 Imports:
