@@ -257,7 +257,7 @@ varimpact =
   }
 
   ########
-  # Applied to Explanatory (X) data frame
+  # Applied to Explanatory (X) data frame.
   sna = sapply(X, sum_na)
 
   n = nrow(X)
