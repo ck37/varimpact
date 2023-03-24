@@ -258,9 +258,9 @@ varimpact =
 
   ########
   # Applied to Explanatory (X) data frame.
-  sna = sapply(X, sum_na)
+  sna = sapply(data, sum_na)
 
-  n = nrow(X)
+  n = nrow(data)
 
   #######
   # Missing proportion by variable.
