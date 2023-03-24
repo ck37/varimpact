@@ -71,6 +71,8 @@
 #' @param verbose_reduction Boolean - if TRUE, will display more detail during
 #'   variable reduction step (clustering).
 #' @param digits Number of digits to round the value labels.
+#' @param adjustment_exclusions List of variables to be removed from the adjustment set
+#' of each variable for which we want to estimate importance.
 #'
 #' @return Results object. TODO: add more detail here.
 #'
@@ -209,7 +211,8 @@ varimpact =
            verbose_tmle = FALSE,
            verbose_reduction = FALSE,
            parallel = TRUE,
-           digits = 4L) {
+           digits = 4L,
+           adjustment_exclusions = list()) {
 
   # Time the full function execution.
   time_start = proc.time()
@@ -255,9 +258,9 @@ varimpact =
 
   ########
   # Applied to Explanatory (X) data frame
-  sna = sapply(data, sum_na)
+  sna = sapply(X, sum_na)
 
-  n = nrow(data)
+  n = nrow(X)
 
   #######
   # Missing proportion by variable.
@@ -330,7 +333,8 @@ varimpact =
                  adjust_cutoff = adjust_cutoff,
                  verbose = verbose,
                  verbose_tmle = verbose_tmle,
-                 verbose_reduction = verbose_reduction)
+                 verbose_reduction = verbose_reduction,
+                 adjustment_exclusions= adjustment_exclusions)
 
   # Combine the separate continuous and factor results.
   results =
@@ -365,6 +369,6 @@ varimpact =
 
   # Set a custom class so that we can override print and summary.
   class(results) = "varimpact"
-
+  
   invisible(results)
 }

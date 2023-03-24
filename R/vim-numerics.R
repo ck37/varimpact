@@ -13,6 +13,7 @@ vim_numerics =
            Qbounds,
            corthres,
            adjust_cutoff,
+           adjustment_exclusions,
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE) {
@@ -230,12 +231,26 @@ vim_numerics =
                          numerics$miss.cont,
                          factors$datafac.dumW,
                          factors$miss.fac)
-
+          
+          #print(nameA)
+          #print(var_i)
+          #print(colnames(W))
+          
           # Remove any columns in which all values are NA.
           # CK: but we're using imputed data, so there should be no NAs actually.
           # (With the exception of the NA vectors possibly added above.
           W = W[, !apply(is.na(W), 2, all), drop = FALSE]
 
+          #print(nameA)
+          
+          # Remove variables from the adjustment set of each variable for which we want to measure importance
+          if (nameA %in% names(adjustment_exclusions) && length(adjustment_exclusions[[nameA]]) > 0) {
+            W = W[, setdiff(colnames(W), adjustment_exclusions[[nameA]]), drop = FALSE]
+          }
+          
+          #print(colnames(W))
+          #print(class(W))
+          
           # Separate adjustment matrix into the training and test folds.
           Wt = W[folds != fold_k, , drop = FALSE]
           Wv = W[folds == fold_k, , drop = FALSE]
@@ -344,6 +359,7 @@ vim_numerics =
               # Create a list to hold the results for this level.
               bin_result = list(
                 name = nameA,
+                W_names = colnames(W),
                 cv_fold = fold_k,
                 level = bin_j,
                 level_label = At_bin_labels[bin_j],
@@ -386,7 +402,7 @@ vim_numerics =
 
               # Save how many obs have this level/bin in this training fold.
               bin_result$train_cell_size = sum(IA)
-
+              
               ###############################################
               # TODO: send to calculate_estimates first, which would calculate
               # TMLE, IPTW, G-Comp, and Unadj estimates.
@@ -466,18 +482,18 @@ vim_numerics =
               }
 
               bin_result$test_msg = "success"
-
+              
               # Save to the main list.
               bin_results[[bin_j]] = bin_result
             }
-
+            
             # Finished looping over each level of the assignment variable
             # (primarily training fold, but now also some val fold work).
             if (verbose) cat(" done.\n")
 
             # Save individual bin results.
             fold_result$bin_results = bin_results
-
+            
             # Create a dataframe version of the bin results.
             fold_result$bin_df =
               do.call(rbind, lapply(bin_results, function(result) {
@@ -578,7 +594,7 @@ vim_numerics =
                                 "label = ", training_estimates[[minj]]$label, ")")
               }
               fold_result$message = message
-
+              
               if (verbose) {
                 cat(message, "\n")
               }
