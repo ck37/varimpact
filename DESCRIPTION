@@ -27,14 +27,11 @@ Imports:
     future,
     future.apply,
     ggplot2,
-    glmnet,
     histogram,
     hopach,
     magrittr,
-    MASS,
     modeest,
     multtest,
-    RANN,
     tmle,
     xtable
 biocViews:

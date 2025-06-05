@@ -189,6 +189,11 @@ vim
 vim$results_all
 exportLatex(vim)
 
+# Clean up LaTeX files
+suppressWarnings({
+  file.remove(c("varimpByFold.tex", "varimpAll.tex", "varimpConsistent.tex"))
+})
+
 # Impute by median rather than knn.
 \dontrun{
 vim <- varimpact(Y = Y, data = X[, 1:3], impute = "median")
