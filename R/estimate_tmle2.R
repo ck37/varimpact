@@ -237,7 +237,8 @@ estimate_tmle2 =
 
   if (verbose) cat("tmle::calcParameters\n")
   res <- tmle::calcParameters(Ystar, A, I.Z=rep(1, length(Ystar)), delta, g1W.total, g0W.total, Qstar,
-                        mu1=mean(Qstar[,"Q1W"]), mu0=mean(Qstar[,"Q0W"]), id, family)
+                        mu1=mean(Qstar[,"Q1W"]), mu0=mean(Qstar[,"Q0W"]), id, family, 
+                        obsWeights=rep(1, length(Ystar)))
 
   #returnVal <- list(estimates=res, Qinit=Q, g=g, g.Z=g.z, g.Delta=g.Delta, Qstar=Qstar[,-1], epsilon=epsilon)
   #class(returnVal) <- "tmle"

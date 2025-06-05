@@ -415,6 +415,8 @@ vim_numerics =
                 # Error.
                 if (verbose) cat("X")
                 error_count = error_count + 1
+                # Initialize to NULL so validation code doesn't get subscript error
+                training_estimates[[bin_j]] = NULL
               } else {
 
                 # TMLE succeeded (hopefully).
@@ -511,7 +513,11 @@ vim_numerics =
             # Extract theta estimates.
             theta_estimates = sapply(training_estimates, function(result) {
               # Handle errors in the tmle estimation by returning NA.
-              ifelse("theta" %in% names(result), result$theta, NA)
+              if (is.null(result)) {
+                NA
+              } else {
+                ifelse("theta" %in% names(result), result$theta, NA)
+              }
             })
 
             # Identify maximum EY1 (theta)
@@ -524,6 +530,23 @@ vim_numerics =
               cat("Max level:", vals[maxj], At_bin_labels[maxj], paste0("(", maxj, ")"),
                   "Min level:", vals[minj], At_bin_labels[minj], paste0("(", minj, ")"), "\n")
             }
+
+            # This fold failed if we got an error for each category
+            # Or if the minimum and maximum bin is the same.
+            # Or if the min/max training estimates are NULL.
+            if (error_count == numcat.cont[var_i] || minj == maxj || 
+                is.null(training_estimates[[minj]]) || is.null(training_estimates[[maxj]])) {
+              message = paste("Fold", fold_k, "failed,")
+              if (error_count == numcat.cont[var_i]) {
+                message = paste(message, "all", num.cat, "levels had errors.")
+              } else if (minj == maxj) {
+                message = paste(message, "min and max level are the same. (j = ", minj, ")")
+              } else {
+                message = paste(message, "min or max training estimate is NULL.")
+              }
+              fold_result$message = message
+              if (verbose) cat(message, "\n")
+            } else {
 
             # Save that estimate.
             maxEY1 = training_estimates[[maxj]]$theta
@@ -567,22 +590,7 @@ vim_numerics =
               training_estimates[[minj]]$g_model$cvRisk[
                 which.min(training_estimates[[minj]]$g_model$cvRisk)]
 
-            # This fold failed if we got an error for each category
-            # Or if the minimum and maximum bin is the same.
-            if (error_count == numcat.cont[var_i] || minj == maxj) {
-              message = paste("Fold", fold_k, "failed,")
-              if (error_count == numcat.cont[var_i]) {
-                message = paste(message, "all", num.cat, "levels had errors.")
-              } else {
-                message = paste(message, "min and max level are the same. (j = ", minj,
-                                "label = ", training_estimates[[minj]]$label, ")")
-              }
-              fold_result$message = message
 
-              if (verbose) {
-                cat(message, "\n")
-              }
-            } else {
 
               # Turn to validation data.
               # TODO: use the validation results already saved in bin_result
