@@ -2,6 +2,7 @@
 
 S3method(print,varimpact)
 export(.bound)
+export(cleanup_latex_files)
 export(estimate_tmle2)
 export(exportLatex)
 export(factors_to_indicators)

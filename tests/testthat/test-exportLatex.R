@@ -32,9 +32,7 @@ test_that("exportLatex creates and cleans up LaTeX files", {
   # Define cleanup function to ensure files are always removed
   tex_files = c("varimpByFold.tex", "varimpAll.tex", "varimpConsistent.tex")
   cleanup_files = function() {
-    suppressWarnings({
-      file.remove(tex_files[file.exists(tex_files)])
-    })
+    cleanup_latex_files(verbose = FALSE)
   }
   
   # Ensure cleanup happens even if test fails
@@ -119,9 +117,7 @@ test_that("exportLatex with custom outname and directory", {
   
   # Ensure cleanup happens even if test fails
   on.exit({
-    suppressWarnings({
-      file.remove(expected_files[file.exists(expected_files)])
-    })
+    cleanup_latex_files(dir = temp_dir, outname = custom_prefix, verbose = FALSE)
   })
   
   # Test with custom outname and directory

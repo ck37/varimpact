@@ -143,9 +143,7 @@ exportLatex(vim)
 #> NULL
 
 # Clean up LaTeX files
-suppressWarnings({
-  file.remove(c("varimpByFold.tex", "varimpAll.tex", "varimpConsistent.tex"))
-})
+cleanup_latex_files()
 #> [1] TRUE TRUE TRUE
 ```
 

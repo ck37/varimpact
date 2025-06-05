@@ -83,9 +83,7 @@ plot_var("V2", vim)
 exportLatex(vim)
 
 # Clean up LaTeX files
-suppressWarnings({
-  file.remove(c("varimpByFold.tex", "varimpAll.tex", "varimpConsistent.tex"))
-})
+cleanup_latex_files()
 ```
 
 ### Example: customize outcome and propensity score estimation

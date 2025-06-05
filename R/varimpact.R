@@ -141,11 +141,7 @@
 #' vim
 #' vim$results_all
 #' exportLatex(vim)
-#' 
-#' # Clean up LaTeX files
-#' suppressWarnings({
-#'   file.remove(c("varimpByFold.tex", "varimpAll.tex", "varimpConsistent.tex"))
-#' })
+#' cleanup_latex_files()
 #'
 #' # Impute by median rather than knn.
 #' \dontrun{
