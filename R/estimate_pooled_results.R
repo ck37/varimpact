@@ -1,6 +1,8 @@
 estimate_pooled_results = function(fold_results,
                                    fluctuation = "logistic",
-                                   verbose = FALSE) {
+                                   verbose = FALSE,
+                                   Qbounds = NULL,
+                                   map_to_ystar = FALSE) {
   # Fold results is a list with test results from each fold.
 
   # Each fold result should have at least this element:
@@ -134,13 +136,30 @@ estimate_pooled_results = function(fold_results,
 
       # Estimate treatment-specific mean parameter on every validation fold.
       thetas = tapply(Q_star, data$fold_num, mean, na.rm = TRUE)
+      
+      # Transform thetas back to original scale if needed
+      if (map_to_ystar && !is.null(Qbounds)) {
+        if (verbose) cat("Transforming thetas back to original scale using Qbounds:", Qbounds, "\n")
+        thetas = thetas * diff(Qbounds) + Qbounds[1]
+      }
+      
       if (verbose) cat(thetas, "\n")
 
       # Take average across folds to get final estimate.
       #theta = mean(thetas)
 
+      # Transform Q_star back to original scale if needed for influence curve calculation
+      if (map_to_ystar && !is.null(Qbounds)) {
+        Q_star_original = Q_star * diff(Qbounds) + Qbounds[1]
+        # Also transform Y_star back to original scale for influence curve
+        data$Y_original = data$Y_star * diff(Qbounds) + Qbounds[1]
+      } else {
+        Q_star_original = Q_star
+        data$Y_original = data$Y_star
+      }
+      
       # Move Q_star into the data so that it can be analyzed per-fold.
-      data$Q_star = Q_star
+      data$Q_star = Q_star_original
       rm(Q_star)
 
       if (verbose) cat("Calculating per-fold influence curves\n")
@@ -156,7 +175,7 @@ estimate_pooled_results = function(fold_results,
                    "Q_star:", length(Q_star), "\n"))
         }
         #with(fold_data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)
-        result = with(fold_data, (A / g1W_hat) * (Y_star - Q_star) +
+        result = with(fold_data, (A / g1W_hat) * (Y_original - Q_star) +
                         Q_star - mean(Q_star, na.rm = TRUE))
         #if (verbose) cat("Result:", class(result), "Length:", length(result), "\n")
         result

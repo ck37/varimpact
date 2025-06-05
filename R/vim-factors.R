@@ -665,7 +665,18 @@ vim_factors =
         # bin_df can be NULL if the variable is skipped due to errors,
         # e.g. lack of variation.
         if (!is.null(bin_df) && nrow(bin_df) > 0L) {
-          pooled_bin = estimate_pooled_results(bin_list, verbose = verbose)
+          # Determine if we need to transform back to original scale
+          map_to_ystar = FALSE
+          if (!is.null(Qbounds) && length(Qbounds) == 2) {
+            # Check if this is a continuous outcome (not binary)
+            if (family == "gaussian" || (family == "binomial" && length(unique(Y)) > 2)) {
+              map_to_ystar = TRUE
+            }
+          }
+          
+          pooled_bin = estimate_pooled_results(bin_list, verbose = verbose,
+                                                Qbounds = Qbounds,
+                                                map_to_ystar = map_to_ystar)
           # Now we have $thetas and $influence_curves
 
           # Save the vector of estimates into the appropriate spot.
@@ -734,13 +745,26 @@ vim_factors =
 
       # TODO: compile results into the new estimate.
 
+      # Determine if we need to transform back to original scale
+      map_to_ystar = FALSE
+      if (!is.null(Qbounds) && length(Qbounds) == 2) {
+        # Check if this is a continuous outcome (not binary)
+        if (family == "gaussian" || (family == "binomial" && length(unique(Y)) > 2)) {
+          map_to_ystar = TRUE
+        }
+      }
+      
       if (verbose) cat("Estimating pooled min.\n")
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
-                                           verbose = verbose)
+                                           verbose = verbose,
+                                           Qbounds = Qbounds,
+                                           map_to_ystar = map_to_ystar)
       cat("\n")
       if (verbose) cat("Estimating pooled max.\n")
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
-                                           verbose = verbose)
+                                           verbose = verbose,
+                                           Qbounds = Qbounds,
+                                           map_to_ystar = map_to_ystar)
       cat("\n")
 
       var_results$EY0V = pooled_min$thetas
