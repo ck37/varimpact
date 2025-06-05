@@ -12,8 +12,8 @@ names(data) = tolower(names(data))
 
 set.seed(3, "L'Ecuyer-CMRG")
 
-# Reduce to a dataset of 120 observations to speed up testing.
-data = data[sample(nrow(data), 120), ]
+# Reduce to a dataset of 200 observations to speed up testing.
+data = data[sample(nrow(data), 200), ]
 
 # Create a numeric outcome variable.
 data$y = as.numeric(data$class == "malignant")
