@@ -345,7 +345,7 @@ vim_factors =
                                     g.lib = g.library, verbose = verbose_tmle),
                       silent = !verbose)
 
-            if (class(tmle_result) == "try-error") {
+            if (inherits(tmle_result, "try-error")) {
               # TMLE estimation failed.
               if (verbose) cat("X")
               error_count = error_count + 1
@@ -395,7 +395,7 @@ vim_factors =
               preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                                    deltav, training_estimates[[bin_j]],
                                                    verbose = verbose))
-              if (class(preds) == "try-error") {
+              if (inherits(preds, "try-error")) {
                 bin_result$test_msg = paste("CV-TMLE prediction on validation failed")
               } else {
                 # Save the result.
@@ -647,7 +647,7 @@ vim_factors =
         bin_df = do.call(rbind, compile_rows)
         if (verbose) cat("\n")
 
-        if (class(bin_df) != "data.frame" || nrow(bin_df) == 0L) {
+        if (!inherits(bin_df, "data.frame") || nrow(bin_df) == 0L) {
           if (verbose) {
             cat("Skipping bin", bin, "- no rows are available.\n")
           }

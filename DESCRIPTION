@@ -39,7 +39,10 @@ Imports:
     xtable
 biocViews:
 Suggests:
+    doSNOW,
+    foreach,
     mlbench,
     RhpcBLASctl,
+    snow,
     testthat
 RoxygenNote: 7.1.2
