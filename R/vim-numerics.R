@@ -789,7 +789,7 @@ vim_numerics =
       map_to_ystar = FALSE
       if (!is.null(Qbounds) && length(Qbounds) == 2) {
         # Check if this is a continuous outcome (not binary)
-        if (family == "gaussian" || (family == "binomial" && length(unique(Y)) > 2)) {
+        if (family == "gaussian") {
           map_to_ystar = TRUE
         }
       }
