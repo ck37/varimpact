@@ -41,11 +41,7 @@ print(vim)
 vim$results_all
 vim$results_by_fold
 # names(vim)
-exportLatex(vim)
-# Clean up - will get a warning if there were no consistent results.
-suppressWarnings({
-  file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
-})
+# exportLatex testing moved to test-exportLatex.R
 
 # And try a gaussian outcome.
 vim = varimpact(Y = Y_gaus, data = X[, 1:3], V = 3L, verbose = TRUE,
@@ -177,9 +173,4 @@ print(vim)
 vim$results_all
 vim$results_by_fold
 # In this test all variables are significant, which is rare.
-exportLatex(vim)
-# Clean up
- # Suppress a warning when no results are consistent.
-suppressWarnings({
-  file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
-})
+# exportLatex testing moved to test-exportLatex.R

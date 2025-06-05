@@ -95,9 +95,9 @@ tmle_estimate_g <-
         }
       } else {
         form <- try(as.formula(gform))
-        if(class(form)== "formula") {
+        if(inherits(form, "formula")) {
           m <- try(glm(form,  data=d, family="binomial"))
-          if (class(m)[1]=="try-error"){
+          if (inherits(m, "try-error")){
             if(verbose){cat("\tInvalid formula supplied. Running glm using main terms\n")}
             form <- paste(colnames(d)[1],"~1 + ", paste(colnames(d)[-1], collapse = "+"), sep="")
             m <- glm(form, data=d, family="binomial")

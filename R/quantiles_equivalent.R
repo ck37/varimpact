@@ -13,7 +13,7 @@ quantiles_equivalent = function(x, quantile_probs = c(0.1, 0.9)) {
   if (length(quantile_probs) != 2) {
     warning("Quantiles_equivalent() expects quantile_probs to be a 2-element vector.")
   }
-  if (class(x) == "factor") {
+  if (is.factor(x)) {
     x = unclass(x)
   }
   quantiles = quantile(x, probs = quantile_probs, na.rm = T)

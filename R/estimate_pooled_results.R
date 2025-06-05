@@ -72,7 +72,7 @@ estimate_pooled_results = function(fold_results,
     # If Q is binary or continuous we still want to take logit of predicted values.
     # See tmle::estimateQ where it does this after predicting Q.
     data$logit_Q_hat = try(stats::qlogis(data$Q_hat))
-    if (class(data$logit_Q_hat) == "try-error") {
+    if (inherits(data$logit_Q_hat, "try-error")) {
       cat("Error in estimate_pooled_results() with qlogis()\n")
       print(summary(data$Q_hat))
       browser()

@@ -141,6 +141,7 @@
 #' vim
 #' vim$results_all
 #' exportLatex(vim)
+#' cleanup_latex_files()
 #'
 #' # Impute by median rather than knn.
 #' \dontrun{

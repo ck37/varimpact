@@ -345,13 +345,13 @@ vim_factors =
                                     g.lib = g.library, verbose = verbose_tmle),
                       silent = !verbose)
 
-            if (class(tmle_result) == "try-error") {
+            if (inherits(tmle_result, "try-error")) {
               # TMLE estimation failed.
               if (verbose) cat("X")
               error_count = error_count + 1
 
-              # TODO: not sure if this will be handled appropriately.
-              training_estimates[[bin_j]] = NA
+              # Initialize to NULL so validation code doesn't get subscript error
+              training_estimates[[bin_j]] = NULL
             } else {
               # TMLE estimation successed.
 
@@ -395,7 +395,7 @@ vim_factors =
               preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                                    deltav, training_estimates[[bin_j]],
                                                    verbose = verbose))
-              if (class(preds) == "try-error") {
+              if (inherits(preds, "try-error")) {
                 bin_result$test_msg = paste("CV-TMLE prediction on validation failed")
               } else {
                 # Save the result.
@@ -448,7 +448,11 @@ vim_factors =
           # Extract theta estimates.
           theta_estimates = sapply(training_estimates, function(result) {
             # Handle errors in the tmle estimation by returning NA.
-            ifelse("theta" %in% names(result), result$theta, NA)
+            if (is.null(result)) {
+              NA
+            } else {
+              ifelse("theta" %in% names(result), result$theta, NA)
+            }
           })
 
           if (!all(is.na(theta_estimates))) {
@@ -470,15 +474,18 @@ vim_factors =
 
           # This fold failed if we got an error for each category
           # Or if the minimum and maximum bin is the same.
+          # Or if the min/max training estimates are NULL.
           if (error_count == num.cat ||
               (is.na(minj) && is.na(maxj)) ||
-              minj == maxj) {
+              minj == maxj ||
+              is.null(training_estimates[[minj]]) || is.null(training_estimates[[maxj]])) {
             message = paste("Fold", fold_k, "failed,")
             if (length(theta_estimates) == 0 || error_count == num.cat) {
               message = paste(message, "all", num.cat, "levels had errors.")
+            } else if (minj == maxj) {
+              message = paste(message, "min and max level are the same. (j = ", minj, ")")
             } else {
-              message = paste(message, "min and max level are the same. (j = ", minj,
-                              "label = ", training_estimates[[minj]]$label, ")")
+              message = paste(message, "min or max training estimate is NULL.")
             }
             fold_result$message = message
 
@@ -555,7 +562,7 @@ vim_factors =
             #                        g.lib = g.library, verbose = verbose),
             #          silent = T)
 
-            if (class(min_preds) == "try-error") {
+            if (inherits(min_preds, "try-error")) {
               message = paste("CV-TMLE prediction on validation failed during",
                             "low/control level.")
               fold_result$message = message
@@ -585,7 +592,7 @@ vim_factors =
               #           silent = !verbose)
 
 
-              if (class(max_preds) == "try-error") {
+              if (inherits(max_preds, "try-error")) {
                 message = paste("CV-TMLE prediction on validation failed",
                       "during high/treatment level.")
                 fold_result$message = message
@@ -640,7 +647,7 @@ vim_factors =
         bin_df = do.call(rbind, compile_rows)
         if (verbose) cat("\n")
 
-        if (class(bin_df) != "data.frame" || nrow(bin_df) == 0L) {
+        if (!inherits(bin_df, "data.frame") || nrow(bin_df) == 0L) {
           if (verbose) {
             cat("Skipping bin", bin, "- no rows are available.\n")
           }

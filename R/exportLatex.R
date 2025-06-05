@@ -24,6 +24,12 @@
 # TODO: document return object.
 exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...) {
 
+  # Check if results are valid
+  if (is.null(impact_results$results_by_fold) || is.null(impact_results$results_all)) {
+    warning("Cannot export LaTeX: varimpact results are NULL or incomplete")
+    return(invisible(NULL))
+  }
+
   table_byfold = cbind("Variable" = rownames(impact_results$results_by_fold),
                     impact_results$results_by_fold)
 
@@ -100,6 +106,8 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...)
                    all = xtable_all,
                    byfold = xtable_byfold
                  ))
+
+
 
   return(invisible(results))
 }
