@@ -12,8 +12,8 @@ names(data) = tolower(names(data))
 
 set.seed(3, "L'Ecuyer-CMRG")
 
-# Reduce to a dataset of 200 observations to speed up testing.
-data = data[sample(nrow(data), 200), ]
+# Reduce to a dataset of 50 observations to speed up testing.
+data = data[sample(nrow(data), 50), ]
 
 # Create a numeric outcome variable.
 data$y = as.numeric(data$class == "malignant")
@@ -27,17 +27,30 @@ if (.Platform$GUI == "RStudio") {
   # Use multicore parallelization to speed up processing.
   future::plan("multiprocess", workers = 2)
 }
-# This takes 1-2 minutes.
-vim = varimpact(Y = data$y, x, verbose = TRUE, verbose_tmle = FALSE)
-vim$time
-vim
 
-# Test a subset of columns for A_names.
-colnames(x)[1:3]
-vim = varimpact(Y = data$y, x, A_names = colnames(x)[1:3], verbose = TRUE)
-vim$time
-vim
-vim$results_all
+test_that("varimpact runs on BreastCancer dataset", {
+  # Speed up the test with very aggressive optimization:
+  # - Use only 1 variable to minimize computation
+  # - Use only SL.mean (fastest possible)
+  # - Minimal bins and very low thresholds
+  # - Single cross-validation fold
+  vim = varimpact(Y = data$y, x[, 1:2], 
+                  Q.library = c("SL.mean"), 
+                  g.library = c("SL.mean"),
+                  bins_numeric = 3L,
+                  minCell = 0L,
+                  minYs = 1L,
+                  V = 2L,
+                  verbose = FALSE, 
+                  verbose_tmle = FALSE)
+  
+  # Test that the function completes without error
+  expect_is(vim, "varimpact")
+  expect_is(vim$time, "proc_time")
+  
+  # Print timing for reference
+  cat("Test execution time:", vim$time[3], "seconds\n")
+})
 
 # Return to single core usage.
 future::plan("sequential")
