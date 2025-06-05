@@ -40,8 +40,8 @@ test_that("exportLatex creates and cleans up LaTeX files", {
   # Ensure cleanup happens even if test fails
   on.exit(cleanup_files())
   
-  # Test 1: exportLatex without cleanup should create files
-  exportLatex(vim, cleanup = FALSE)
+  # Test 1: exportLatex should create files
+  exportLatex(vim)
   
   existing_files = tex_files[file.exists(tex_files)]
   
@@ -59,12 +59,13 @@ test_that("exportLatex creates and cleans up LaTeX files", {
   expect_equal(length(remaining_files), 0,
                info = "Manual cleanup should remove all LaTeX files")
   
-  # Test 3: exportLatex with cleanup=TRUE should not leave files
-  exportLatex(vim, cleanup = TRUE)
+  # Test 3: Manual cleanup after exportLatex should work
+  exportLatex(vim)
+  cleanup_files()
   
   remaining_files_after_cleanup = tex_files[file.exists(tex_files)]
   expect_equal(length(remaining_files_after_cleanup), 0,
-               info = "exportLatex with cleanup=TRUE should not leave LaTeX files")
+               info = "Manual cleanup after exportLatex should remove LaTeX files")
 })
 
 test_that("exportLatex handles NULL results gracefully", {
@@ -124,16 +125,12 @@ test_that("exportLatex with custom outname and directory", {
   })
   
   # Test with custom outname and directory
-  exportLatex(vim, outname = custom_prefix, dir = temp_dir, cleanup = FALSE)
+  exportLatex(vim, outname = custom_prefix, dir = temp_dir)
   
   existing_custom_files = expected_files[file.exists(expected_files)]
   expect_true(length(existing_custom_files) > 0,
               info = "Custom named files should be created in custom directory")
   
-  # Test cleanup with custom names
-  exportLatex(vim, outname = custom_prefix, dir = temp_dir, cleanup = TRUE)
-  
-  remaining_custom_files = expected_files[file.exists(expected_files)]
-  expect_equal(length(remaining_custom_files), 0,
-               info = "Cleanup should work with custom names and directory")
+  # Test manual cleanup with custom names
+  # Files should be cleaned up by on.exit() handler
 })

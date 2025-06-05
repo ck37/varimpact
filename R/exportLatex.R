@@ -15,7 +15,6 @@
 #' @param outname (Optional) String that is prepended to filenames.
 #' @param dir (Optional) Directory to save the results, defaults to current directory.
 #' @param digits Digits to round numbers, passed through to xtable.
-#' @param cleanup (Optional) If TRUE, automatically delete the LaTeX files after creation. Defaults to FALSE.
 #' @param ... Additional parameters passed to print.xtable().
 #'
 #' @seealso
@@ -23,7 +22,7 @@
 #'
 #' @export
 # TODO: document return object.
-exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, cleanup = FALSE, ...) {
+exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, ...) {
 
   # Check if results are valid
   if (is.null(impact_results$results_by_fold) || is.null(impact_results$results_all)) {
@@ -108,17 +107,7 @@ exportLatex = function(impact_results, outname = "", dir = ".", digits = 4, clea
                    byfold = xtable_byfold
                  ))
 
-  # Cleanup LaTeX files if requested
-  if (cleanup) {
-    latex_files = c(
-      paste0(dir, "/", outname, "varimpByFold.tex"),
-      paste0(dir, "/", outname, "varimpAll.tex"),
-      paste0(dir, "/", outname, "varimpConsistent.tex")
-    )
-    suppressWarnings({
-      file.remove(latex_files)
-    })
-  }
+
 
   return(invisible(results))
 }
