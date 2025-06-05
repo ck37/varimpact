@@ -139,14 +139,8 @@ plot_var("V2", vim)
 ``` r
 
 # Generate latex tables with results.
-exportLatex(vim)
+exportLatex(vim, cleanup = TRUE)
 #> NULL
-
-# Clean up - will get a warning if there were no consistent results.
-suppressWarnings({
-  file.remove(c("varimpByFold.tex", "varImpAll.tex", "varimpConsistent.tex"))
-})
-#> [1]  TRUE  TRUE FALSE
 ```
 
 ### Example: customize outcome and propensity score estimation
