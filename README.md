@@ -69,17 +69,12 @@ Forthcoming fall 2022
 
 ``` r
 library(varimpact)
-#> Loading required package: SuperLearner
-#> Loading required package: nnls
-#> Super Learner
-#> Version: 2.0-27-9000
-#> Package created on 2021-03-28
 
 ####################################
 # Create test dataset.
 set.seed(1, "L'Ecuyer-CMRG")
-N <- 300
-num_normal <- 5
+N <- 200
+num_normal <- 4
 X <- as.data.frame(matrix(rnorm(N * num_normal), N, num_normal))
 Y <- rbinom(N, 1, plogis(.2*X[, 1] + .1*X[, 2] - .2*X[, 3] + .1*X[, 3]*X[, 4] - .2*abs(X[, 4])))
 # Add some missing data to X so we can test imputation.
@@ -92,43 +87,32 @@ vim <- varimpact(Y = Y, data = X)
 #> 
 #> Processing results:
 #> - Factor variables: 0 
-#> - Numeric variables: 5 
+#> - Numeric variables: 4 
 #> 
 #> No factor variables - skip VIM estimation.
 #> 
-#> Estimating variable importance for 5 numerics.
+#> Estimating variable importance for 4 numerics.
 
 # Review consistent and significant results.
 vim
-#> No significant and consistent results.
-#> All results:
-#>       Type    Estimate              CI95    P-value Adj. p-value   Est. RR
-#> V4 Ordered  0.17058432 (-0.0518 - 0.393) 0.06639069    0.3319535 1.3174241
-#> V1 Ordered  0.03831094  (-0.158 - 0.234) 0.35081119    0.8770280 1.0724707
-#> V3 Ordered -0.05171291  (-0.339 - 0.235) 0.63807247    0.8835731 0.9673808
-#> V2 Ordered -0.06678388  (-0.307 - 0.174) 0.70685848    0.8835731 0.9305320
-#> V5 Ordered -0.12419619 (-0.304 - 0.0561) 0.91152962    0.9115296 0.8468485
-#>           CI95 RR P-value RR Adj. p-value RR Consistent
-#> V4 (0.953 - 1.82)  0.0474590       0.2372950       TRUE
-#> V1 (0.446 - 2.58)  0.4379413       0.8101835       TRUE
-#> V3 (0.654 - 1.43)  0.5658283       0.8101835      FALSE
-#> V2 (0.642 - 1.35)  0.6481468       0.8101835      FALSE
-#> V5 (0.634 - 1.13)  0.8696742       0.8696742      FALSE
+#> Significant and consistent results:
+#>       Type  Estimate            CI95      P-value Adj. p-value  Est. RR
+#> V3 Ordered 0.4986136 (0.255 - 0.742) 2.935984e-05 0.0001174394 2.908162
+#>         CI95 RR   P-value RR Adj. p-value RR
+#> V3 (1.92 - 4.4) 2.214955e-07    8.859819e-07
 
 # Look at all results.
 vim$results_all
-#>       Type    Estimate              CI95    P-value Adj. p-value   Est. RR
-#> V4 Ordered  0.17058432 (-0.0518 - 0.393) 0.06639069    0.3319535 1.3174241
-#> V1 Ordered  0.03831094  (-0.158 - 0.234) 0.35081119    0.8770280 1.0724707
-#> V3 Ordered -0.05171291  (-0.339 - 0.235) 0.63807247    0.8835731 0.9673808
-#> V2 Ordered -0.06678388  (-0.307 - 0.174) 0.70685848    0.8835731 0.9305320
-#> V5 Ordered -0.12419619 (-0.304 - 0.0561) 0.91152962    0.9115296 0.8468485
-#>           CI95 RR P-value RR Adj. p-value RR Consistent
-#> V4 (0.953 - 1.82)  0.0474590       0.2372950       TRUE
-#> V1 (0.446 - 2.58)  0.4379413       0.8101835       TRUE
-#> V3 (0.654 - 1.43)  0.5658283       0.8101835      FALSE
-#> V2 (0.642 - 1.35)  0.6481468       0.8101835      FALSE
-#> V5 (0.634 - 1.13)  0.8696742       0.8696742      FALSE
+#>       Type    Estimate             CI95      P-value Adj. p-value   Est. RR
+#> V3 Ordered  0.49861358  (0.255 - 0.742) 2.935984e-05 0.0001174394 2.9081617
+#> V4 Ordered  0.21853793 (-0.167 - 0.604) 1.334006e-01 0.2668012809 1.4110231
+#> V2 Ordered  0.04733746 (-0.276 - 0.371) 3.872064e-01 0.5162752138 1.0698709
+#> V1 Ordered -0.10939221 (-0.494 - 0.275) 7.116162e-01 0.7116161584 0.8266168
+#>           CI95 RR   P-value RR Adj. p-value RR Consistent
+#> V3   (1.92 - 4.4) 2.214955e-07    8.859819e-07       TRUE
+#> V4 (0.833 - 2.39) 1.000755e-01    2.001509e-01       TRUE
+#> V2 (0.664 - 1.72) 3.905406e-01    5.207208e-01       TRUE
+#> V1 (0.441 - 1.55) 7.238555e-01    7.238555e-01       TRUE
 
 # Plot the V2 impact.
 plot_var("V2", vim)
@@ -140,11 +124,9 @@ plot_var("V2", vim)
 
 # Generate latex tables with results.
 exportLatex(vim)
-#> NULL
 
 # Clean up LaTeX files
 cleanup_latex_files()
-#> [1] TRUE TRUE TRUE
 ```
 
 ### Example: customize outcome and propensity score estimation
@@ -158,62 +140,33 @@ set.seed(1, "L'Ecuyer-CMRG")
 #> 
 #> Processing results:
 #> - Factor variables: 0 
-#> - Numeric variables: 5 
+#> - Numeric variables: 4 
 #> 
 #> No factor variables - skip VIM estimation.
 #> 
-#> Estimating variable importance for 5 numerics.
-#> No significant and consistent results.
-#> All results:
-#>       Type    Estimate               CI95   P-value Adj. p-value   Est. RR
-#> V4 Ordered -0.02595001    (-0.25 - 0.198) 0.5897958    0.9863267 0.9926791
-#> V3 Ordered -0.12688688   (-0.391 - 0.137) 0.8267887    0.9863267 0.8304033
-#> V2 Ordered -0.11547591   (-0.355 - 0.124) 0.8277832    0.9863267 0.8529795
-#> V1 Ordered -0.17014276  (-0.397 - 0.0571) 0.9288760    0.9863267 0.6823365
-#> V5 Ordered -0.19094845 (-0.361 - -0.0213) 0.9863267    0.9863267 0.6210945
-#>           CI95 RR P-value RR Adj. p-value RR Consistent
-#> V4 (0.719 - 1.37)  0.5177707       0.9838749      FALSE
-#> V3  (0.55 - 1.25)  0.7944201       0.9838749      FALSE
-#> V2 (0.584 - 1.25)  0.8117625       0.9838749      FALSE
-#> V1  (0.44 - 1.06)  0.9560802       0.9838749       TRUE
-#> V5 (0.402 - 0.96)  0.9838749       0.9838749      FALSE
+#> Estimating variable importance for 4 numerics.
+#> Significant and consistent results:
+#>       Type Estimate            CI95      P-value Adj. p-value  Est. RR
+#> V3 Ordered  0.56401 (0.326 - 0.802) 1.749015e-06 6.996059e-06 3.644982
+#>          CI95 RR   P-value RR Adj. p-value RR
+#> V3 (2.34 - 5.69) 6.234554e-09    2.493822e-08
 ```
 
 ### Example: parallel via multicore
 
 ``` r
 library(future)
-plan("multiprocess")
+plan("multisession")
 vim = varimpact(Y = Y, data = X)
 #> Finished pre-processing variables.
 #> 
 #> Processing results:
 #> - Factor variables: 0 
-#> - Numeric variables: 5 
+#> - Numeric variables: 4 
 #> 
 #> No factor variables - skip VIM estimation.
 #> 
-#> Estimating variable importance for 5 numerics.
-```
-
-### Example: parallel via SNOW
-
-``` r
-library(RhpcBLASctl)
-# Detect the number of physical cores on this computer using RhpcBLASctl.
-cl = parallel::makeCluster(get_num_cores())
-plan("cluster", workers = cl)
-vim = varimpact(Y = Y, data = X)
-#> Finished pre-processing variables.
-#> 
-#> Processing results:
-#> - Factor variables: 0 
-#> - Numeric variables: 5 
-#> 
-#> No factor variables - skip VIM estimation.
-#> 
-#> Estimating variable importance for 5 numerics.
-parallel::stopCluster(cl)
+#> Estimating variable importance for 4 numerics.
 ```
 
 ### Example: mlbench breast cancer
@@ -226,7 +179,7 @@ data = BreastCancer
 data$Y = as.integer(data$Class == "malignant")
 
 # Use multicore parallelization to speed up processing.
-plan("multiprocess")
+plan("multisession")
 (vim = varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id))))
 #> Finished pre-processing variables.
 #> 
@@ -237,15 +190,15 @@ plan("multiprocess")
 #> Estimating variable importance for 9 factors.
 #> Significant and consistent results:
 #>                Type  Estimate            CI95      P-value Adj. p-value
-#> Bare.nuclei  Factor 0.6284939 (0.503 - 0.754) 0.000000e+00 0.000000e+00
-#> Mitoses      Factor 0.4097166 (0.336 - 0.483) 0.000000e+00 0.000000e+00
-#> Cl.thickness Factor 0.5344847 (0.378 - 0.691) 1.040124e-11 2.340278e-11
-#> Cell.size    Factor 0.5577438 (0.386 - 0.729) 8.920165e-11 1.605630e-10
+#> Bare.nuclei  Factor 0.6174459   (0.5 - 0.735) 0.000000e+00 0.000000e+00
+#> Mitoses      Factor 0.4092028 (0.333 - 0.486) 0.000000e+00 0.000000e+00
+#> Cl.thickness Factor 0.5245860 (0.382 - 0.667) 3.027578e-13 9.082735e-13
+#> Cell.size    Factor 0.5650275 (0.395 - 0.735) 3.313050e-11 5.963490e-11
 #>               Est. RR       CI95 RR   P-value RR Adj. p-value RR
-#> Bare.nuclei  3.697125 (2.15 - 6.35) 0.000000e+00    0.000000e+00
-#> Mitoses      2.095869 (1.85 - 2.37) 7.227108e-12    3.252199e-11
-#> Cl.thickness 3.103819 (2.23 - 4.31) 4.128421e-07    9.288948e-07
-#> Cell.size    3.326385 (1.93 - 5.73) 1.062140e-06    1.911853e-06
+#> Bare.nuclei  3.682218 (2.21 - 6.14) 0.000000e+00    0.000000e+00
+#> Mitoses      2.093929 (1.85 - 2.37) 3.023193e-11    1.360437e-10
+#> Cl.thickness 2.952087 (2.13 - 4.08) 2.956850e-07    8.870549e-07
+#> Cell.size    3.445132    (1.98 - 6) 4.465977e-06    8.038759e-06
 plot_var("Mitoses", vim)
 ```
 
