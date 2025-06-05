@@ -562,7 +562,7 @@ vim_factors =
             #                        g.lib = g.library, verbose = verbose),
             #          silent = T)
 
-            if (class(min_preds) == "try-error") {
+            if (inherits(min_preds, "try-error")) {
               message = paste("CV-TMLE prediction on validation failed during",
                             "low/control level.")
               fold_result$message = message
@@ -592,7 +592,7 @@ vim_factors =
               #           silent = !verbose)
 
 
-              if (class(max_preds) == "try-error") {
+              if (inherits(max_preds, "try-error")) {
                 message = paste("CV-TMLE prediction on validation failed",
                       "during high/treatment level.")
                 fold_result$message = message

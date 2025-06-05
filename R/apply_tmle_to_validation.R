@@ -62,7 +62,7 @@ apply_tmle_to_validation =
   # Predict g
   tryCatch({
     # Check specifically for a g_model that doesn't exist.
-    if (class(tmle$g_model) == "NULL") {
+    if (is.null(tmle$g_model)) {
       stop("tmle$g_model has class = NULL")
     }
     sl_pred = predict(tmle$g_model, W, type = "response", onlySL = TRUE)

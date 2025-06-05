@@ -411,7 +411,7 @@ vim_numerics =
               #res = try(estimate_tmle(Yt, IA, Wtsht, family, deltat, Q.lib = Q.library,
               #                        g.lib = g.library, verbose = verbose), silent = T)
 
-              if (class(tmle_result) == "try-error") {
+              if (inherits(tmle_result, "try-error")) {
                 # Error.
                 if (verbose) cat("X")
                 error_count = error_count + 1
@@ -459,7 +459,7 @@ vim_numerics =
                 preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                                    deltav, training_estimates[[bin_j]],
                                                    verbose = verbose))
-                if (class(preds) == "try-error") {
+                if (inherits(preds, "try-error")) {
                   bin_result$test_msg = paste("CV-TMLE prediction on validation failed")
                 } else {
                   # Save the result.
@@ -616,7 +616,7 @@ vim_numerics =
               #                        g.lib = g.library, verbose = verbose),
               #          silent = T)
 
-              if (class(min_preds) == "try-error") {
+              if (inherits(min_preds, "try-error")) {
                 message = paste("CV-TMLE prediction on validation failed during",
                                 "low/control level.")
                 fold_result$message = message
@@ -647,7 +647,7 @@ vim_numerics =
                 #           silent = !verbose)
 
 
-                if (class(max_preds) == "try-error") {
+                if (inherits(max_preds, "try-error")) {
                   message = paste("CV-TMLE prediction on validation failed",
                                   "during high/treatment level.")
                   fold_result$message = message
@@ -690,7 +690,7 @@ vim_numerics =
           rows = fold_r$test_predictions[fold_r$test_predictions$bin == bin, , drop = FALSE]
           if (verbose) cat("Rows:", nrow(rows), " ")
           # If we have 0 rows for this bin in this fold, we need to debug.
-          if (class(rows) != "data.frame" || nrow(rows) == 0) {
+          if (!inherits(rows, "data.frame") || nrow(rows) == 0) {
             #browser()
             NULL
           } else {
@@ -701,7 +701,7 @@ vim_numerics =
         # Remove elements that are NULL or 0 rows.
         for (element_i in length(combine_rows)) {
           item = combine_rows[[element_i]]
-          if (class(item) != "data.frame" || nrow(item) == 0) {
+          if (!inherits(item, "data.frame") || nrow(item) == 0) {
             combine_rows[[element_i]] = NULL
           }
         }

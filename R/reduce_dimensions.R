@@ -54,7 +54,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = FALSE) 
     # We transpose Wt because we want to cluster columns rather than rows.
     mydist = try(hopach::distancematrix(t(data), d = "cosangle", na.rm = T),
                  silent = !verbose)
-    if (class(mydist) == "try-error") {
+    if (inherits(mydist, "try-error")) {
       cat("Error in HOPACH clustering: failed to calculate distance matrix.\n")
     }
 
@@ -68,7 +68,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = FALSE) 
                                   K = max_variables, kmax = 3, khigh = 3),
                    silent = !verbose)
     })
-    if (class(hopach.1) == "try-error") {
+    if (inherits(hopach.1, "try-error")) {
       if (verbose) {
         cat("Hopach attempt 1 fail.\n")
         print(hopach.1)
@@ -83,7 +83,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = FALSE) 
                       silent = !verbose)
       })
     }
-    if (class(hopach.1) == "try-error") {
+    if (inherits(hopach.1, "try-error")) {
       if (verbose) {
         cat("Attempt 2 fail.")# Reverting to original W dataframe.\n")
         print(hopach.1)
@@ -99,7 +99,7 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = FALSE) 
                       silent = !verbose)
       })
     }
-    if (class(hopach.1) == "try-error") {
+    if (inherits(hopach.1, "try-error")) {
       if (verbose) {
         cat("Attempt 3 fail. Reverting to original W dataframe.\n")
         # Now try to debug this.
