@@ -18,9 +18,10 @@ Description: Automated data processing and variable importance using data-
 License: GPL (>= 2)
 Encoding: UTF-8
 Depends:
+    R (>= 4.1.0),
     SuperLearner
 Imports:
-    arules,
+    arules (>= 1.6-0),
     caret,
     cvTools,
     dplyr,
