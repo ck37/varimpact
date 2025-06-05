@@ -4,7 +4,14 @@
 \alias{exportLatex}
 \title{Export varimpact results as Latex tables}
 \usage{
-exportLatex(impact_results, outname = "", dir = ".", digits = 4, ...)
+exportLatex(
+  impact_results,
+  outname = "",
+  dir = ".",
+  digits = 4,
+  cleanup = FALSE,
+  ...
+)
 }
 \arguments{
 \item{impact_results}{Result object from previous varimpact() call.}
@@ -14,6 +21,8 @@ exportLatex(impact_results, outname = "", dir = ".", digits = 4, ...)
 \item{dir}{(Optional) Directory to save the results, defaults to current directory.}
 
 \item{digits}{Digits to round numbers, passed through to xtable.}
+
+\item{cleanup}{(Optional) If TRUE, automatically delete the LaTeX files after creation. Defaults to FALSE.}
 
 \item{...}{Additional parameters passed to print.xtable().}
 }
