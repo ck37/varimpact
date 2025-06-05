@@ -26,7 +26,8 @@ summary(X_fac)
 table(X_fac[, 1], useNA="ifany")
 
 # Test a single factor.
-results = factors_to_indicators(X_fac[, 1, drop = F], verbose = T)
+# Use column 3 which has 3 missing values based on the seed
+results = factors_to_indicators(X_fac[, 3, drop = F], verbose = T)
 dim(results$data)
 # We should have indicators for 1, 2, 3.
 colnames(results$data)
