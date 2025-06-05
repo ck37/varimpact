@@ -36,7 +36,7 @@ test_that("varimpact runs on BreastCancer dataset", {
   vim = varimpact(Y = data$y, x[, 1:2], 
                   Q.library = c("SL.glm", "SL.mean"),
                   g.library = c("SL.glm", "SL.mean"),
-                  bins_numeric = 5L,
+                  bins_numeric = 2L,
                   V = 2L,
                   verbose = FALSE, 
                   verbose_tmle = FALSE)
@@ -64,7 +64,7 @@ test_that("varimpact works with A_names parameter", {
                   A_names = colnames(x)[1], 
                   Q.library = c("SL.glm", "SL.mean"),
                   g.library = c("SL.glm", "SL.mean"),
-                  bins_numeric = 5L,
+                  bins_numeric = 2L,
                   V = 2L,
                   verbose = FALSE)
   
