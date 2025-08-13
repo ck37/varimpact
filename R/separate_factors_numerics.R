@@ -19,7 +19,12 @@ separate_factors_numerics =
     is_char = sapply(data, is.character)
 
     # Convert strings to factors.
-    data[, is_char] = sapply(data[, is_char], as.factor)
+    if (any(is_char)) {
+      # Convert each character column to factor individually
+      for (col_name in names(data)[is_char]) {
+        data[[col_name]] = as.factor(data[[col_name]])
+      }
+    }
   }
 
   # Identify factors.
