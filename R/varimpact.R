@@ -218,9 +218,16 @@ varimpact =
   ######################
   # Argument checks.
 
-  # Confirm that data has at least two columns.
-  if (ncol(data) < 2L) {
-    stop("Data argument must have at least two columns.")
+  # Handle vector input by converting to data frame
+  if (is.vector(data) && !is.list(data)) {
+    if (verbose) cat("Converting vector input to data frame.\n")
+    data <- data.frame(X1 = data)
+  }
+
+  # Handle single column case with warning
+  if (ncol(data) == 1L) {
+    warning("Using single variable for variable importance analysis. Results may be limited.")
+    if (verbose) cat("Single variable detected in data.\n")
   }
 
   # Ensure that Y is numeric; e.g. can't be a factor.
