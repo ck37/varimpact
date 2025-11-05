@@ -175,16 +175,6 @@ vim_factors =
         deltat = as.numeric(!is.na(Yt) & !is.na(At))
         deltav = as.numeric(!is.na(Yv) & !is.na(Av))
 
-        # TODO (CK): don't do this, in order to use the delta missingness estimation.
-        # To avoid crashing TMLE function just drop obs missing A or Y if the
-        # total number of missing is < 10
-        if (sum(deltat == 0) < 10) {
-          Yt = Yt[deltat == 1]
-          At = At[deltat == 1]
-          Wtsht = Wtsht[deltat == 1, , drop = FALSE]
-          deltat = deltat[deltat == 1]
-        }
-
         levA = levels(At)
 
         if (length(unique(Yt)) == 2) {
