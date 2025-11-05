@@ -142,8 +142,7 @@ process_numerics =
         # The effect is that the basis is set to 1 if it exists and 0 if it's missing.
         ix = as.numeric(!is.na(data.cont.dist[, k]))
         miss.cont = cbind(miss.cont, ix)
-        # TODO: convert to paste0
-        nmesm = c(nmesm, paste("Imiss_", nmesX[k], sep = ""))
+        nmesm = c(nmesm, paste0("Imiss_", nmesX[k]))
       }
     }
     # if(is.null(miss.cont)){miss.cont= rep(1,n.cont)}
