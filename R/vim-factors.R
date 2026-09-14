@@ -175,19 +175,16 @@ vim_factors =
         deltat = as.numeric(!is.na(Yt) & !is.na(At))
         deltav = as.numeric(!is.na(Yv) & !is.na(Av))
 
-        # TODO (CK): don't do this, in order to use the delta missingness estimation.
-        # To avoid crashing TMLE function just drop obs missing A or Y if the
-        # total number of missing is < 10
-        if (sum(deltat == 0) < 10) {
-          Yt = Yt[deltat == 1]
-          At = At[deltat == 1]
-          Wtsht = Wtsht[deltat == 1, , drop = FALSE]
-          deltat = deltat[deltat == 1]
-        }
+        # Observations missing Y or A are kept, and handled by the missingness
+        # mechanism (g.Delta) inside estimate_tmle2() and
+        # apply_tmle_to_validation(). They used to be dropped from the training
+        # fold when fewer than 10 were missing, which made the estimator's
+        # behavior depend on an arbitrary threshold, and which never applied to
+        # the validation fold.
 
         levA = levels(At)
 
-        if (length(unique(Yt)) == 2) {
+        if (length_unique(Yt) == 2L) {
           # Binary outcome.
 
           # Minimum numer of observations for each cell in validation fold.
@@ -210,10 +207,10 @@ vim_factors =
         #  outcome. (e.g. via table)
 
         # Number of positive outcomes in training data.
-        nYt = sum(Yt[!is.na(At)])
+        nYt = sum(Yt[!is.na(At)], na.rm = TRUE)
 
         # Number of positive outcomes in validation data.
-        nYv = sum(Yv[!is.na(Av)])
+        nYv = sum(Yv[!is.na(Av)], na.rm = TRUE)
 
         # Create a list to hold the results we calculate in this fold.
         # Set them to default values and update as they are calculated.
@@ -250,7 +247,7 @@ vim_factors =
         # 2) if missingness pattern for A is such that there are few death events left
         # in either (< minYs)
         # Applies only to binary outcomes, not continuous.
-        if ((length(unique(Yt)) == 2L &&
+        if ((length_unique(Yt) == 2L &&
              (num.cat < 2L || min(nYt, nYv) < minYs)) ||
             (length(is_constant) > 0 && mean(is_constant) == 1)) {
           if (length(is_constant) > 0 && mean(is_constant) == 1) {
