@@ -57,10 +57,27 @@ tmle_estimate_g <-
     } else {
       if (is.null(gform)){
         SL.ok <- TRUE
+
+        # With no adjustment variables - which happens when the analyzed
+        # variable is the only column in the data - the conditional probability
+        # reduces to the marginal one. Learners that regress on the covariates
+        # cannot fit at all: SL.glm's "Y ~ ." errors on a zero-column data frame
+        # ("'.' in formula and no 'data' argument"), so SuperLearner drops it
+        # and falls back to SL.mean, which is that same marginal. Ask for it
+        # directly, so the estimate is unchanged but the failed fits are not.
+        g_library <- SL.library
+        if (ncol(d) <= 1L) {
+          if (verbose) {
+            cat("\tNo adjustment variables; estimating", message,
+                "with SL.mean alone.\n")
+          }
+          g_library <- "SL.mean"
+        }
+
         old.SL <- packageDescription("SuperLearner")$Version < SL.version
         if(old.SL){
           arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE],
-                          family="binomial", SL.library=SL.library, V=V, id=id)
+                          family="binomial", SL.library=g_library, V=V, id=id)
         } else {
           sl_id = id
           # If IDs are unique we don't need to pass them to SL, which breaks
@@ -69,7 +86,7 @@ tmle_estimate_g <-
             sl_id = NULL
           }
           arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE],
-                          family="binomial", method = method, SL.library=SL.library, cvControl = cvControl, id = sl_id)
+                          family="binomial", method = method, SL.library=g_library, cvControl = cvControl, id = sl_id)
         }
         # TODO: are we sure we want to suppress warnings here?
         suppressWarnings({

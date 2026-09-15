@@ -280,7 +280,9 @@ vim_numerics =
           Wvsht = reduced_results$newX
 
           # Identify any constant columns.
-          is_constant = sapply(Wtsht, function(col) var(col) == 0)
+          # vapply: an empty adjustment set must yield an empty logical vector,
+          # not an empty list. See reduce_dimensions().
+          is_constant = vapply(Wtsht, function(col) var(col) == 0, logical(1))
           is_constant = is_constant[is_constant]
 
           if (verbose) {

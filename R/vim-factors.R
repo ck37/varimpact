@@ -156,7 +156,10 @@ vim_factors =
 
         # We should have no constant columns after calling reduce_dimensions().
         # Remove any NA values - but shouldn't these already be imputed?
-        is_constant = sapply(Wtsht, function(col) var(col, na.rm = TRUE) == 0)
+        # vapply: an empty adjustment set must yield an empty logical vector,
+        # not an empty list. See reduce_dimensions().
+        is_constant = vapply(Wtsht, function(col) var(col, na.rm = TRUE) == 0,
+                             logical(1))
         # Restrict to just the TRUE variables - those that are constant.
         is_constant = is_constant[is_constant]
 
