@@ -46,6 +46,13 @@ estimate_pooled_results = function(fold_results,
     return(results)
   }
 
+  # delta = 0 marks validation observations that are missing Y or A. Their
+  # clever covariate (HAW) is already 0, so they contribute nothing to the
+  # fluctuation or to the influence curve.
+  if (is.null(data$delta)) {
+    data$delta = 1
+  }
+
   if (min(data$Q_hat) < 0 || max(data$Q_hat) > 1) {
     cat("Error: some predicted values of Q_hat are out of bounds.",
         "They should be in [0, 1].\n")
@@ -87,8 +94,13 @@ estimate_pooled_results = function(fold_results,
         #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + H1W,
         #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
         #                 data = data, family = "binomial"))
-        reg = try(stats::glm(Y_star ~ -1 + stats::offset(logit_Q_hat) + HAW,
-                  data = data, family = "binomial"))
+        # offset() has to be called unqualified: stats::offset() is not
+        # recognized as the formula's offset special, so logit_Q_hat would be
+        # fit as an ordinary covariate and epsilon would come back with two
+        # elements instead of one.
+        reg = try(stats::glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
+                  data = data, family = "binomial",
+                  subset = data$delta == 1))
         if ("try-error" %in% class(reg)) {
           cat("Error in epsilon regression.\n")
           browser()
@@ -156,7 +168,9 @@ estimate_pooled_results = function(fold_results,
                    "Q_star:", length(Q_star), "\n"))
         }
         #with(fold_data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)
-        result = with(fold_data, (A / g1W_hat) * (Y_star - Q_star) +
+        # HAW = A * delta / (g1W * g.Delta), so observations missing Y or A
+        # drop out of the residual term rather than turning it into an NA.
+        result = with(fold_data, HAW * (Y_star - Q_star) +
                         Q_star - mean(Q_star, na.rm = TRUE))
         #if (verbose) cat("Result:", class(result), "Length:", length(result), "\n")
         result
@@ -168,6 +182,7 @@ estimate_pooled_results = function(fold_results,
         if (verbose) {
           cat("Error: influence curves contain", num_nans, "NaNs.\n")
           cat("g1W_hat zeros:", sum(data$g1W_hat == 0), "\n")
+          cat("gAW_total zeros:", sum(data$gAW_total == 0), "\n")
         }
       }
 

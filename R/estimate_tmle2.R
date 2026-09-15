@@ -15,7 +15,7 @@
 #' @param V Number of folds for SuperLearner
 #' @param verbose If true output extra information during execution.
 #' @importFrom tmle tmle
-#' @importFrom stats as.formula binomial coef glm plogis poisson predict qlogis
+#' @importFrom stats as.formula binomial coef glm offset plogis poisson predict qlogis
 #' @importFrom utils packageDescription
 #' @export
 estimate_tmle2 =
@@ -38,28 +38,22 @@ estimate_tmle2 =
     stop('Estimate_tmle: family must be either "binomial" or "gaussian".')
   }
 
-  # Because of quirk of program, delete observations with delta=0 if #>0
-  # & < 10
   n = length(Y)
-  inc = rep(T, n)
 
-  # TODO: revisit this decision.
-  if (!is.null(delta)) {
-    num_missing = sum(delta == 0)
-    if (num_missing > 0 && num_missing < 10) {
-      inc[delta == 0] = F
-    }
+  if (is.null(delta)) {
+    delta = rep(1, n)
   }
+  delta = as.numeric(delta)
 
   if (length(dim(W)) != 2) {
     stop("Error: W should have two dimensions. Instead its dimensions are:", paste(dim(W)), "\n")
   }
 
-  Y = Y[inc]
-  A = A[inc]
-  W = W[inc, , drop = F]
-
-  delta = delta[inc]
+  # Observations missing Y or A (delta = 0) are retained rather than dropped:
+  # the missingness mechanism is estimated below (g.Delta) and used to weight
+  # the observations that were observed. Previously these observations were
+  # silently dropped when fewer than 10 of them were missing, which made the
+  # behavior of the estimator depend on an arbitrary threshold.
 
   # Check for any remaining missing data.
   # It is technically ok for Y or A to include missingness, because the
@@ -80,7 +74,7 @@ estimate_tmle2 =
     cat("Warning: found", missing_vals, "NAs in A.\n")
   }
 
-  missing_vals = sum(is.na(Y[delta]))
+  missing_vals = sum(is.na(Y[delta == 1]))
   if (missing_vals != 0) {
     cat("Warning: found", missing_vals, "NAs in Y.\n")
   }
@@ -195,12 +189,26 @@ estimate_tmle2 =
   g.z <- NULL
   g.z$type="No intermediate variable"
   g.z$coef=NA
+  # The missingness indicator is usually very unbalanced, so reduce the number
+  # of CV folds (and skip stratification when a cell holds a single
+  # observation) rather than letting SuperLearner fail and fall back to glm.
+  min_delta_cell = min(table(delta))
+  delta_V = V
+  if (min_delta_cell < V) {
+    delta_V = max(min_delta_cell, 2)
+    if (verbose) {
+      cat("Delta's minimum cell size", min_delta_cell, "is less than the number",
+          "of CV folds", V, "\n. Reducing folds to", delta_V, "\n")
+    }
+  }
+
   g.Delta <- suppressWarnings({
     tmle_estimate_g(d = data.frame(delta, Z=1, A, W),
                     pDelta1,
                     g.Deltaform,
                     g.lib,
-                    id = id, V = V,
+                    id = id, V = delta_V,
+                    stratify = min_delta_cell >= delta_V,
                     verbose = verbose,
                     message = "missingness mechanism",
                     outcome="D")
@@ -262,11 +270,18 @@ estimate_tmle2 =
   # E[Y | A = 1, W]
   theta = mean(Qst)
 
-  # Influence curve
-  IC = (A / g1) * (Y - Qst) + Qst - theta
+  # Influence curve. Observations missing their outcome get zero weight; their
+  # contribution is carried by the missingness mechanism within g1W.total.
+  Y_ic = Y
+  Y_ic[delta == 0] = 0
+  IC = (A * delta / g1W.total) * (Y_ic - Qst) + Qst - theta
 
   # Compile results.
   result = list(theta = theta, IC = IC, g_model = g$model, q_model = q$model,
+                # Model for the missingness mechanism, needed to apply this fit
+                # to a validation fold. NULL if the training fold had no
+                # missingness in Y or A.
+                g_delta_model = g.Delta$model,
                 tmle = tmle.1, alpha = alpha,
                 Qbounds = Qbounds,
                 stage1_Qbounds = stage1$Qbounds,

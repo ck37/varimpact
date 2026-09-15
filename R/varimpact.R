@@ -241,7 +241,7 @@ varimpact =
   }
 
   # Save bounds on the full Y variables for later transformation if Y is not binary.
-  if (family == "binomial" || length(unique(Y)) == 2) {
+  if (family == "binomial" || length_unique(Y) == 2L) {
     #Qbounds = NULL
     Qbounds = c(0, 1)
   } else {
