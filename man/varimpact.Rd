@@ -69,7 +69,14 @@ variable for inclusion of an adjustment variables}
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
 of missing obs > cut.off}
 
-\item{bins_numeric}{Numbers of bins when discretizing numeric variables.}
+\item{bins_numeric}{Number of quantile bins used to discretize a numeric
+variable when it serves as the variable of interest, provided it has more
+than that many distinct values. Note that within each cross-validation fold
+these bins are then further aggregated by penalized histogram density
+estimation, in order to avoid small cell sizes (Hubbard, Kennedy & van der
+Laan 2018, section 9.8). The number of bins actually compared is therefore
+data-driven, and is often substantially smaller than \code{bins_numeric} -
+in practice frequently just two.}
 
 \item{quantile_probs_factor}{Quantiles used to check if factors have
 sufficient variation.}
