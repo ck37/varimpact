@@ -4,6 +4,7 @@
 # varimpact - variable importance through causal inference
 
 [![R-CMD-check](https://github.com/ck37/varimpact/actions/workflows/check-standard.yaml/badge.svg)](https://github.com/ck37/varimpact/actions/workflows/check-standard.yaml)
+[![codecov](https://codecov.io/gh/ck37/varimpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varimpact)
 
 ## Summary
 
@@ -57,7 +58,7 @@ remotes::install_github("ck37/varimpact")
 
 ### CRAN
 
-Forthcoming fall 2022
+varimpact is not on CRAN yet; install from GitHub as above.
 
 ## Examples
 

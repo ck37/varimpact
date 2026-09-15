@@ -2,10 +2,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 
-# Automated testing.
-^\.travis\.yml$
-^appveyor\.yml$
-
 # Misc.
 ^TODO.txt$
 ^images$
