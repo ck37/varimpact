@@ -175,19 +175,16 @@ vim_factors =
         deltat = as.numeric(!is.na(Yt) & !is.na(At))
         deltav = as.numeric(!is.na(Yv) & !is.na(Av))
 
-        # TODO (CK): don't do this, in order to use the delta missingness estimation.
-        # To avoid crashing TMLE function just drop obs missing A or Y if the
-        # total number of missing is < 10
-        if (sum(deltat == 0) < 10) {
-          Yt = Yt[deltat == 1]
-          At = At[deltat == 1]
-          Wtsht = Wtsht[deltat == 1, , drop = FALSE]
-          deltat = deltat[deltat == 1]
-        }
+        # Observations missing Y or A are kept, and handled by the missingness
+        # mechanism (g.Delta) inside estimate_tmle2() and
+        # apply_tmle_to_validation(). They used to be dropped from the training
+        # fold when fewer than 10 were missing, which made the estimator's
+        # behavior depend on an arbitrary threshold, and which never applied to
+        # the validation fold.
 
         levA = levels(At)
 
-        if (length(unique(Yt)) == 2) {
+        if (length_unique(Yt) == 2L) {
           # Binary outcome.
 
           # Minimum numer of observations for each cell in validation fold.
@@ -210,10 +207,10 @@ vim_factors =
         #  outcome. (e.g. via table)
 
         # Number of positive outcomes in training data.
-        nYt = sum(Yt[!is.na(At)])
+        nYt = sum(Yt[!is.na(At)], na.rm = TRUE)
 
         # Number of positive outcomes in validation data.
-        nYv = sum(Yv[!is.na(Av)])
+        nYv = sum(Yv[!is.na(Av)], na.rm = TRUE)
 
         # Create a list to hold the results we calculate in this fold.
         # Set them to default values and update as they are calculated.
@@ -250,7 +247,7 @@ vim_factors =
         # 2) if missingness pattern for A is such that there are few death events left
         # in either (< minYs)
         # Applies only to binary outcomes, not continuous.
-        if ((length(unique(Yt)) == 2L &&
+        if ((length_unique(Yt) == 2L &&
              (num.cat < 2L || min(nYt, nYv) < minYs)) ||
             (length(is_constant) > 0 && mean(is_constant) == 1)) {
           if (length(is_constant) > 0 && mean(is_constant) == 1) {
@@ -672,18 +669,8 @@ vim_factors =
         # bin_df can be NULL if the variable is skipped due to errors,
         # e.g. lack of variation.
         if (!is.null(bin_df) && nrow(bin_df) > 0L) {
-          # Determine if we need to transform back to original scale
-          map_to_ystar = FALSE
-          if (!is.null(Qbounds) && length(Qbounds) == 2) {
-            # Check if this is a continuous outcome (not binary)
-            if ((family == "binomial" && length(unique(Y)) > 2) || family == "gaussian") {
-              map_to_ystar = TRUE
-            }
-          }
-          
           pooled_bin = estimate_pooled_results(bin_list, verbose = verbose,
-                                                Qbounds = Qbounds,
-                                                map_to_ystar = map_to_ystar)
+                                               Qbounds = Qbounds)
           # Now we have $thetas and $influence_curves
 
           # Save the vector of estimates into the appropriate spot.
@@ -752,26 +739,15 @@ vim_factors =
 
       # TODO: compile results into the new estimate.
 
-      # Determine if we need to transform back to original scale
-      map_to_ystar = FALSE
-      if (!is.null(Qbounds) && length(Qbounds) == 2) {
-        # Check if this is a continuous outcome (not binary)
-        if ((family == "binomial" && length(unique(Y)) > 2) || family == "gaussian") {
-          map_to_ystar = TRUE
-        }
-      }
-      
       if (verbose) cat("Estimating pooled min.\n")
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
                                            verbose = verbose,
-                                           Qbounds = Qbounds,
-                                           map_to_ystar = map_to_ystar)
+                                           Qbounds = Qbounds)
       cat("\n")
       if (verbose) cat("Estimating pooled max.\n")
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
                                            verbose = verbose,
-                                           Qbounds = Qbounds,
-                                           map_to_ystar = map_to_ystar)
+                                           Qbounds = Qbounds)
       cat("\n")
 
       var_results$EY0V = pooled_min$thetas

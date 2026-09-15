@@ -4,7 +4,7 @@
 #' all levels of each variable across all CV folds.
 #' @param verbose If true, display extra output.
 #' @importFrom magrittr %>%
-#' @importFrom dplyr group_by summarize_all select mutate first
+#' @importFrom dplyr group_by summarize_all funs select mutate first
 #' @importFrom modeest mlv
 results_by_level =
   function(results_by_fold_and_level,
@@ -25,7 +25,7 @@ results_by_level =
     # TODO: take mode of test_msg or first value, rather than mean.
     select(-c(test_msg, train_msg)) %>%
     # this generates a warning in mean() because test_msg is a character not a numeric.
-    summarize_all(list(mean = mean)) %>%
+    summarize_all(dplyr::funs(mean)) %>%
     select(-c(cv_fold, train_cell_size, test_cell_size))
 
     # Don't keep this as a tibble.

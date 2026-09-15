@@ -10,7 +10,8 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.path = "images/README-",
   fig.width = 5,
-  fig.height = 3.5
+  fig.height = 3.5,
+  message = FALSE
 )
 
 # Hide warnings when knitting.
@@ -99,19 +100,8 @@ set.seed(1, "L'Ecuyer-CMRG")
 
 ```{r example_3}
 library(future)
-plan("multiprocess")
+plan("multisession")
 vim = varimpact(Y = Y, data = X)
-```
-
-### Example: parallel via SNOW
-
-```{r example_4}
-library(RhpcBLASctl)
-# Detect the number of physical cores on this computer using RhpcBLASctl.
-cl = parallel::makeCluster(get_num_cores())
-plan("cluster", workers = cl)
-vim = varimpact(Y = Y, data = X)
-parallel::stopCluster(cl)
 ```
 
 ### Example: mlbench breast cancer
@@ -124,7 +114,7 @@ data = BreastCancer
 data$Y = as.integer(data$Class == "malignant")
 
 # Use multicore parallelization to speed up processing.
-plan("multiprocess")
+plan("multisession")
 (vim = varimpact(Y = data$Y, data = subset(data, select = -c(Y, Class, Id))))
 plot_var("Mitoses", vim)
 ```

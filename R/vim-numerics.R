@@ -110,12 +110,14 @@ vim_numerics =
         # Conduct penalized histogramming by looking at the distribution of the rare outcome over
         # the treatment variable. So we create A_Y1 as the conditional distribution of treatment given Y = 1.
         # Pr(A | Y = 1).
-        if (length(unique(Yt)) == 2L) {
+        if (length_unique(Yt) == 2L) {
           # Binary outcome.
 
           # Conditional distribution of A given Y = 1.
           # F(A | Y = 1)
-          A_Y1 = At[Yt == 1 & !is.na(At)]
+          # Use which() so that observations missing Y are excluded rather than
+          # turned into NA elements.
+          A_Y1 = At[which(Yt == 1 & !is.na(At))]
 
           # Check if AY1 has only a single observation. If so, skip histogramming to avoid an error.
           singleAY1 = length(unique(na.omit(A_Y1))) == 1L
@@ -294,13 +296,12 @@ vim_numerics =
           deltat = as.numeric(!is.na(Yt) & !is.na(Atnew))
           deltav = as.numeric(!is.na(Yv) & !is.na(Avnew))
 
-          # TODO: may want to remove this procedure, which is pretty arbitrary.
-          if (sum(deltat == 0) < 10L) {
-            Yt = Yt[deltat == 1]
-            Wtsht = Wtsht[deltat == 1, , drop = FALSE]
-            Atnew = Atnew[deltat == 1]
-            deltat = deltat[deltat == 1]
-          }
+          # Observations missing Y or A are kept, and handled by the
+          # missingness mechanism (g.Delta) inside estimate_tmle2() and
+          # apply_tmle_to_validation(). They used to be dropped from the
+          # training fold when fewer than 10 were missing, which made the
+          # estimator's behavior depend on an arbitrary threshold, and which
+          # never applied to the validation fold.
 
           vals = cats.cont[[var_i]]
           num.cat = length(vals)
@@ -309,7 +310,7 @@ vim_numerics =
           Avnew[is.na(Avnew)] = -1
 
           if ((length(is_constant) > 0 && mean(is_constant) == 1) ||
-              (length(unique(Yt)) == 2L && min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell)) {
+              (length_unique(Yt) == 2L && min(table(Avnew[Avnew >= 0], Yv[Avnew >= 0])) <= minCell)) {
             if (length(is_constant) > 0 && mean(is_constant) == 1) {
               error_msg = paste("Skipping", nameA, "because HOPACH reduced W",
                 "to all constant columns.")
@@ -726,8 +727,7 @@ vim_numerics =
 
         if (!is.null(bin_df) && nrow(bin_df) > 0L) {
           pooled_bin = estimate_pooled_results(bin_list, verbose = verbose,
-                                                Qbounds = Qbounds,
-                                                map_to_ystar = map_to_ystar)
+                                               Qbounds = Qbounds)
           # Now we have $thetas and $influence_curves
 
           # Save the vector of estimates into the appropriate spot.
@@ -792,24 +792,12 @@ vim_numerics =
 
       # TODO: compile results into the new estimate.
 
-      # Determine if we need to transform back to original scale
-      # For continuous outcomes, the estimates are on [0,1] scale and need to be transformed back
-      map_to_ystar = FALSE
-      if (!is.null(Qbounds) && length(Qbounds) == 2) {
-        # Check if this is a continuous outcome (not binary)
-        if ((family == "binomial" && length(unique(Y)) > 2) || family == "gaussian") {
-          map_to_ystar = TRUE
-        }
-      }
-      
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
                                            verbose = verbose,
-                                           Qbounds = Qbounds,
-                                           map_to_ystar = map_to_ystar)
+                                           Qbounds = Qbounds)
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
                                            verbose = verbose,
-                                           Qbounds = Qbounds,
-                                           map_to_ystar = map_to_ystar)
+                                           Qbounds = Qbounds)
 
       var_results$EY0V = pooled_min$thetas
       var_results$EY1V = pooled_max$thetas

@@ -1,8 +1,13 @@
+# Qbounds: the bounds that were used to map the outcome into [0, 1] before the
+# CV-TMLE was run, i.e. the same vector varimpact() passed down to
+# apply_tmle_to_validation(). For a binary outcome this is c(0, 1) and every
+# transformation below is the identity. For a continuous outcome it is the
+# (10%-widened) range of Y, and we use it to map the results back onto the
+# scale of the original outcome. See issue #8.
 estimate_pooled_results = function(fold_results,
                                    fluctuation = "logistic",
                                    verbose = FALSE,
-                                   Qbounds = NULL,
-                                   map_to_ystar = FALSE) {
+                                   Qbounds = c(0, 1)) {
   # Fold results is a list with test results from each fold.
 
   # Each fold result should have at least this element:
@@ -48,6 +53,13 @@ estimate_pooled_results = function(fold_results,
     return(results)
   }
 
+  # delta = 0 marks validation observations that are missing Y or A. Their
+  # clever covariate (HAW) is already 0, so they contribute nothing to the
+  # fluctuation or to the influence curve.
+  if (is.null(data$delta)) {
+    data$delta = 1
+  }
+
   if (min(data$Q_hat) < 0 || max(data$Q_hat) > 1) {
     cat("Error: some predicted values of Q_hat are out of bounds.",
         "They should be in [0, 1].\n")
@@ -89,8 +101,13 @@ estimate_pooled_results = function(fold_results,
         #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + H1W,
         #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
         #                 data = data, family = "binomial"))
-        reg = try(stats::glm(Y_star ~ -1 + stats::offset(logit_Q_hat) + HAW,
-                  data = data, family = "binomial"))
+        # offset() has to be called unqualified: stats::offset() is not
+        # recognized as the formula's offset special, so logit_Q_hat would be
+        # fit as an ordinary covariate and epsilon would come back with two
+        # elements instead of one.
+        reg = try(stats::glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
+                  data = data, family = "binomial",
+                  subset = data$delta == 1))
         if ("try-error" %in% class(reg)) {
           cat("Error in epsilon regression.\n")
           browser()
@@ -132,34 +149,45 @@ estimate_pooled_results = function(fold_results,
       Q_star = plogis(Q_star)
       #}
 
+      # Map back onto the scale of the original outcome.
+      #
+      # apply_tmle_to_validation() ran the whole CV-TMLE on
+      # Y_star = (Y - Qbounds[1]) / diff(Qbounds), so both Q_star and Y_star
+      # currently live on that [0, 1] scale. The treatment-specific mean is
+      # linear in Y, so its inverse is just the inverse of that map, and every
+      # quantity built from Q_star and Y_star below inherits the right scale:
+      #
+      #   theta_original = theta_star * diff(Qbounds) + Qbounds[1]
+      #   IC_original    = diff(Qbounds) * IC_star
+      #
+      # The location shift cancels out of the influence curve, because both of
+      # its terms are differences: HAW * (Y_star - Q_star), and
+      # Q_star - mean(Q_star).
+      #
+      # For a binary outcome Qbounds is c(0, 1) and this is a no-op, which is
+      # why it is applied unconditionally rather than behind a family check.
+      if (!is.null(Qbounds) && length(Qbounds) == 2L) {
+        if (verbose && !identical(as.numeric(Qbounds), c(0, 1))) {
+          cat("Mapping Q_star back to the outcome scale using Qbounds:",
+              Qbounds, "\n")
+        }
+        Q_star = Q_star * diff(Qbounds) + Qbounds[1]
+        # Observations with delta == 0 carry a placeholder Y_star of 0; they get
+        # zero weight through HAW, so their rescaled value is irrelevant.
+        data$Y_star = data$Y_star * diff(Qbounds) + Qbounds[1]
+      }
+
       if (verbose) cat("Estimating per-fold thetas: ")
 
       # Estimate treatment-specific mean parameter on every validation fold.
       thetas = tapply(Q_star, data$fold_num, mean, na.rm = TRUE)
-      
-      # Transform thetas back to original scale if needed
-      if (map_to_ystar && !is.null(Qbounds)) {
-        if (verbose) cat("Transforming thetas back to original scale using Qbounds:", Qbounds, "\n")
-        thetas = thetas * diff(Qbounds) + Qbounds[1]
-      }
-      
       if (verbose) cat(thetas, "\n")
 
       # Take average across folds to get final estimate.
       #theta = mean(thetas)
 
-      # Transform Q_star back to original scale if needed for influence curve calculation
-      if (map_to_ystar && !is.null(Qbounds)) {
-        Q_star_original = Q_star * diff(Qbounds) + Qbounds[1]
-        # Also transform Y_star back to original scale for influence curve
-        data$Y_original = data$Y_star * diff(Qbounds) + Qbounds[1]
-      } else {
-        Q_star_original = Q_star
-        data$Y_original = data$Y_star
-      }
-      
       # Move Q_star into the data so that it can be analyzed per-fold.
-      data$Q_star = Q_star_original
+      data$Q_star = Q_star
       rm(Q_star)
 
       if (verbose) cat("Calculating per-fold influence curves\n")
@@ -175,7 +203,9 @@ estimate_pooled_results = function(fold_results,
                    "Q_star:", length(Q_star), "\n"))
         }
         #with(fold_data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)
-        result = with(fold_data, (A / g1W_hat) * (Y_original - Q_star) +
+        # HAW = A * delta / (g1W * g.Delta), so observations missing Y or A
+        # drop out of the residual term rather than turning it into an NA.
+        result = with(fold_data, HAW * (Y_star - Q_star) +
                         Q_star - mean(Q_star, na.rm = TRUE))
         #if (verbose) cat("Result:", class(result), "Length:", length(result), "\n")
         result
@@ -187,6 +217,7 @@ estimate_pooled_results = function(fold_results,
         if (verbose) {
           cat("Error: influence curves contain", num_nans, "NaNs.\n")
           cat("g1W_hat zeros:", sum(data$g1W_hat == 0), "\n")
+          cat("gAW_total zeros:", sum(data$gAW_total == 0), "\n")
         }
       }
 
