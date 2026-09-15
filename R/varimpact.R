@@ -57,7 +57,14 @@
 #'   "median", "knn" (default). Note: knn results in the covariate data being centered/scaled.
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
-#' @param bins_numeric Numbers of bins when discretizing numeric variables.
+#' @param bins_numeric Number of quantile bins used to discretize a numeric
+#'   variable when it serves as the variable of interest, provided it has more
+#'   than that many distinct values. Note that within each cross-validation fold
+#'   these bins are then further aggregated by penalized histogram density
+#'   estimation, in order to avoid small cell sizes (Hubbard, Kennedy & van der
+#'   Laan 2018, section 9.8). The number of bins actually compared is therefore
+#'   data-driven, and is often substantially smaller than \code{bins_numeric} -
+#'   in practice frequently just two.
 #' @param quantile_probs_factor Quantiles used to check if factors have
 #'   sufficient variation.
 #' @param quantile_probs_numeric Quantiles used to check if numerics have
@@ -248,7 +255,7 @@ varimpact =
   }
 
   # Save bounds on the full Y variables for later transformation if Y is not binary.
-  if (family == "binomial" || length(unique(Y)) == 2) {
+  if (family == "binomial" || length_unique(Y) == 2L) {
     #Qbounds = NULL
     Qbounds = c(0, 1)
   } else {

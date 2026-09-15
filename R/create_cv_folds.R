@@ -8,21 +8,25 @@
 #'
 #' @importFrom cvTools cvFolds
 create_cv_folds = function(V, Y, verbose = F) {
-  Ys = unique(Y)
+  # Ignore missing outcomes when deciding whether Y is binary, so that a binary
+  # outcome with some missingness is still stratified.
+  Ys = unique(Y[!is.na(Y)])
   nys = length(Ys)
   nn = length(Y)
   # Binary outcome so we can do stratified fold generation.
   if (nys == 2) {
     out = rep(NA, nn)
-    for (i in 1:nys) {
-      # Record how many observations have this Y value.
-      n = sum(Y == Ys[i])
+    # Observations with a missing outcome form their own stratum, so that they
+    # are spread evenly across the folds rather than clustered in one.
+    strata = lapply(Ys, function(y) which(!is.na(Y) & Y == y))
+    if (anyNA(Y)) {
+      strata = c(strata, list(which(is.na(Y))))
+    }
+    for (rows in strata) {
+      # Record how many observations are in this stratum.
+      n = length(rows)
       folds = cvTools::cvFolds(n, K = V, R = 1, type = "random")$which
-      #if (verbose) {
-      #  cat("Y", i, "is", Ys[i], "count:", sum(Y == Ys[i]), "n=", n, "fold length:",
-      #      length(folds), "\n")
-      #}
-      out[Y == Ys[i]] = folds
+      out[rows] = folds
     }
     if (verbose) {
       cat("Cross-validation fold breakdown:\n")
