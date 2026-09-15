@@ -1,124 +1,144 @@
+# Issue #8: variable importance estimates for a continuous outcome were reported
+# on the internal [0, 1] scale rather than the scale of Y itself.
+#
+# varimpact() maps a continuous outcome into [0, 1] with
+# Y_star = (Y - Qbounds[1]) / diff(Qbounds) before running the CV-TMLE, where
+# Qbounds is the observed range of Y widened by 10%. estimate_pooled_results()
+# now applies the inverse of that map, so both the treatment-specific means and
+# their influence curves come back on the outcome's own scale.
+
 library(varimpact)
 library(testthat)
 
 context("Continuous outcome scale transformation")
 
-test_that("continuous outcomes are reported on original scale, not [0,1] scale", {
-  # Set multicore-compatible seed
-  set.seed(42, "L'Ecuyer-CMRG")
-  
-  # Create test dataset with continuous outcome in a known range
-  N <- 100
-  num_vars <- 3
-  X <- as.data.frame(matrix(rnorm(N * num_vars), N, num_vars))
-  colnames(X) <- paste0("X", 1:num_vars)
-  
-  # Create a continuous outcome with values roughly between 20 and 80
-  # This gives us a clear range that's far from [0, 1]
-  Y_continuous <- 50 + 15 * (.3*X[, 1] + .2*X[, 2] - .1*X[, 3]) + rnorm(N, 0, 3)
-  
-  # Verify our outcome is in the expected range
-  expect_true(min(Y_continuous) > 10, "Y should be well above 0")
-  expect_true(max(Y_continuous) < 100, "Y should be well below 100")
-  expect_true(max(Y_continuous) - min(Y_continuous) > 10, "Y should have substantial range")
-  
-  # Run varimpact with gaussian family
-  # Use sequential execution and simple libraries for faster testing
-  future::plan("sequential")
-  
-  vim <- varimpact(Y = Y_continuous, 
-                   data = X, 
-                   family = "gaussian",
-                   V = 2L,  # Use fewer folds for faster testing
-                   verbose = FALSE,
-                   Q.library = c("SL.mean", "SL.glm"),
-                   g.library = c("SL.mean", "SL.glm"),
-                   bins_numeric = 2L)  # Fewer bins for faster testing
-  
-  # Check that the function completed successfully
-  expect_s3_class(vim, "varimpact")
-  expect_true(!is.null(vim$results_all))
-  
-  # Extract estimates
-  estimates <- vim$results_all$Estimate
-  estimates <- estimates[!is.na(estimates)]
-  
-  # The key test: estimates should NOT be on [0, 1] scale
-  # If the bug exists, all estimates would be between 0 and 1
-  # With the fix, estimates should be on the original scale
-  
-  # Check that not all estimates are in [0, 1] range
-  # (some estimates might legitimately be in [0, 1] by chance, but not all)
-  estimates_in_01_range <- estimates >= 0 & estimates <= 1
-  proportion_in_01 <- mean(estimates_in_01_range)
-  
-  # If more than 90% of estimates are in [0, 1], likely the bug still exists
-  expect_lt(proportion_in_01, 0.9, 
-            paste("Too many estimates in [0,1] range. Estimates:", 
-                  paste(round(estimates, 3), collapse = ", ")))
-  
-  # Additional check: the range of estimates should be reasonable
-  # relative to the original outcome range
-  original_range <- max(Y_continuous) - min(Y_continuous)
-  estimate_range <- max(estimates) - min(estimates)
-  
-  # The estimate range should be a reasonable fraction of the original range
-  # (not tiny like it would be if stuck on [0, 1] scale)
-  expect_gt(estimate_range, original_range * 0.01,
-            "Estimate range seems too small relative to original outcome range")
-  
-  # Test fold-specific estimates if available
-  if (!is.null(vim$results_by_fold)) {
-    fold_est_cols <- grep("Est_v", colnames(vim$results_by_fold), value = TRUE)
-    if (length(fold_est_cols) > 0) {
-      fold_estimates <- as.matrix(vim$results_by_fold[, fold_est_cols])
-      fold_estimates <- fold_estimates[!is.na(fold_estimates)]
-      
-      if (length(fold_estimates) > 0) {
-        fold_estimates_in_01 <- fold_estimates >= 0 & fold_estimates <= 1
-        fold_proportion_in_01 <- mean(fold_estimates_in_01)
-        
-        expect_lt(fold_proportion_in_01, 0.9,
-                  "Too many fold estimates in [0,1] range")
-      }
-    }
+# Build a minimal fold_results structure of the shape estimate_pooled_results()
+# consumes: one element per fold, each holding a $val_preds data frame with the
+# columns apply_tmle_to_validation() returns.
+make_fold_results <- function(n_per_fold = 60, n_folds = 2, seed = 7) {
+  set.seed(seed)
+  lapply(seq_len(n_folds), function(fold) {
+    A <- rbinom(n_per_fold, 1, 0.5)
+    g1W_hat <- runif(n_per_fold, 0.3, 0.7)
+    Q_hat <- runif(n_per_fold, 0.2, 0.8)
+    # Y_star is already on the [0, 1] scale here, as it is in real fold results.
+    Y_star <- runif(n_per_fold)
+    gDelta_hat <- rep(1, n_per_fold)
+    gAW_total <- g1W_hat * gDelta_hat
+    H1W <- 1 / gAW_total
+    list(val_preds = data.frame(Y_star = Y_star,
+                                A = A,
+                                Q_hat = Q_hat,
+                                g1W_hat = g1W_hat,
+                                gDelta_hat = gDelta_hat,
+                                gAW_total = gAW_total,
+                                delta = rep(1, n_per_fold),
+                                H1W = H1W,
+                                HAW = A * H1W))
+  })
+}
+
+test_that("estimate_pooled_results() rescales thetas and ICs by exactly Qbounds", {
+  fold_results <- make_fold_results()
+
+  # The internal [0, 1] scale: Qbounds = c(0, 1) must be the identity.
+  unit <- varimpact:::estimate_pooled_results(fold_results, verbose = FALSE, Qbounds = c(0, 1))
+  default <- varimpact:::estimate_pooled_results(fold_results, verbose = FALSE)
+  expect_equal(unit$thetas, default$thetas)
+
+  # An arbitrary continuous-outcome range.
+  Qbounds <- c(-12.5, 37.5)
+  scaled <- varimpact:::estimate_pooled_results(fold_results, verbose = FALSE, Qbounds = Qbounds)
+
+  # Rescaling happens after the fluctuation, so epsilon is untouched.
+  expect_equal(scaled$epsilon, unit$epsilon)
+
+  # theta_original = theta_star * diff(Qbounds) + Qbounds[1]
+  expect_equal(as.vector(scaled$thetas),
+               as.vector(unit$thetas) * diff(Qbounds) + Qbounds[1])
+
+  # IC_original = diff(Qbounds) * IC_star: the location shift cancels, because
+  # both terms of the influence curve are differences.
+  for (fold in seq_along(unit$influence_curves)) {
+    expect_equal(as.vector(scaled$influence_curves[[fold]]),
+                 as.vector(unit$influence_curves[[fold]]) * diff(Qbounds))
   }
 })
 
-test_that("binary outcomes still work correctly", {
-  # Set seed for reproducibility
-  set.seed(43, "L'Ecuyer-CMRG")
-  
-  # Create test dataset with binary outcome
-  N <- 100
+test_that("estimate_pooled_results() ignores a malformed Qbounds", {
+  fold_results <- make_fold_results()
+  unit <- varimpact:::estimate_pooled_results(fold_results, verbose = FALSE, Qbounds = c(0, 1))
+
+  expect_equal(varimpact:::estimate_pooled_results(fold_results, Qbounds = NULL)$thetas,
+               unit$thetas)
+  expect_equal(varimpact:::estimate_pooled_results(fold_results, Qbounds = 4)$thetas,
+               unit$thetas)
+})
+
+test_that("continuous outcomes produce results on the original scale", {
+  # Before the fix to the double plogis() in estimate_tmle2(), every fold of a
+  # gaussian run was discarded ("min and max level are the same") and
+  # results_all came back NULL, so this is also a regression test for that.
+  set.seed(42, "L'Ecuyer-CMRG")
+  future::plan("sequential")
+
+  N <- 300
+  X <- as.data.frame(matrix(rnorm(N * 2), N, 2))
+  colnames(X) <- paste0("X", 1:2)
+
+  # True ATE contrast on the original scale is roughly 4.5 for X1 and 3.0 for X2
+  # per unit of X, i.e. far outside [0, 1].
+  Y <- 50 + 15 * (0.3 * X[, 1] + 0.2 * X[, 2]) + rnorm(N, 0, 3)
+  expect_gt(min(Y), 10)
+
+  vim <- suppressWarnings(
+    varimpact(Y = Y, data = X, family = "gaussian", V = 2L, verbose = FALSE,
+              Q.library = c("SL.mean", "SL.glm"),
+              g.library = c("SL.mean", "SL.glm"),
+              bins_numeric = 3L))
+
+  expect_s3_class(vim, "varimpact")
+  expect_s3_class(vim$results_all, "data.frame")
+  expect_equal(nrow(vim$results_all), 2)
+
+  estimates <- vim$results_all$Estimate
+  expect_false(any(is.na(estimates)))
+
+  # The headline check for issue #8: estimates are on Y's scale, not [0, 1].
+  # A median split of a standard normal separates the bin means by roughly 1.6,
+  # so the X1 contrast should land near 15 * 0.3 * 1.6 = 7.2 and the X2 contrast
+  # near 15 * 0.2 * 1.6 = 4.8. Both would be under 1 on the old scale.
+  expect_true(all(estimates > 1))
+  expect_true(all(estimates < diff(range(Y))))
+  expect_equal(estimates[rownames(vim$results_all) == "X1"], 7.2, tolerance = 0.4)
+  expect_equal(estimates[rownames(vim$results_all) == "X2"], 4.8, tolerance = 0.4)
+
+  # Confidence intervals are on the same scale, so they bracket the estimate.
+  ci <- vim$results_all$CI95
+  expect_true(all(!is.na(ci)))
+})
+
+test_that("binary outcomes are unaffected by the rescaling", {
+  # Qbounds is c(0, 1) for a binary outcome, so every transformation added for
+  # issue #8 is the identity and estimates stay within [-1, 1].
+  set.seed(3, "L'Ecuyer-CMRG")
+  future::plan("sequential")
+
+  N <- 200
   X <- as.data.frame(matrix(rnorm(N * 2), N, 2))
   colnames(X) <- c("X1", "X2")
-  
-  # Create binary outcome
-  Y_binary <- rbinom(N, 1, plogis(.5*X[, 1] - .3*X[, 2]))
-  
-  # Run varimpact with binomial family
-  future::plan("sequential")
-  
-  vim <- varimpact(Y = Y_binary, 
-                   data = X, 
-                   family = "binomial",
-                   V = 2L,
-                   verbose = FALSE,
-                   Q.library = c("SL.mean", "SL.glm"),
-                   g.library = c("SL.mean", "SL.glm"))
-  
-  # Check that the function completed successfully
+  Y <- rbinom(N, 1, plogis(0.5 * X[, 1] - 0.3 * X[, 2]))
+
+  vim <- suppressWarnings(
+    varimpact(Y = Y, data = X, family = "binomial", V = 2L, verbose = FALSE,
+              Q.library = c("SL.mean", "SL.glm"),
+              g.library = c("SL.mean", "SL.glm")))
+
   expect_s3_class(vim, "varimpact")
-  expect_true(!is.null(vim$results_all))
-  
-  # For binary outcomes, estimates should be in a reasonable range
-  # (typically between -1 and 1 for risk differences)
+  expect_s3_class(vim$results_all, "data.frame")
+
   estimates <- vim$results_all$Estimate
   estimates <- estimates[!is.na(estimates)]
-  
-  if (length(estimates) > 0) {
-    expect_true(all(estimates >= -1 & estimates <= 1),
-                "Binary outcome estimates should be reasonable risk differences")
-  }
+  expect_gt(length(estimates), 0)
+  expect_true(all(estimates >= -1 & estimates <= 1))
 })
