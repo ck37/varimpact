@@ -2,7 +2,7 @@
 output: github_document
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- README.md is generated from readme.Rmd. Please edit that file -->
 
 ```{r init_knitr, echo = FALSE}
 knitr::opts_chunk$set(
@@ -20,8 +20,7 @@ options(warn = -1)
 
 # varimpact - variable importance through causal inference
 
-[![Build Status](https://travis-ci.org/ck37/varimpact.svg?branch=master)](https://travis-ci.org/ck37/varimpact)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ck37/varimpact?branch=master&svg=true)](https://ci.appveyor.com/project/ck37/varimpact)
+[![R-CMD-check](https://github.com/ck37/varimpact/actions/workflows/check-standard.yaml/badge.svg)](https://github.com/ck37/varimpact/actions/workflows/check-standard.yaml)
 [![codecov](https://codecov.io/gh/ck37/varimpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varimpact)
 
 ## Summary
@@ -48,7 +47,7 @@ remotes::install_github("ck37/varimpact")
 
 ### CRAN
 
-Forthcoming fall 2022
+varimpact is not on CRAN yet; install from GitHub as above.
 
 ## Examples
 
