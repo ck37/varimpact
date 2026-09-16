@@ -13,6 +13,7 @@ vim_factors =
            Qbounds,
            corthres,
            adjust_cutoff,
+           adjustment_exclusions = list(),
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE) {
@@ -111,6 +112,10 @@ vim_factors =
 
         # Restrict to columns in which there is less than 100% missingness.
         W = W[, !apply(is.na(W), 2, all), drop = FALSE]
+
+        # Drop any adjustment variables the user excluded for this variable.
+        W = exclude_adjustment_vars(W, nameA, adjustment_exclusions,
+                                    verbose = verbose)
 
         #######################################
 
@@ -279,6 +284,7 @@ vim_factors =
             # Create a list to hold the results for this level.
             bin_result = list(
               name = nameA,
+              W_names = colnames(W),
               cv_fold = fold_k,
               level = bin_j,
               #level_label = At_bin_labels[bin_j],

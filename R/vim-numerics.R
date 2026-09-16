@@ -13,6 +13,7 @@ vim_numerics =
            Qbounds,
            corthres,
            adjust_cutoff,
+           adjustment_exclusions = list(),
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE) {
@@ -238,6 +239,10 @@ vim_numerics =
           # (With the exception of the NA vectors possibly added above.
           W = W[, !apply(is.na(W), 2, all), drop = FALSE]
 
+          # Drop any adjustment variables the user excluded for this variable.
+          W = exclude_adjustment_vars(W, nameA, adjustment_exclusions,
+                                      verbose = verbose)
+
           # Separate adjustment matrix into the training and test folds.
           Wt = W[folds != fold_k, , drop = FALSE]
           Wv = W[folds == fold_k, , drop = FALSE]
@@ -345,6 +350,7 @@ vim_numerics =
               # Create a list to hold the results for this level.
               bin_result = list(
                 name = nameA,
+                W_names = colnames(W),
                 cv_fold = fold_k,
                 level = bin_j,
                 level_label = At_bin_labels[bin_j],
