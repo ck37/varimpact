@@ -21,7 +21,7 @@ Description: Automated data processing and variable importance using data-
 License: GPL (>= 2)
 Encoding: UTF-8
 Depends:
-    SuperLearner
+    SuperLearner (>= 2.0.0)
 Imports:
     arules,
     caret,
