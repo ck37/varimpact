@@ -202,6 +202,15 @@ estimate_tmle2 =
     }
   }
 
+  # Reducing the folds is not enough on its own. Cross-validating over
+  # delta_V folds leaves roughly min_delta_cell * (delta_V - 1) / delta_V
+  # observations of the rarer class in each training split, and learners that
+  # resample again internally - glmnet's cv.glmnet uses ten unstratified folds -
+  # can lose that class entirely in one of their own splits. So require at least
+  # a couple of observations per fold before attempting a covariate-adjusted
+  # fit, and use the marginal rate of missingness below that.
+  min_delta_cell_size = 2 * delta_V
+
   g.Delta <- suppressWarnings({
     tmle_estimate_g(d = data.frame(delta, Z=1, A, W),
                     pDelta1,
@@ -211,7 +220,8 @@ estimate_tmle2 =
                     stratify = min_delta_cell >= delta_V,
                     verbose = verbose,
                     message = "missingness mechanism",
-                    outcome="D")
+                    outcome="D",
+                    min_cell_size = min_delta_cell_size)
   })
   g1W.total <- .bound(g$g1W*g.Delta$g1W[,"Z0A1"], gbound)
   if (sum(is.na(g1W.total)) > 0) {
