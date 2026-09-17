@@ -53,7 +53,7 @@ varimpact is not on CRAN yet; install from GitHub as above.
 
 ### Example: basic functionality
 
-```{r example_1, fig.width = 6.5, fig.height = 3.5, fig.alt = "Horizontal bar chart, Impact of V2. Adjusted outcome mean is 0.68 for the lower bin of V2 and 0.73 for the upper bin, with an impact estimate of 0.05. Bars are colored by low risk, high risk and impact."}
+```{r example_1, fig.width = 6.5, fig.height = 3.5, fig.alt = "Horizontal bar chart titled Impact of V2: the adjusted outcome mean for each of V2's two bins, plus a third bar for the impact estimate. Bars are colored to mark the lower-risk level, the higher-risk level and the impact."}
 library(varimpact)
 
 ####################################
@@ -105,7 +105,7 @@ vim = varimpact(Y = Y, data = X)
 
 ### Example: mlbench breast cancer
 
-```{r example_5, fig.width = 6, fig.height = 3.5, fig.alt = "Horizontal bar chart, Impact of Mitoses. Adjusted outcome mean rises across levels 1, 2 and 3, at 0.37, 0.71 and 0.78, with an impact estimate of 0.41. Bars are colored by low risk, other, high risk and impact."}
+```{r example_5, fig.width = 6, fig.height = 3.5, fig.alt = "Horizontal bar chart titled Impact of Mitoses: the adjusted outcome mean for Mitoses levels 1, 2 and 3, which increases with level, plus a fourth bar for the impact estimate. Bars are colored to mark the lower-risk level, intermediate levels, the higher-risk level and the impact."}
 data(BreastCancer, package = "mlbench")
 data = BreastCancer
 

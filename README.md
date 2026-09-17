@@ -92,35 +92,43 @@ vim <- varimpact(Y = Y, data = X)
 
 # Review consistent and significant results.
 vim
-#> Significant and consistent results:
-#>       Type  Estimate            CI95      P-value Adj. p-value  Est. RR
-#> V3 Ordered 0.4986136 (0.255 - 0.742) 2.935984e-05 0.0001174394 2.908162
-#>         CI95 RR   P-value RR Adj. p-value RR
-#> V3 (1.92 - 4.4) 2.214955e-07    8.859819e-07
+#> No significant and consistent results.
+#> All results:
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.14594569 (-0.139 - 0.431) 0.1576403    0.3173261 1.485982
+#> V2 Ordered 0.09282500 (-0.162 - 0.348) 0.2378623    0.3173261 1.254249
+#> V3 Ordered 0.08669212 (-0.152 - 0.325) 0.2379946    0.3173261 1.197426
+#> V4 Ordered 0.04143251 (-0.246 - 0.329) 0.3886701    0.3886701 1.092521
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1  (0.58 - 3.81)  0.2045956       0.3509072       TRUE
+#> V2 (0.622 - 2.53)  0.2225937       0.3509072       TRUE
+#> V3  (0.754 - 1.9)  0.2631804       0.3509072       TRUE
+#> V4 (0.606 - 1.97)  0.3843299       0.3843299       TRUE
 
 # Look at all results.
 vim$results_all
-#>       Type    Estimate             CI95      P-value Adj. p-value   Est. RR
-#> V3 Ordered  0.49861358  (0.255 - 0.742) 2.935984e-05 0.0001174394 2.9081617
-#> V4 Ordered  0.21853793 (-0.167 - 0.604) 1.334006e-01 0.2668012809 1.4110231
-#> V2 Ordered  0.04733746 (-0.276 - 0.371) 3.872064e-01 0.5162752138 1.0698709
-#> V1 Ordered -0.10939221 (-0.494 - 0.275) 7.116162e-01 0.7116161584 0.8266168
-#>           CI95 RR   P-value RR Adj. p-value RR Consistent
-#> V3   (1.92 - 4.4) 2.214955e-07    8.859819e-07       TRUE
-#> V4 (0.833 - 2.39) 1.000755e-01    2.001509e-01       TRUE
-#> V2 (0.664 - 1.72) 3.905406e-01    5.207208e-01       TRUE
-#> V1 (0.441 - 1.55) 7.238555e-01    7.238555e-01       TRUE
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.14594569 (-0.139 - 0.431) 0.1576403    0.3173261 1.485982
+#> V2 Ordered 0.09282500 (-0.162 - 0.348) 0.2378623    0.3173261 1.254249
+#> V3 Ordered 0.08669212 (-0.152 - 0.325) 0.2379946    0.3173261 1.197426
+#> V4 Ordered 0.04143251 (-0.246 - 0.329) 0.3886701    0.3886701 1.092521
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1  (0.58 - 3.81)  0.2045956       0.3509072       TRUE
+#> V2 (0.622 - 2.53)  0.2225937       0.3509072       TRUE
+#> V3  (0.754 - 1.9)  0.2631804       0.3509072       TRUE
+#> V4 (0.606 - 1.97)  0.3843299       0.3843299       TRUE
 
 # Plot the V2 impact.
 plot_var("V2", vim)
 ```
 
-![Horizontal bar chart, Impact of V2. Adjusted outcome mean is 0.68 for the lower bin of V2 and 0.73 for the upper bin, with an impact estimate of 0.05. Bars are colored by low risk, high risk and impact.](man/figures/README-example_1-1.png)<!-- -->
+<img src="man/figures/README-example_1-1.png" alt="Horizontal bar chart titled Impact of V2: the adjusted outcome mean for each of V2's two bins, plus a third bar for the impact estimate. Bars are colored to mark the lower-risk level, the higher-risk level and the impact."  />
 
 ``` r
 
 # Generate latex tables with results.
 exportLatex(vim)
+#> NULL
 
 # Clean up LaTeX files
 cleanup_latex_files()
@@ -142,11 +150,18 @@ set.seed(1, "L'Ecuyer-CMRG")
 #> No factor variables - skip VIM estimation.
 #> 
 #> Estimating variable importance for 4 numerics.
-#> Significant and consistent results:
-#>       Type Estimate            CI95      P-value Adj. p-value  Est. RR
-#> V3 Ordered  0.56401 (0.326 - 0.802) 1.749015e-06 6.996059e-06 3.644982
-#>          CI95 RR   P-value RR Adj. p-value RR
-#> V3 (2.34 - 5.69) 6.234554e-09    2.493822e-08
+#> No significant and consistent results.
+#> All results:
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.11972453   (-0.11 - 0.35) 0.1536753    0.3199279 1.343059
+#> V3 Ordered 0.11121909 (-0.122 - 0.344) 0.1747763    0.3199279 1.253538
+#> V2 Ordered 0.09154387 (-0.162 - 0.346) 0.2399459    0.3199279 1.248120
+#> V4 Ordered 0.03595027 (-0.252 - 0.324) 0.4033505    0.4033505 1.080330
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1 (0.706 - 2.55)  0.1548062       0.3519554       TRUE
+#> V3 (0.811 - 1.94)  0.1841387       0.3519554       TRUE
+#> V2 (0.627 - 2.48)  0.2639666       0.3519554       TRUE
+#> V4 (0.597 - 1.95)  0.3992209       0.3992209       TRUE
 ```
 
 ### Example: parallel via multicore
@@ -187,19 +202,19 @@ plan("multisession")
 #> Estimating variable importance for 9 factors.
 #> Significant and consistent results:
 #>                Type  Estimate            CI95      P-value Adj. p-value
-#> Bare.nuclei  Factor 0.6174459   (0.5 - 0.735) 0.000000e+00 0.000000e+00
-#> Mitoses      Factor 0.4092028 (0.333 - 0.486) 0.000000e+00 0.000000e+00
-#> Cl.thickness Factor 0.5245860 (0.382 - 0.667) 3.027578e-13 9.082735e-13
-#> Cell.size    Factor 0.5650275 (0.395 - 0.735) 3.313050e-11 5.963490e-11
+#> Bare.nuclei  Factor 0.5018849 (0.367 - 0.637) 1.602052e-13 1.441847e-12
+#> Cell.size    Factor 0.5745486 (0.402 - 0.747) 3.381506e-11 1.521678e-10
+#> Mitoses      Factor 0.2392427 (0.161 - 0.317) 1.011109e-09 2.274996e-09
+#> Cl.thickness Factor 0.3805930 (0.251 - 0.511) 4.677600e-09 8.419679e-09
 #>               Est. RR       CI95 RR   P-value RR Adj. p-value RR
-#> Bare.nuclei  3.682218 (2.21 - 6.14) 0.000000e+00    0.000000e+00
-#> Mitoses      2.093929 (1.85 - 2.37) 3.023193e-11    1.360437e-10
-#> Cl.thickness 2.952087 (2.13 - 4.08) 2.956850e-07    8.870549e-07
-#> Cell.size    3.445132    (1.98 - 6) 4.465977e-06    8.038759e-06
+#> Bare.nuclei  2.968525 (1.77 - 4.97) 3.356870e-12    3.021183e-11
+#> Cell.size         Inf     (NA - NA) 6.480864e-10    2.916389e-09
+#> Mitoses      1.720553 (1.47 - 2.01) 2.708806e-05    6.094813e-05
+#> Cl.thickness 3.194347  (2.2 - 4.65) 6.051102e-05    1.089198e-04
 plot_var("Mitoses", vim)
 ```
 
-![Horizontal bar chart, Impact of Mitoses. Adjusted outcome mean rises across levels 1, 2 and 3, at 0.37, 0.71 and 0.78, with an impact estimate of 0.41. Bars are colored by low risk, other, high risk and impact.](man/figures/README-example_5-1.png)<!-- -->
+<img src="man/figures/README-example_5-1.png" alt="Horizontal bar chart titled Impact of Mitoses: the adjusted outcome mean for Mitoses levels 1, 2 and 3, which increases with level, plus a fourth bar for the impact estimate. Bars are colored to mark the lower-risk level, intermediate levels, the higher-risk level and the impact."  />
 
 ## Authors
 
