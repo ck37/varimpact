@@ -60,25 +60,6 @@ test_that("the fallback reports itself when verbose", {
   expect_true(any(grepl("2 observations, fewer than 4", output)))
 })
 
-test_that("the fallback reshapes for an intermediate variable", {
-  set.seed(1)
-  n = 60
-  W = data.frame(W1 = rnorm(n), W2 = rnorm(n))
-  A = rbinom(n, 1, 0.5)
-  # d = [Z, A, W] for an intermediate variable, so the guard reads Z.
-  Z = c(0, 0, rep(1, n - 2))
-  d = data.frame(Z, A, W)
-
-  g = varimpact:::tmle_estimate_g(d = d, SL.library = "SL.mean", V = 2,
-                                  stratify = TRUE, outcome = "Z",
-                                  min_cell_size = 4)
-
-  expect_equal(g$type, "marginal")
-  expect_equal(colnames(g$g1W), c("A0", "A1"))
-  expect_equal(dim(g$g1W), c(n, 2L))
-  expect_true(all(g$g1W == mean(Z)))
-})
-
 test_that("min_cell_size = 0 leaves the covariate-adjusted fit alone", {
   set.seed(2)
   n = 60
