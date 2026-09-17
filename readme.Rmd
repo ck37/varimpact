@@ -8,7 +8,7 @@ output: github_document
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.path = "images/README-",
+  fig.path = "man/figures/README-",
   fig.width = 5,
   fig.height = 3.5,
   message = FALSE
@@ -53,7 +53,7 @@ varimpact is not on CRAN yet; install from GitHub as above.
 
 ### Example: basic functionality
 
-```{r example_1, fig.width = 6.5, fig.height = 3.5}
+```{r example_1, fig.width = 6.5, fig.height = 3.5, fig.alt = "Horizontal bar chart, Impact of V2. Adjusted outcome mean is 0.68 for the lower bin of V2 and 0.73 for the upper bin, with an impact estimate of 0.05. Bars are colored by low risk, high risk and impact."}
 library(varimpact)
 
 ####################################
@@ -105,7 +105,7 @@ vim = varimpact(Y = Y, data = X)
 
 ### Example: mlbench breast cancer
 
-```{r example_5, fig.width = 6, fig.height = 3.5}
+```{r example_5, fig.width = 6, fig.height = 3.5, fig.alt = "Horizontal bar chart, Impact of Mitoses. Adjusted outcome mean rises across levels 1, 2 and 3, at 0.37, 0.71 and 0.78, with an impact estimate of 0.41. Bars are colored by low risk, other, high risk and impact."}
 data(BreastCancer, package = "mlbench")
 data = BreastCancer
 

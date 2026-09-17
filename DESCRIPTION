@@ -13,7 +13,7 @@ Authors@R: c(
   person("Daniela", "Rodrigues",
     role = c("ctb"),
     comment = c(ORCID = "0000-0002-5791-5573", "adjustment_exclusions")))
-URL: http://github.com/ck37/varimpact
+URL: https://ck37-varimpact.netlify.app, https://github.com/ck37/varimpact
 BugReports: https://github.com/ck37/varimpact/issues
 Description: Automated data processing and variable importance using data-
     adaptive target parameter methods combined with TMLE. Returns an ordered

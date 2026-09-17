@@ -4,3 +4,6 @@
 .DS_Store
 *.Rproj
 results
+
+# pkgdown site, rendered by CI.
+docs/

@@ -115,7 +115,7 @@ vim$results_all
 plot_var("V2", vim)
 ```
 
-![](images/README-example_1-1.png)<!-- -->
+![Horizontal bar chart, Impact of V2. Adjusted outcome mean is 0.68 for the lower bin of V2 and 0.73 for the upper bin, with an impact estimate of 0.05. Bars are colored by low risk, high risk and impact.](man/figures/README-example_1-1.png)<!-- -->
 
 ``` r
 
@@ -199,7 +199,7 @@ plan("multisession")
 plot_var("Mitoses", vim)
 ```
 
-![](images/README-example_5-1.png)<!-- -->
+![Horizontal bar chart, Impact of Mitoses. Adjusted outcome mean rises across levels 1, 2 and 3, at 0.37, 0.71 and 0.78, with an impact estimate of 0.41. Bars are colored by low risk, other, high risk and impact.](man/figures/README-example_5-1.png)<!-- -->
 
 ## Authors
 
