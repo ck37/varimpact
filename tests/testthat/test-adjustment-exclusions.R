@@ -53,6 +53,42 @@ test_that("exclude_adjustment_vars() drops only the requested variables", {
   expect_equal(colnames(one), c("V1", "Imiss_V1"))
 })
 
+test_that("exclude_adjustment_vars() is a no-op when nothing matches", {
+  W <- data.frame(V1 = 1:3, V2 = 1:3, F1XXb = 1:3, Imiss_V1 = 1:3)
+
+  # A requested name that resolves to no column at all. This is distinct from
+  # requesting nothing: the request is real, it just does not match anything in
+  # W, which happens whenever a variable was dropped in pre-processing or a
+  # fold's adjustment set never contained it. The function returns W untouched
+  # rather than erroring or returning a zero-column frame, and the caller
+  # carries on with the full adjustment set.
+  out <- varimpact:::exclude_adjustment_vars(W, "V1", list(V1 = "not_a_column"))
+  expect_equal(colnames(out), colnames(W))
+  expect_equal(out, W)
+
+  # Partially matching requests still drop what they do match.
+  part <- varimpact:::exclude_adjustment_vars(
+    W, "V1", list(V1 = c("not_a_column", "V2")))
+  expect_equal(colnames(part), c("V1", "F1XXb", "Imiss_V1"))
+})
+
+test_that("exclude_adjustment_vars() names the columns it drops when verbose", {
+  W <- data.frame(V1 = 1:3, V2 = 1:3, F1XXb = 1:3, Imiss_V1 = 1:3)
+
+  output <- capture.output(
+    varimpact:::exclude_adjustment_vars(W, "V1", list(V1 = "V2"),
+                                        verbose = TRUE))
+
+  # The count and the column names both matter: a silent exclusion is how a
+  # request that quietly matched the wrong thing would go unnoticed.
+  expect_true(any(grepl("Excluding 1 adjustment column(s) for V1", output,
+                        fixed = TRUE)))
+  expect_true(any(grepl("V2", output, fixed = TRUE)))
+
+  # Quiet by default.
+  expect_silent(varimpact:::exclude_adjustment_vars(W, "V1", list(V1 = "V2")))
+})
+
 test_that("check_adjustment_exclusions() warns about names not in the data", {
   data_names <- c("V1", "V2", "F1")
 

@@ -151,3 +151,36 @@ test_that("varimpact still works with multiple columns (regression test)", {
   expect_s3_class(vim$results_all, "data.frame")
   expect_equal(nrow(vim$results_all), 3)
 })
+
+test_that("tmle_estimate_g() falls back to SL.mean with no adjustment variables", {
+  # When the analyzed variable is the only column in the data there is nothing
+  # left to adjust for, so d reaches tmle_estimate_g() with a single column and
+  # the covariate matrix is zero-column. Learners that regress on the covariates
+  # cannot fit that at all - SL.glm's "Y ~ ." errors with "'.' in formula and no
+  # 'data' argument" - so the library is narrowed to SL.mean up front rather
+  # than letting each learner fail and be dropped.
+  set.seed(1)
+  d <- data.frame(A = rbinom(40, 1, 0.5))
+
+  output <- capture.output(
+    g <- varimpact:::tmle_estimate_g(d = d,
+                                     SL.library = c("SL.mean", "SL.glm"),
+                                     V = 2, stratify = TRUE, verbose = TRUE,
+                                     message = "treatment mechanism"))
+
+  expect_true(any(grepl("No adjustment variables", output, fixed = TRUE)))
+  expect_true(any(grepl("with SL.mean alone", output, fixed = TRUE)))
+
+  # SL.glm is in the library and would have errored; the fit succeeds anyway.
+  expect_equal(g$type, "SuperLearner")
+
+  # The conditional probability reduces to the marginal one, so every fitted
+  # value is the sample mean. That is the same answer the dropped learners
+  # would have left behind, arrived at without the failures.
+  expect_equal(unique(as.vector(g$g1W)), mean(d$A))
+
+  # Quiet by default.
+  expect_silent(
+    varimpact:::tmle_estimate_g(d = d, SL.library = "SL.mean", V = 2,
+                                stratify = TRUE, message = "treatment mechanism"))
+})
