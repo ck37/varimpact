@@ -49,11 +49,17 @@ jobs:
       # the repository was deactivated on Codecov's side, every upload failed,
       # and the job went green every time regardless. Now that uploads work,
       # a silent regression should cost a red check rather than nothing.
-      - uses: codecov/codecov-action@v4
+      #
+      # v5 replaced the action's internals with the Codecov CLI and renamed two
+      # inputs: file became files, and plugin became plugins. Both are set
+      # below, so the version bump and the renames have to happen together -
+      # left as they were, they would be silently ignored as unknown inputs and
+      # the upload would search the workspace instead of taking the one report.
+      - uses: codecov/codecov-action@v7
         with:
           fail_ci_if_error: ${{ github.event_name != 'pull_request' && true || false }}
-          file: ./cobertura.xml
-          plugin: noop
+          files: ./cobertura.xml
+          plugins: noop
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
