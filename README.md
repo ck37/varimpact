@@ -17,8 +17,8 @@ covariate list is ranked by order of importance. This can be used for
 exploratory data analysis, for dimensionality reduction, for
 experimental design (e.g. to determine blocking and re-randomization),
 to reduce variance in an estimation procedure, etc. See Hubbard,
-Kennedy, & van der Laan (2018) for more details, or Hubbard & van der
-Laan (2016) for an earlier description.
+Kennedy, and van der Laan (2018) for more details, or Hubbard and van
+der Laan (2016) for an earlier description.
 
 ## Details
 
@@ -32,14 +32,14 @@ allows the asymptotics of TMLE to provide valid standard errors and
 p-values, unlike other variable importance algorithms.
 
 The results provide raw p-values as well as p-values adjusted for false
-discovery rate using the Benjamini-Hochberg (1995) procedure. Adjustment
-variables are automatically clustered hierarchically using HOPACH (van
-der Laan & Pollard 2003) in order to reduce dimensionality. The package
-supports multi-core and multi-node parallelization, which are detected
-and used automatically when a parallel backend is registered. Missing
-values are automatically imputed using K-nearest neighbors (Troyanskaya
-et al. 2001, Jerez et al. 2010) and missingness indicator variables are
-incorporated into the analysis.
+discovery rate using the Benjamini-Hochberg procedure (Benjamini and
+Hochberg 1995). Adjustment variables are automatically clustered
+hierarchically using HOPACH (van der Laan and Pollard 2003) in order to
+reduce dimensionality. The package supports multi-core and multi-node
+parallelization, which are detected and used automatically when a
+parallel backend is registered. Missing values are automatically imputed
+using K-nearest neighbors (Troyanskaya et al. 2001; Jerez et al. 2010)
+and missingness indicator variables are incorporated into the analysis.
 
 varimpact is under active development so please submit any bug reports
 or feature requests to the [issue
@@ -222,57 +222,117 @@ Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 
 ## References
 
-Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery
-rate: a practical and powerful approach to multiple testing. Journal of
-the royal statistical society. Series B (Methodological), 289-300.
+<div id="refs" class="references csl-bib-body hanging-indent">
 
-Gruber, S., & van der Laan, M. J. (2012). tmle: An R Package for
-Targeted Maximum Likelihood Estimation. Journal of Statistical Software,
-51(i13).
+<div id="ref-benjamini1995controlling" class="csl-entry">
 
-Hubbard, A. E., Kennedy, C. J., van der Laan, M. J. (2018).
-Data-adaptive target parameters. In M. van der Laan & S. Rose (2018)
-Targeted Learning in Data Science. Springer.
+Benjamini, Yoav, and Yosef Hochberg. 1995. “Controlling the False
+Discovery Rate: A Practical and Powerful Approach to Multiple Testing.”
+*Journal of the Royal Statistical Society. Series B (Methodological)*,
+289–300.
 
-Hubbard, A. E., Kherad-Pajouh, S., & van der Laan, M. J. (2016).
-Statistical Inference for Data Adaptive Target Parameters. The
-international journal of biostatistics, 12(1), 3-19.
+</div>
 
-Hubbard, A., Munoz, I. D., Decker, A., Holcomb, J. B., Schreiber, M. A.,
-Bulger, E. M., … & Rahbar, M. H. (2013). Time-Dependent Prediction and
-Evaluation of Variable Importance Using SuperLearning in High
-Dimensional Clinical Data. The journal of trauma and acute care surgery,
-75(1 0 1), S53.
+<div id="ref-gruber2012tmle" class="csl-entry">
 
-Hubbard, A. E., & van der Laan, M. J. (2016). Mining with inference:
-data-adaptive target parameters (pp. 439-452). In P. Bühlmann et
-al. (Ed.), Handbook of Big Data. CRC Press, Taylor & Francis Group, LLC:
-Boca Raton, FL.
+Gruber, Susan, and Mark J. van der Laan. 2012. “Tmle: An R Package for
+Targeted Maximum Likelihood Estimation.” *Journal of Statistical
+Software* 51 (13).
 
-Jerez, J. M., Molina, I., García-Laencina, P. J., Alba, E., Ribelles,
-N., Martín, M., & Franco, L. (2010). Missing data imputation using
-statistical and machine learning methods in a real breast cancer
-problem. Artificial intelligence in medicine, 50(2), 105-115.
+</div>
 
-Rozenholc, Y., Mildenberger, T., & Gather, U. (2010). Combining regular
-and irregular histograms by penalized likelihood. Computational
-Statistics & Data Analysis, 54(12), 3313-3323.
+<div id="ref-hubbard2018dataadaptive" class="csl-entry">
 
-Troyanskaya, O., Cantor, M., Sherlock, G., Brown, P., Hastie, T.,
-Tibshirani, R., Botstein, D., & Altman, R. B. (2001). Missing value
-estimation methods for DNA microarrays. Bioinformatics, 17(6), 520-525.
+Hubbard, Alan E., Chris J. Kennedy, and Mark J. van der Laan. 2018.
+“Data-Adaptive Target Parameters.” In *Targeted Learning in Data
+Science*, edited by Mark J. van der Laan and Sherri Rose. Springer.
 
-van der Laan, M. J. (2006). Statistical inference for variable
-importance. The International Journal of Biostatistics, 2(1).
+</div>
 
-van der Laan, M. J., & Pollard, K. S. (2003). A new algorithm for hybrid
-hierarchical clustering with visualization and the bootstrap. Journal of
-Statistical Planning and Inference, 117(2), 275-303.
+<div id="ref-hubbard2016statistical" class="csl-entry">
 
-van der Laan, M. J., Polley, E. C., & Hubbard, A. E. (2007). Super
-learner. Statistical applications in genetics and molecular biology,
-6(1).
+Hubbard, Alan E., Sara Kherad-Pajouh, and Mark J. van der Laan. 2016.
+“Statistical Inference for Data Adaptive Target Parameters.” *The
+International Journal of Biostatistics* 12 (1): 3–19.
 
-van der Laan, M. J., & Rose, S. (2011). Targeted learning: causal
-inference for observational and experimental data. Springer Science &
+</div>
+
+<div id="ref-hubbard2013timedependent" class="csl-entry">
+
+Hubbard, Alan E., Ivan Diaz Munoz, Anna Decker, John B. Holcomb, Martin
+A. Schreiber, Eileen M. Bulger, et al. 2013. “Time-Dependent Prediction
+and Evaluation of Variable Importance Using SuperLearning in High
+Dimensional Clinical Data.” *The Journal of Trauma and Acute Care
+Surgery* 75 (1 Suppl 1): S53.
+
+</div>
+
+<div id="ref-hubbard2016mining" class="csl-entry">
+
+Hubbard, Alan E., and Mark J. van der Laan. 2016. “Mining with
+Inference: Data-Adaptive Target Parameters.” In *Handbook of Big Data*,
+edited by Peter Bühlmann et al., 439–52. Boca Raton, FL: CRC Press,
+Taylor & Francis Group.
+
+</div>
+
+<div id="ref-jerez2010missing" class="csl-entry">
+
+Jerez, José M., Ignacio Molina, Pedro J. García-Laencina, Emilio Alba,
+Nuria Ribelles, Miguel Martín, and Leonardo Franco. 2010. “Missing Data
+Imputation Using Statistical and Machine Learning Methods in a Real
+Breast Cancer Problem.” *Artificial Intelligence in Medicine* 50 (2):
+105–15.
+
+</div>
+
+<div id="ref-rozenholc2010combining" class="csl-entry">
+
+Rozenholc, Yves, Thoralf Mildenberger, and Ursula Gather. 2010.
+“Combining Regular and Irregular Histograms by Penalized Likelihood.”
+*Computational Statistics & Data Analysis* 54 (12): 3313–23.
+
+</div>
+
+<div id="ref-troyanskaya2001missing" class="csl-entry">
+
+Troyanskaya, Olga, Michael Cantor, Gavin Sherlock, Pat Brown, Trevor
+Hastie, Robert Tibshirani, David Botstein, and Russ B. Altman. 2001.
+“Missing Value Estimation Methods for DNA Microarrays.” *Bioinformatics*
+17 (6): 520–25.
+
+</div>
+
+<div id="ref-vanderlaan2006statistical" class="csl-entry">
+
+van der Laan, Mark J. 2006. “Statistical Inference for Variable
+Importance.” *The International Journal of Biostatistics* 2 (1).
+
+</div>
+
+<div id="ref-vanderlaan2003hopach" class="csl-entry">
+
+van der Laan, Mark J., and Katherine S. Pollard. 2003. “A New Algorithm
+for Hybrid Hierarchical Clustering with Visualization and the
+Bootstrap.” *Journal of Statistical Planning and Inference* 117 (2):
+275–303.
+
+</div>
+
+<div id="ref-vanderlaan2007super" class="csl-entry">
+
+van der Laan, Mark J., Eric C. Polley, and Alan E. Hubbard. 2007. “Super
+Learner.” *Statistical Applications in Genetics and Molecular Biology* 6
+(1).
+
+</div>
+
+<div id="ref-vanderlaan2011targeted" class="csl-entry">
+
+van der Laan, Mark J., and Sherri Rose. 2011. *Targeted Learning: Causal
+Inference for Observational and Experimental Data*. Springer Science &
 Business Media.
+
+</div>
+
+</div>
