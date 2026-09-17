@@ -26,6 +26,7 @@ reference:
   - estimate_tmle2
   - tmle_estimate_q
   - create_cv_folds
+  - predict.varimpact_marginal
 
 - title: Data processing
   desc: >
