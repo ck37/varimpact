@@ -21,10 +21,10 @@ vim_factors =
   if (factors$num_factors > 0L && ncol(factors$data.fac) > 0L) {
     cat("Estimating variable importance for", factors$num_factors, "factors.\n")
 
-    # Find the level of covariate that has lowest risk
-    datafac.dumW = factors$datafac.dum
-    # NOTE: can't we skip this line because we already imputed missing data to 0?
-    datafac.dumW[is.na(factors$datafac.dum)] = 0
+    # Find the level of covariate that has lowest risk.
+    # The indicator matrix with missing values imputed to 0; process_factors()
+    # computes it so that vim_numerics() adjusts on exactly the same matrix.
+    datafac.dumW = factors$datafac.dumW
 
     #############################
     # Below is to get indexing vectors so that any basis functions related to current A

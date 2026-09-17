@@ -8,6 +8,7 @@ process_factors = function(data.fac,
   num_factors = 0L
   miss.fac = NULL
   datafac.dum = NULL
+  datafac.dumW = NULL
 
   #####################
   if (ncol(data.fac) > 0L) {
@@ -74,6 +75,14 @@ process_factors = function(data.fac,
       factor_results = factors_to_indicators(data.fac, verbose = verbose)
 
       datafac.dum = factor_results$data
+
+      # The version used as adjustment variables, with missing indicator values
+      # imputed to 0; the separate miss.fac columns carry the missingness. Both
+      # vim_factors() and vim_numerics() adjust on this, so it is computed once
+      # here rather than derived in each of them.
+      datafac.dumW = datafac.dum
+      datafac.dumW[is.na(datafac.dum)] = 0
+
       # Here 1 = defined, 0 = missing.
       miss.fac = factor_results$missing_indicators
 
@@ -91,6 +100,7 @@ process_factors = function(data.fac,
       num_factors = num_factors,
       miss.fac = miss.fac,
       datafac.dum = datafac.dum,
+      datafac.dumW = datafac.dumW,
       data.fac = data.fac
   ))
 
