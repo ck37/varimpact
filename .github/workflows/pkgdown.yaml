@@ -57,10 +57,10 @@ jobs:
         run: pkgdown::build_site(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
-      # netlify.toml is read from the root of the directory that gets uploaded,
-      # so the redirect and header rules have to travel with the site.
-      - name: Stage Netlify configuration
-        run: cp netlify.toml docs/netlify.toml
+      # pkgdown copies pkgdown/assets/netlify.toml to the root of the built
+      # site, which is where Netlify reads it from on the uploaded directory.
+      - name: Verify Netlify configuration was staged
+        run: test -f docs/netlify.toml
 
       - name: Upload site artifact
         uses: actions/upload-artifact@v4

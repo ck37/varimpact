@@ -1,0 +1,23 @@
+# Netlify configuration for the published documentation site.
+#
+# This lives under pkgdown/assets/ rather than at the repository root, and
+# pkgdown copies it to the root of the built site. That placement matters.
+# Netlify reads this file from the root of whatever directory is deployed, so
+# the rules below still apply to the site. But a netlify.toml at the root of
+# the *repository* would also be picked up by Netlify's own Git integration,
+# which would then try to build the site itself - something it cannot do, since
+# rendering needs R and Bioconductor packages its build image does not have.
+#
+# The site is built and uploaded by .github/workflows/pkgdown.yaml.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# pkgdown writes versioned asset paths, so they can be cached hard.
+[[headers]]
+  for = "/deps/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

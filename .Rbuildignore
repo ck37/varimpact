@@ -20,4 +20,3 @@
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
-^netlify\.toml$
