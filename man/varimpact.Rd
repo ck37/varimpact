@@ -26,7 +26,8 @@ varimpact(
   verbose_tmle = FALSE,
   verbose_reduction = FALSE,
   parallel = TRUE,
-  digits = 4L
+  digits = 4L,
+  adjustment_exclusions = list()
 )
 }
 \arguments{
@@ -97,6 +98,16 @@ variable reduction step (clustering).}
 by default.}
 
 \item{digits}{Number of digits to round the value labels.}
+
+\item{adjustment_exclusions}{Named list specifying adjustment variables to
+exclude when estimating the importance of a given variable. Each name is a
+column of \code{data} whose importance is being estimated, and each element
+is a character vector of other columns of \code{data} to leave out of its
+adjustment set, e.g. \code{list(V1 = c("V2", "V3"))}. Use it to keep a
+mediator or collider out of a particular adjustment set. Naming a factor
+excludes all of its indicator columns, and a variable's missingness
+indicator is excluded along with the variable. Defaults to an empty list,
+which adjusts for every other variable as usual.}
 }
 \value{
 Results object. TODO: add more detail here.
