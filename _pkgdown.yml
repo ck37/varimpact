@@ -1,0 +1,55 @@
+url: https://chambermaid-bill-50044.netlify.app
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#1a5490"
+
+# Every documented topic has to appear exactly once below, so adding a new
+# documented function means adding it here too. pkgdown fails the build
+# otherwise, which is the reminder.
+reference:
+- title: Estimating variable importance
+  desc: The entry point and what it returns.
+  contents:
+  - varimpact
+  - print.varimpact
+  - plot_var
+  - exportLatex
+
+- title: Estimation internals
+  desc: >
+    The CV-TMLE machinery underneath varimpact(). Documented so a fit can be
+    inspected, not normally called directly.
+  contents:
+  - estimate_tmle
+  - estimate_tmle2
+  - tmle_estimate_q
+  - create_cv_folds
+
+- title: Data processing
+  desc: >
+    Turning a raw data frame into the numeric matrix the estimator needs:
+    separating factors from numerics, binning, and reducing dimension.
+  contents:
+  - separate_factors_numerics
+  - factors_to_indicators
+  - quantiles_equivalent
+  - restrict_by_quantiles
+  - reduce_dimensions
+
+- title: Excluding variables from adjustment
+  desc: >
+    Keeping a variable, or the dummies and missingness indicator derived from
+    it, out of the adjustment set when it is the variable of interest.
+  contents:
+  - adjustment_columns
+  - exclude_adjustment_vars
+  - check_adjustment_exclusions
+
+- title: Utilities
+  contents:
+  - results_by_level
+  - cleanup_latex_files
+  - sum_na
+  - max_sqr
