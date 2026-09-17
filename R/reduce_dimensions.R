@@ -15,7 +15,11 @@
 reduce_dimensions = function(data, newX = NULL, max_variables, verbose = FALSE) {
 
   # Identify constant columns in training data.
-  is_constant = sapply(data, function(col) var(col, na.rm = TRUE) == 0)
+  # vapply rather than sapply: with no adjustment variables (which happens when
+  # the analyzed variable is the only column in the data) sapply() returns an
+  # empty list rather than an empty logical vector, and sum() on that fails with
+  # "invalid 'type' (list) of argument".
+  is_constant = vapply(data, function(col) var(col, na.rm = TRUE) == 0, logical(1))
 
   if (sum(is_constant) > 0) {
     if (verbose) cat("First removing", sum(is_constant), "constant columns.\n")
