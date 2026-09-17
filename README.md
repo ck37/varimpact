@@ -92,24 +92,31 @@ vim <- varimpact(Y = Y, data = X)
 
 # Review consistent and significant results.
 vim
-#> Significant and consistent results:
-#>       Type  Estimate            CI95      P-value Adj. p-value  Est. RR
-#> V3 Ordered 0.4986136 (0.255 - 0.742) 2.935984e-05 0.0001174394 2.908162
-#>         CI95 RR   P-value RR Adj. p-value RR
-#> V3 (1.92 - 4.4) 2.214955e-07    8.859819e-07
+#> No significant and consistent results.
+#> All results:
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.14489067 (-0.139 - 0.429) 0.1584764    0.3881728 1.481582
+#> V2 Ordered 0.09158159 (-0.162 - 0.345) 0.2397969    0.3881728 1.248218
+#> V3 Ordered 0.06324108 (-0.189 - 0.315) 0.3114153    0.3881728 1.143214
+#> V4 Ordered 0.04160003 (-0.245 - 0.329) 0.3881728    0.3881728 1.092865
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1  (0.58 - 3.79)  0.2057776       0.3838645       TRUE
+#> V2 (0.627 - 2.48)  0.2638584       0.3838645       TRUE
+#> V3  (0.69 - 1.89)  0.3017601       0.3838645       TRUE
+#> V4 (0.606 - 1.97)  0.3838645       0.3838645       TRUE
 
 # Look at all results.
 vim$results_all
-#>       Type    Estimate             CI95      P-value Adj. p-value   Est. RR
-#> V3 Ordered  0.49861358  (0.255 - 0.742) 2.935984e-05 0.0001174394 2.9081617
-#> V4 Ordered  0.21853793 (-0.167 - 0.604) 1.334006e-01 0.2668012809 1.4110231
-#> V2 Ordered  0.04733746 (-0.276 - 0.371) 3.872064e-01 0.5162752138 1.0698709
-#> V1 Ordered -0.10939221 (-0.494 - 0.275) 7.116162e-01 0.7116161584 0.8266168
-#>           CI95 RR   P-value RR Adj. p-value RR Consistent
-#> V3   (1.92 - 4.4) 2.214955e-07    8.859819e-07       TRUE
-#> V4 (0.833 - 2.39) 1.000755e-01    2.001509e-01       TRUE
-#> V2 (0.664 - 1.72) 3.905406e-01    5.207208e-01       TRUE
-#> V1 (0.441 - 1.55) 7.238555e-01    7.238555e-01       TRUE
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.14489067 (-0.139 - 0.429) 0.1584764    0.3881728 1.481582
+#> V2 Ordered 0.09158159 (-0.162 - 0.345) 0.2397969    0.3881728 1.248218
+#> V3 Ordered 0.06324108 (-0.189 - 0.315) 0.3114153    0.3881728 1.143214
+#> V4 Ordered 0.04160003 (-0.245 - 0.329) 0.3881728    0.3881728 1.092865
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1  (0.58 - 3.79)  0.2057776       0.3838645       TRUE
+#> V2 (0.627 - 2.48)  0.2638584       0.3838645       TRUE
+#> V3  (0.69 - 1.89)  0.3017601       0.3838645       TRUE
+#> V4 (0.606 - 1.97)  0.3838645       0.3838645       TRUE
 
 # Plot the V2 impact.
 plot_var("V2", vim)
@@ -121,6 +128,7 @@ plot_var("V2", vim)
 
 # Generate latex tables with results.
 exportLatex(vim)
+#> NULL
 
 # Clean up LaTeX files
 cleanup_latex_files()
@@ -142,11 +150,92 @@ set.seed(1, "L'Ecuyer-CMRG")
 #> No factor variables - skip VIM estimation.
 #> 
 #> Estimating variable importance for 4 numerics.
-#> Significant and consistent results:
-#>       Type Estimate            CI95      P-value Adj. p-value  Est. RR
-#> V3 Ordered  0.56401 (0.326 - 0.802) 1.749015e-06 6.996059e-06 3.644982
-#>          CI95 RR   P-value RR Adj. p-value RR
-#> V3 (2.34 - 5.69) 6.234554e-09    2.493822e-08
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in h(simpleError(msg, call)) : 
+#>   error in evaluating the argument 'x' in selecting a method for function 'drop': non-conformable arguments
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in h(simpleError(msg, call)) : 
+#>   error in evaluating the argument 'x' in selecting a method for function 'drop': non-conformable arguments
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in h(simpleError(msg, call)) : 
+#>   error in evaluating the argument 'x' in selecting a method for function 'drop': non-conformable arguments
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in h(simpleError(msg, call)) : 
+#>   error in evaluating the argument 'x' in selecting a method for function 'drop': non-conformable arguments
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in h(simpleError(msg, call)) : 
+#>   error in evaluating the argument 'x' in selecting a method for function 'drop': non-conformable arguments
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in h(simpleError(msg, call)) : 
+#>   error in evaluating the argument 'x' in selecting a method for function 'drop': non-conformable arguments
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in h(simpleError(msg, call)) : 
+#>   error in evaluating the argument 'x' in selecting a method for function 'drop': non-conformable arguments
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> Error in lognet(xd, is.sparse, ix, jx, y, weights, offset, alpha, nobs,  : 
+#>   one multinomial or binomial class has 1 or 0 observations; not allowed
+#> No significant and consistent results.
+#> All results:
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.11977803   (-0.11 - 0.35) 0.1536074    0.3189829 1.343215
+#> V3 Ordered 0.11061310 (-0.122 - 0.343) 0.1756394    0.3189829 1.251850
+#> V2 Ordered 0.09184043 (-0.162 - 0.346) 0.2392372    0.3189829 1.248918
+#> V4 Ordered 0.03601204 (-0.252 - 0.324) 0.4031810    0.4031810 1.080478
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1 (0.706 - 2.55)  0.1556579       0.3511543       TRUE
+#> V3  (0.81 - 1.93)  0.1840749       0.3511543       TRUE
+#> V2 (0.628 - 2.49)  0.2633657       0.3511543       TRUE
+#> V4 (0.597 - 1.96)  0.3990397       0.3990397       TRUE
 ```
 
 ### Example: parallel via multicore
@@ -187,15 +276,15 @@ plan("multisession")
 #> Estimating variable importance for 9 factors.
 #> Significant and consistent results:
 #>                Type  Estimate            CI95      P-value Adj. p-value
-#> Bare.nuclei  Factor 0.6174459   (0.5 - 0.735) 0.000000e+00 0.000000e+00
-#> Mitoses      Factor 0.4092028 (0.333 - 0.486) 0.000000e+00 0.000000e+00
-#> Cl.thickness Factor 0.5245860 (0.382 - 0.667) 3.027578e-13 9.082735e-13
-#> Cell.size    Factor 0.5650275 (0.395 - 0.735) 3.313050e-11 5.963490e-11
+#> Bare.nuclei  Factor 0.5018849 (0.367 - 0.637) 1.602052e-13 1.441847e-12
+#> Cell.size    Factor 0.5745486 (0.402 - 0.747) 3.381506e-11 1.521678e-10
+#> Mitoses      Factor 0.2392427 (0.161 - 0.317) 1.011109e-09 2.274996e-09
+#> Cl.thickness Factor 0.3805930 (0.251 - 0.511) 4.677600e-09 8.419679e-09
 #>               Est. RR       CI95 RR   P-value RR Adj. p-value RR
-#> Bare.nuclei  3.682218 (2.21 - 6.14) 0.000000e+00    0.000000e+00
-#> Mitoses      2.093929 (1.85 - 2.37) 3.023193e-11    1.360437e-10
-#> Cl.thickness 2.952087 (2.13 - 4.08) 2.956850e-07    8.870549e-07
-#> Cell.size    3.445132    (1.98 - 6) 4.465977e-06    8.038759e-06
+#> Bare.nuclei  2.968525 (1.77 - 4.97) 3.356870e-12    3.021183e-11
+#> Cell.size         Inf     (NA - NA) 6.480864e-10    2.916389e-09
+#> Mitoses      1.720553 (1.47 - 2.01) 2.708806e-05    6.094813e-05
+#> Cl.thickness 3.194347  (2.2 - 4.65) 6.051102e-05    1.089198e-04
 plot_var("Mitoses", vim)
 ```
 
