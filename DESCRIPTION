@@ -9,7 +9,10 @@ Authors@R: c(
     comment = c(ORCID = "0000-0002-3769-0127")),
   person("Chris", "Kennedy", email = "chrisken@gmail.com",
     role = c("aut", "cre"),
-    comment = c(ORCID = "0000-0001-7444-2766")))
+    comment = c(ORCID = "0000-0001-7444-2766")),
+  person("Daniela", "Rodrigues",
+    role = c("ctb"),
+    comment = c(ORCID = "0000-0002-5791-5573", "adjustment_exclusions")))
 URL: http://github.com/ck37/varimpact
 BugReports: https://github.com/ck37/varimpact/issues
 Description: Automated data processing and variable importance using data-
