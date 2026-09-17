@@ -57,10 +57,11 @@ jobs:
         run: pkgdown::build_site(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
-      # pkgdown copies pkgdown/assets/netlify.toml to the root of the built
-      # site, which is where Netlify reads it from on the uploaded directory.
+      # pkgdown copies pkgdown/assets/_headers to the root of the built site.
+      # A _headers file is read from the uploaded directory; a netlify.toml is
+      # not, on this deploy path. See the comment in that file.
       - name: Verify Netlify configuration was staged
-        run: test -f docs/netlify.toml
+        run: test -f docs/_headers
 
       - name: Upload site artifact
         uses: actions/upload-artifact@v7
