@@ -15,6 +15,9 @@
 # message - printed when verbose=TRUE
 # outcome - "A" for treatment, "Z" for intermediate variable,
 #           "D" for Delta (missingness)
+# min_cell_size - smallest number of observations the rarer outcome class may
+#           have before the covariate-adjusted fit is abandoned in favor of the
+#           marginal proportion. 0 (the default) never abandons it.
 # newdata - optional values to predict on (needed by tmleMSM function)
 # d = [A,W] for treatment
 # d = [Z,A,W] for intermediate
@@ -34,6 +37,7 @@ tmle_estimate_g <-
             verbose = F,
             message = "",
             outcome = "A",
+            min_cell_size = 0,
             newdata=d)  {
 
   cvControl = SuperLearner::SuperLearner.CV.control(V = V,
@@ -53,6 +57,30 @@ tmle_estimate_g <-
         g1W <- cbind(A0=g1W, A1=g1W)
       } else if (outcome=="D"){
         g1W <- cbind(Z0A0=g1W, Z0A1=g1W, Z1A0=g1W, Z1A1=g1W)
+      }
+    } else if (min(table(d[, 1])) < min_cell_size) {
+      # The rarer class is too small to support a covariate-adjusted fit: a
+      # V-fold cross-validation needs at least a couple of its observations in
+      # every training split, and the learners resample again on top of that.
+      # Below that floor SuperLearner does not fail cleanly. Each learner that
+      # cannot fit the split errors, SuperLearner prints the error and gives the
+      # learner weight 0, and if every learner fails the fallback is a glm that
+      # separates perfectly. The ensemble that survives is the intercept, so fit
+      # the intercept directly and say so.
+      p <- mean(d[, 1])
+      m <- marginal_fit(p)
+      type <- "marginal"
+      if (verbose) {
+        cat("\tRarest class of", colnames(d)[1], "has", min(table(d[, 1])),
+            "observations, fewer than", min_cell_size,
+            "\n\tUsing the marginal proportion", signif(p, 4),
+            "instead of a covariate-adjusted fit\n")
+      }
+      g1W <- rep(p, nrow(newdata))
+      if (outcome == "Z") {
+        g1W <- cbind(A0 = g1W, A1 = g1W)
+      } else if (outcome == "D") {
+        g1W <- cbind(Z0A0 = g1W, Z0A1 = g1W, Z1A0 = g1W, Z1A1 = g1W)
       }
     } else {
       if (is.null(gform)){

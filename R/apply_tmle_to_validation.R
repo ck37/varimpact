@@ -1,7 +1,9 @@
 # Predict the missingness mechanism P(Delta = 1 | Z = 0, A = 1, W) on new data,
 # using the model that estimate_tmle2() fit on the training fold.
 # Returns a vector of 1s if the training fold had no missingness, in which case
-# no model was fit.
+# no model was fit. When the training fold had too little missingness to model
+# from covariates the fit is a marginal_fit(), which predicts the training
+# fold's rate of missingness here, so the two folds agree.
 predict_g_delta = function(model, W) {
   if (is.null(model)) {
     # No missingness in the training fold, so P(Delta = 1 | A, W) = 1.

@@ -1,0 +1,18 @@
+# Netlify header rules for the published documentation site.
+#
+# This is a _headers file rather than a netlify.toml because the site is
+# deployed as a prebuilt directory through the Netlify CLI, and on that path
+# Netlify reads netlify.toml from the working directory rather than from the
+# uploaded directory - a netlify.toml placed here is simply ignored. A _headers
+# file at the root of the published directory is the mechanism that does apply.
+#
+# pkgdown copies anything in pkgdown/assets/ to the root of the built site.
+# The site is built and uploaded by .github/workflows/pkgdown.yaml.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# pkgdown writes versioned asset paths, so they can be cached hard.
+/deps/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -1,0 +1,98 @@
+# Builds the pkgdown documentation site and deploys it to Netlify.
+#
+# The build runs here rather than on Netlify because rendering the site needs R
+# and the package's dependencies, several of which (hopach, multtest) come from
+# Bioconductor. Netlify's build image has none of that. So GitHub Actions builds
+# the site and uploads the finished directory, and Netlify only serves it.
+#
+# A push to master publishes to production. A pull request publishes a deploy
+# preview instead, which is what gives Netlify's "Pages changed", "Header rules"
+# and "Redirect rules" checks something real to report.
+#
+# Deploying needs two repository secrets, NETLIFY_AUTH_TOKEN and
+# NETLIFY_SITE_ID. Without them the site is still built, so the job keeps
+# verifying that the documentation renders; only the upload is skipped. That
+# also covers pull requests from forks, which cannot see secrets.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+name: pkgdown
+
+permissions: read-all
+
+concurrency:
+  group: pkgdown-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pkgdown:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgdown, local::.
+          needs: website
+
+      - name: Build site
+        run: pkgdown::build_site(new_process = FALSE, install = FALSE)
+        shell: Rscript {0}
+
+      # pkgdown copies pkgdown/assets/_headers to the root of the built site.
+      # A _headers file is read from the uploaded directory; a netlify.toml is
+      # not, on this deploy path. See the comment in that file.
+      - name: Verify Netlify configuration was staged
+        run: test -f docs/_headers
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: pkgdown-site
+          path: docs
+          retention-days: 7
+
+      - name: Report missing Netlify credentials
+        if: env.NETLIFY_AUTH_TOKEN == '' || env.NETLIFY_SITE_ID == ''
+        run: |
+          echo "::notice::Site built but not deployed. Set the NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID repository secrets to publish it."
+
+      - name: Deploy production to Netlify
+        if: >-
+          github.event_name != 'pull_request'
+          && env.NETLIFY_AUTH_TOKEN != ''
+          && env.NETLIFY_SITE_ID != ''
+        run: |
+          npx --yes netlify-cli@17 deploy \
+            --dir=docs \
+            --prod \
+            --message="${GITHUB_SHA::8} on ${GITHUB_REF_NAME}"
+
+      - name: Deploy preview to Netlify
+        if: >-
+          github.event_name == 'pull_request'
+          && env.NETLIFY_AUTH_TOKEN != ''
+          && env.NETLIFY_SITE_ID != ''
+        run: |
+          npx --yes netlify-cli@17 deploy \
+            --dir=docs \
+            --alias="pr-${{ github.event.number }}" \
+            --message="PR #${{ github.event.number }}: ${{ github.event.pull_request.title }}"

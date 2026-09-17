@@ -17,7 +17,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -31,6 +31,7 @@ jobs:
           needs: coverage
 
       - name: Test coverage
+        id: coverage
         run: |
           cov <- covr::package_coverage(
             quiet = FALSE,
@@ -41,19 +42,35 @@ jobs:
           covr::to_cobertura(cov)
         shell: Rscript {0}
 
-      # fail_ci_if_error is false on purpose: until CODECOV_TOKEN is added to
-      # the repository secrets the upload cannot succeed, and a missing token
-      # should not turn this workflow red.
-      - uses: codecov/codecov-action@v4
+      # Fail the job when the upload fails on a push, but tolerate it on a pull
+      # request, where a fork cannot see the token. This started as `false`
+      # unconditionally, so that a missing CODECOV_TOKEN would not turn the
+      # workflow red - and that is exactly how a broken upload stayed invisible:
+      # the repository was deactivated on Codecov's side, every upload failed,
+      # and the job went green every time regardless. Now that uploads work,
+      # a silent regression should cost a red check rather than nothing.
+      #
+      # v5 replaced the action's internals with the Codecov CLI and renamed two
+      # inputs: file became files, and plugin became plugins. Both are set
+      # below, so the version bump and the renames have to happen together -
+      # left as they were, they would be silently ignored as unknown inputs and
+      # the upload would search the workspace instead of taking the one report.
+      - uses: codecov/codecov-action@v7
         with:
-          fail_ci_if_error: false
-          file: ./cobertura.xml
-          plugin: noop
+          fail_ci_if_error: ${{ github.event_name != 'pull_request' && true || false }}
+          files: ./cobertura.xml
+          plugins: noop
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
+      # Only when the coverage step itself failed - not merely when the job is
+      # failing. This dumps every testthat warning, and varimpact currently
+      # emits 99 copies of the same dplyr::funs() deprecation backtrace, which
+      # is enough to fill the retrievable log window. Running it on a green job
+      # is pure noise; running it on a failed codecov upload would bury the
+      # error that a reader came to find.
       - name: Show testthat output
-        if: always()
+        if: failure() && steps.coverage.outcome == 'failure'
         run: |
           ## --------------------------------------------------------------------
           find '${{ runner.temp }}/package' -name 'testthat.Rout*' -exec cat '{}' \; || true
@@ -61,7 +78,7 @@ jobs:
 
       - name: Upload test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-test-failures
           path: ${{ runner.temp }}/package
