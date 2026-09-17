@@ -5,5 +5,9 @@
 *.Rproj
 results
 
+# Local preview written by rmarkdown's github_document (html_preview);
+# the committed output is README.md.
+README.html
+
 # pkgdown site, rendered by CI.
 docs/
