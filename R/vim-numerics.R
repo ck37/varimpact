@@ -492,7 +492,13 @@ vim_numerics =
               do.call(rbind, lapply(bin_results, function(result) {
                 # Exclude certain elements from the list - here the prediction vectors.
                 # These should be saved separately.
-                data.frame(result[!names(result) %in% c("test_predictions")],
+                # W_names is excluded alongside test_predictions: both are
+                # vector-valued, and data.frame() recycles them into one row per
+                # element, which would silently emit one row per adjustment
+                # variable instead of one row per bin - or fail outright when the
+                # adjustment set is empty. Both stay available on bin_results.
+                data.frame(result[!names(result) %in%
+                                    c("test_predictions", "W_names")],
                           stringsAsFactors = FALSE)
             }))
 
