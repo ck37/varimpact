@@ -13,6 +13,7 @@ vim_factors =
            Qbounds,
            corthres,
            adjust_cutoff,
+           adjustment_exclusions = list(),
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE) {
@@ -21,10 +22,10 @@ vim_factors =
   if (factors$num_factors > 0L && ncol(factors$data.fac) > 0L) {
     cat("Estimating variable importance for", factors$num_factors, "factors.\n")
 
-    # Find the level of covariate that has lowest risk
-    datafac.dumW = factors$datafac.dum
-    # NOTE: can't we skip this line because we already imputed missing data to 0?
-    datafac.dumW[is.na(factors$datafac.dum)] = 0
+    # Find the level of covariate that has lowest risk.
+    # The indicator matrix with missing values imputed to 0; process_factors()
+    # computes it so that vim_numerics() adjusts on exactly the same matrix.
+    datafac.dumW = factors$datafac.dumW
 
     #############################
     # Below is to get indexing vectors so that any basis functions related to current A
@@ -112,6 +113,10 @@ vim_factors =
         # Restrict to columns in which there is less than 100% missingness.
         W = W[, !apply(is.na(W), 2, all), drop = FALSE]
 
+        # Drop any adjustment variables the user excluded for this variable.
+        W = exclude_adjustment_vars(W, nameA, adjustment_exclusions,
+                                    verbose = verbose)
+
         #######################################
 
         # Divide into training and validation subsets.
@@ -156,7 +161,10 @@ vim_factors =
 
         # We should have no constant columns after calling reduce_dimensions().
         # Remove any NA values - but shouldn't these already be imputed?
-        is_constant = sapply(Wtsht, function(col) var(col, na.rm = TRUE) == 0)
+        # vapply: an empty adjustment set must yield an empty logical vector,
+        # not an empty list. See reduce_dimensions().
+        is_constant = vapply(Wtsht, function(col) var(col, na.rm = TRUE) == 0,
+                             logical(1))
         # Restrict to just the TRUE variables - those that are constant.
         is_constant = is_constant[is_constant]
 
@@ -279,6 +287,7 @@ vim_factors =
             # Create a list to hold the results for this level.
             bin_result = list(
               name = nameA,
+              W_names = colnames(W),
               cv_fold = fold_k,
               level = bin_j,
               #level_label = At_bin_labels[bin_j],
@@ -417,7 +426,13 @@ vim_factors =
             do.call(rbind, lapply(bin_results, function(result) {
               # Exclude certain elements from the list - here the prediction vectors.
               # These should be saved separately.
-              data.frame(result[!names(result) %in% c("test_predictions")],
+              # W_names is excluded alongside test_predictions: both are
+              # vector-valued, and data.frame() recycles them into one row per
+              # element, which would silently emit one row per adjustment
+              # variable instead of one row per bin - or fail outright when the
+              # adjustment set is empty. Both stay available on bin_results.
+              data.frame(result[!names(result) %in%
+                                  c("test_predictions", "W_names")],
                          stringsAsFactors = FALSE)
             }))
 

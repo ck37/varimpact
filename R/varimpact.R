@@ -78,6 +78,15 @@
 #' @param verbose_reduction Boolean - if TRUE, will display more detail during
 #'   variable reduction step (clustering).
 #' @param digits Number of digits to round the value labels.
+#' @param adjustment_exclusions Named list specifying adjustment variables to
+#'   exclude when estimating the importance of a given variable. Each name is a
+#'   column of \code{data} whose importance is being estimated, and each element
+#'   is a character vector of other columns of \code{data} to leave out of its
+#'   adjustment set, e.g. \code{list(V1 = c("V2", "V3"))}. Use it to keep a
+#'   mediator or collider out of a particular adjustment set. Naming a factor
+#'   excludes all of its indicator columns, and a variable's missingness
+#'   indicator is excluded along with the variable. Defaults to an empty list,
+#'   which adjusts for every other variable as usual.
 #'
 #' @return Results object. TODO: add more detail here.
 #'
@@ -217,7 +226,8 @@ varimpact =
            verbose_tmle = FALSE,
            verbose_reduction = FALSE,
            parallel = TRUE,
-           digits = 4L) {
+           digits = 4L,
+           adjustment_exclusions = list()) {
 
   # Time the full function execution.
   time_start = proc.time()
@@ -225,10 +235,21 @@ varimpact =
   ######################
   # Argument checks.
 
-  # Confirm that data has at least two columns.
-  if (ncol(data) < 2L) {
-    stop("Data argument must have at least two columns.")
+  # Handle vector input by converting to data frame
+  if (is.vector(data) && !is.list(data)) {
+    if (verbose) cat("Converting vector input to data frame.\n")
+    data <- data.frame(X1 = data)
   }
+
+  # Handle single column case with warning
+  if (ncol(data) == 1L) {
+    warning("Using single variable for variable importance analysis. Results may be limited.")
+    if (verbose) cat("Single variable detected in data.\n")
+  }
+
+  # Check the exclusion list once here rather than inside the per-fold loops,
+  # so that a typo is reported a single time instead of once per fold.
+  check_adjustment_exclusions(adjustment_exclusions, colnames(data))
 
   # Ensure that Y is numeric; e.g. can't be a factor.
   stopifnot(class(Y) %in% c("numeric", "integer"))
@@ -319,6 +340,7 @@ varimpact =
                 Qbounds = Qbounds,
                 corthres = corthres,
                 adjust_cutoff = adjust_cutoff,
+                adjustment_exclusions = adjustment_exclusions,
                 verbose = verbose,
                 verbose_tmle = verbose_tmle,
                 verbose_reduction = verbose_reduction)
@@ -338,7 +360,8 @@ varimpact =
                  adjust_cutoff = adjust_cutoff,
                  verbose = verbose,
                  verbose_tmle = verbose_tmle,
-                 verbose_reduction = verbose_reduction)
+                 verbose_reduction = verbose_reduction,
+                 adjustment_exclusions = adjustment_exclusions)
 
   # Combine the separate continuous and factor results.
   results =

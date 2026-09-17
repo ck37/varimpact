@@ -14,11 +14,22 @@
 
 * Fixed a duplicated line in `estimate_tmle2()` that applied `plogis()` to
   `Qstar` twice when mapping the targeted predictions back to the outcome scale
-  (`tmle::tmle()` applies it once). For a continuous outcome the second
-  `plogis()` saturated every prediction, which made the training estimate
-  identical in every bin; `which.max()` and `which.min()` then selected the same
-  bin, every fold was discarded as "min and max level are the same", and
-  `varimpact()` returned no results at all for `family = "gaussian"`.
+  (`tmle::tmle()` applies it once). How badly this behaved depended on the range
+  of the outcome, because `plogis()` only saturates once its argument is far
+  from zero:
+
+  - An outcome far from zero, such as one ranging 31 to 68, saturated
+    completely. Every prediction collapsed to the upper bound, which made the
+    training estimate identical in every bin, so `which.max()` and `which.min()`
+    selected the same bin, every fold was discarded as "min and max level are
+    the same", and `varimpact()` returned no results at all.
+  - An outcome near zero, such as one ranging -2 to 3, did not collapse. It
+    came back distorted instead: plausible-looking estimates that were simply
+    wrong, which is the harder case to notice.
+
+  For a binary outcome the bounds are `c(0, 1)` and the extra transform was
+  `plogis()` of a probability, which shifted theta into (0.5, 0.731) but left
+  bin selection intact.
 
 ## Internal changes
 

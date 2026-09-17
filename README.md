@@ -1,12 +1,9 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- README.md is generated from readme.Rmd. Please edit that file -->
 
 # varimpact - variable importance through causal inference
 
-[![Build
-Status](https://travis-ci.org/ck37/varimpact.svg?branch=master)](https://travis-ci.org/ck37/varimpact)
-[![AppVeyor Build
-Status](https://ci.appveyor.com/api/projects/status/github/ck37/varimpact?branch=master&svg=true)](https://ci.appveyor.com/project/ck37/varimpact)
+[![R-CMD-check](https://github.com/ck37/varimpact/actions/workflows/check-standard.yaml/badge.svg)](https://github.com/ck37/varimpact/actions/workflows/check-standard.yaml)
 [![codecov](https://codecov.io/gh/ck37/varimpact/branch/master/graph/badge.svg)](https://codecov.io/gh/ck37/varimpact)
 
 ## Summary
@@ -20,8 +17,8 @@ covariate list is ranked by order of importance. This can be used for
 exploratory data analysis, for dimensionality reduction, for
 experimental design (e.g. to determine blocking and re-randomization),
 to reduce variance in an estimation procedure, etc. See Hubbard,
-Kennedy, & van der Laan (2018) for more details, or Hubbard & van der
-Laan (2016) for an earlier description.
+Kennedy, and van der Laan (2018) for more details, or Hubbard and van
+der Laan (2016) for an earlier description.
 
 ## Details
 
@@ -35,14 +32,14 @@ allows the asymptotics of TMLE to provide valid standard errors and
 p-values, unlike other variable importance algorithms.
 
 The results provide raw p-values as well as p-values adjusted for false
-discovery rate using the Benjamini-Hochberg (1995) procedure. Adjustment
-variables are automatically clustered hierarchically using HOPACH (van
-der Laan & Pollard 2003) in order to reduce dimensionality. The package
-supports multi-core and multi-node parallelization, which are detected
-and used automatically when a parallel backend is registered. Missing
-values are automatically imputed using K-nearest neighbors (Troyanskaya
-et al. 2001, Jerez et al. 2010) and missingness indicator variables are
-incorporated into the analysis.
+discovery rate using the Benjamini-Hochberg procedure (Benjamini and
+Hochberg 1995). Adjustment variables are automatically clustered
+hierarchically using HOPACH (van der Laan and Pollard 2003) in order to
+reduce dimensionality. The package supports multi-core and multi-node
+parallelization, which are detected and used automatically when a
+parallel backend is registered. Missing values are automatically imputed
+using K-nearest neighbors (Troyanskaya et al. 2001; Jerez et al. 2010)
+and missingness indicator variables are incorporated into the analysis.
 
 varimpact is under active development so please submit any bug reports
 or feature requests to the [issue
@@ -61,7 +58,7 @@ remotes::install_github("ck37/varimpact")
 
 ### CRAN
 
-Forthcoming fall 2022
+varimpact is not on CRAN yet; install from GitHub as above.
 
 ## Examples
 
@@ -95,35 +92,43 @@ vim <- varimpact(Y = Y, data = X)
 
 # Review consistent and significant results.
 vim
-#> Significant and consistent results:
-#>       Type  Estimate            CI95      P-value Adj. p-value  Est. RR
-#> V3 Ordered 0.4986136 (0.255 - 0.742) 2.935984e-05 0.0001174394 2.908162
-#>         CI95 RR   P-value RR Adj. p-value RR
-#> V3 (1.92 - 4.4) 2.214955e-07    8.859819e-07
+#> No significant and consistent results.
+#> All results:
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.14594569 (-0.139 - 0.431) 0.1576403    0.3173261 1.485982
+#> V2 Ordered 0.09282500 (-0.162 - 0.348) 0.2378623    0.3173261 1.254249
+#> V3 Ordered 0.08669212 (-0.152 - 0.325) 0.2379946    0.3173261 1.197426
+#> V4 Ordered 0.04143251 (-0.246 - 0.329) 0.3886701    0.3886701 1.092521
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1  (0.58 - 3.81)  0.2045956       0.3509072       TRUE
+#> V2 (0.622 - 2.53)  0.2225937       0.3509072       TRUE
+#> V3  (0.754 - 1.9)  0.2631804       0.3509072       TRUE
+#> V4 (0.606 - 1.97)  0.3843299       0.3843299       TRUE
 
 # Look at all results.
 vim$results_all
-#>       Type    Estimate             CI95      P-value Adj. p-value   Est. RR
-#> V3 Ordered  0.49861358  (0.255 - 0.742) 2.935984e-05 0.0001174394 2.9081617
-#> V4 Ordered  0.21853793 (-0.167 - 0.604) 1.334006e-01 0.2668012809 1.4110231
-#> V2 Ordered  0.04733746 (-0.276 - 0.371) 3.872064e-01 0.5162752138 1.0698709
-#> V1 Ordered -0.10939221 (-0.494 - 0.275) 7.116162e-01 0.7116161584 0.8266168
-#>           CI95 RR   P-value RR Adj. p-value RR Consistent
-#> V3   (1.92 - 4.4) 2.214955e-07    8.859819e-07       TRUE
-#> V4 (0.833 - 2.39) 1.000755e-01    2.001509e-01       TRUE
-#> V2 (0.664 - 1.72) 3.905406e-01    5.207208e-01       TRUE
-#> V1 (0.441 - 1.55) 7.238555e-01    7.238555e-01       TRUE
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.14594569 (-0.139 - 0.431) 0.1576403    0.3173261 1.485982
+#> V2 Ordered 0.09282500 (-0.162 - 0.348) 0.2378623    0.3173261 1.254249
+#> V3 Ordered 0.08669212 (-0.152 - 0.325) 0.2379946    0.3173261 1.197426
+#> V4 Ordered 0.04143251 (-0.246 - 0.329) 0.3886701    0.3886701 1.092521
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1  (0.58 - 3.81)  0.2045956       0.3509072       TRUE
+#> V2 (0.622 - 2.53)  0.2225937       0.3509072       TRUE
+#> V3  (0.754 - 1.9)  0.2631804       0.3509072       TRUE
+#> V4 (0.606 - 1.97)  0.3843299       0.3843299       TRUE
 
 # Plot the V2 impact.
 plot_var("V2", vim)
 ```
 
-![](images/README-example_1-1.png)<!-- -->
+<img src="man/figures/README-example_1-1.png" alt="Horizontal bar chart titled Impact of V2: the adjusted outcome mean for each of V2's two bins, plus a third bar for the impact estimate. Bars are colored to mark the lower-risk level, the higher-risk level and the impact."  />
 
 ``` r
 
 # Generate latex tables with results.
 exportLatex(vim)
+#> NULL
 
 # Clean up LaTeX files
 cleanup_latex_files()
@@ -145,11 +150,18 @@ set.seed(1, "L'Ecuyer-CMRG")
 #> No factor variables - skip VIM estimation.
 #> 
 #> Estimating variable importance for 4 numerics.
-#> Significant and consistent results:
-#>       Type Estimate            CI95      P-value Adj. p-value  Est. RR
-#> V3 Ordered  0.56401 (0.326 - 0.802) 1.749015e-06 6.996059e-06 3.644982
-#>          CI95 RR   P-value RR Adj. p-value RR
-#> V3 (2.34 - 5.69) 6.234554e-09    2.493822e-08
+#> No significant and consistent results.
+#> All results:
+#>       Type   Estimate             CI95   P-value Adj. p-value  Est. RR
+#> V1 Ordered 0.11972453   (-0.11 - 0.35) 0.1536753    0.3199279 1.343059
+#> V3 Ordered 0.11121909 (-0.122 - 0.344) 0.1747763    0.3199279 1.253538
+#> V2 Ordered 0.09154387 (-0.162 - 0.346) 0.2399459    0.3199279 1.248120
+#> V4 Ordered 0.03595027 (-0.252 - 0.324) 0.4033505    0.4033505 1.080330
+#>           CI95 RR P-value RR Adj. p-value RR Consistent
+#> V1 (0.706 - 2.55)  0.1548062       0.3519554       TRUE
+#> V3 (0.811 - 1.94)  0.1841387       0.3519554       TRUE
+#> V2 (0.627 - 2.48)  0.2639666       0.3519554       TRUE
+#> V4 (0.597 - 1.95)  0.3992209       0.3992209       TRUE
 ```
 
 ### Example: parallel via multicore
@@ -190,19 +202,19 @@ plan("multisession")
 #> Estimating variable importance for 9 factors.
 #> Significant and consistent results:
 #>                Type  Estimate            CI95      P-value Adj. p-value
-#> Bare.nuclei  Factor 0.6174459   (0.5 - 0.735) 0.000000e+00 0.000000e+00
-#> Mitoses      Factor 0.4092028 (0.333 - 0.486) 0.000000e+00 0.000000e+00
-#> Cl.thickness Factor 0.5245860 (0.382 - 0.667) 3.027578e-13 9.082735e-13
-#> Cell.size    Factor 0.5650275 (0.395 - 0.735) 3.313050e-11 5.963490e-11
+#> Bare.nuclei  Factor 0.5018849 (0.367 - 0.637) 1.602052e-13 1.441847e-12
+#> Cell.size    Factor 0.5745486 (0.402 - 0.747) 3.381506e-11 1.521678e-10
+#> Mitoses      Factor 0.2392427 (0.161 - 0.317) 1.011109e-09 2.274996e-09
+#> Cl.thickness Factor 0.3805930 (0.251 - 0.511) 4.677600e-09 8.419679e-09
 #>               Est. RR       CI95 RR   P-value RR Adj. p-value RR
-#> Bare.nuclei  3.682218 (2.21 - 6.14) 0.000000e+00    0.000000e+00
-#> Mitoses      2.093929 (1.85 - 2.37) 3.023193e-11    1.360437e-10
-#> Cl.thickness 2.952087 (2.13 - 4.08) 2.956850e-07    8.870549e-07
-#> Cell.size    3.445132    (1.98 - 6) 4.465977e-06    8.038759e-06
+#> Bare.nuclei  2.968525 (1.77 - 4.97) 3.356870e-12    3.021183e-11
+#> Cell.size         Inf     (NA - NA) 6.480864e-10    2.916389e-09
+#> Mitoses      1.720553 (1.47 - 2.01) 2.708806e-05    6.094813e-05
+#> Cl.thickness 3.194347  (2.2 - 4.65) 6.051102e-05    1.089198e-04
 plot_var("Mitoses", vim)
 ```
 
-![](images/README-example_5-1.png)<!-- -->
+<img src="man/figures/README-example_5-1.png" alt="Horizontal bar chart titled Impact of Mitoses: the adjusted outcome mean for Mitoses levels 1, 2 and 3, which increases with level, plus a fourth bar for the impact estimate. Bars are colored to mark the lower-risk level, intermediate levels, the higher-risk level and the impact."  />
 
 ## Authors
 
@@ -210,57 +222,117 @@ Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 
 ## References
 
-Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery
-rate: a practical and powerful approach to multiple testing. Journal of
-the royal statistical society. Series B (Methodological), 289-300.
+<div id="refs" class="references csl-bib-body hanging-indent">
 
-Gruber, S., & van der Laan, M. J. (2012). tmle: An R Package for
-Targeted Maximum Likelihood Estimation. Journal of Statistical Software,
-51(i13).
+<div id="ref-benjamini1995controlling" class="csl-entry">
 
-Hubbard, A. E., Kennedy, C. J., van der Laan, M. J. (2018).
-Data-adaptive target parameters. In M. van der Laan & S. Rose (2018)
-Targeted Learning in Data Science. Springer.
+Benjamini, Yoav, and Yosef Hochberg. 1995. “Controlling the False
+Discovery Rate: A Practical and Powerful Approach to Multiple Testing.”
+*Journal of the Royal Statistical Society. Series B (Methodological)*,
+289–300.
 
-Hubbard, A. E., Kherad-Pajouh, S., & van der Laan, M. J. (2016).
-Statistical Inference for Data Adaptive Target Parameters. The
-international journal of biostatistics, 12(1), 3-19.
+</div>
 
-Hubbard, A., Munoz, I. D., Decker, A., Holcomb, J. B., Schreiber, M. A.,
-Bulger, E. M., … & Rahbar, M. H. (2013). Time-Dependent Prediction and
-Evaluation of Variable Importance Using SuperLearning in High
-Dimensional Clinical Data. The journal of trauma and acute care surgery,
-75(1 0 1), S53.
+<div id="ref-gruber2012tmle" class="csl-entry">
 
-Hubbard, A. E., & van der Laan, M. J. (2016). Mining with inference:
-data-adaptive target parameters (pp. 439-452). In P. Bühlmann et
-al. (Ed.), Handbook of Big Data. CRC Press, Taylor & Francis Group, LLC:
-Boca Raton, FL.
+Gruber, Susan, and Mark J. van der Laan. 2012. “Tmle: An R Package for
+Targeted Maximum Likelihood Estimation.” *Journal of Statistical
+Software* 51 (13).
 
-Jerez, J. M., Molina, I., García-Laencina, P. J., Alba, E., Ribelles,
-N., Martín, M., & Franco, L. (2010). Missing data imputation using
-statistical and machine learning methods in a real breast cancer
-problem. Artificial intelligence in medicine, 50(2), 105-115.
+</div>
 
-Rozenholc, Y., Mildenberger, T., & Gather, U. (2010). Combining regular
-and irregular histograms by penalized likelihood. Computational
-Statistics & Data Analysis, 54(12), 3313-3323.
+<div id="ref-hubbard2018dataadaptive" class="csl-entry">
 
-Troyanskaya, O., Cantor, M., Sherlock, G., Brown, P., Hastie, T.,
-Tibshirani, R., Botstein, D., & Altman, R. B. (2001). Missing value
-estimation methods for DNA microarrays. Bioinformatics, 17(6), 520-525.
+Hubbard, Alan E., Chris J. Kennedy, and Mark J. van der Laan. 2018.
+“Data-Adaptive Target Parameters.” In *Targeted Learning in Data
+Science*, edited by Mark J. van der Laan and Sherri Rose. Springer.
 
-van der Laan, M. J. (2006). Statistical inference for variable
-importance. The International Journal of Biostatistics, 2(1).
+</div>
 
-van der Laan, M. J., & Pollard, K. S. (2003). A new algorithm for hybrid
-hierarchical clustering with visualization and the bootstrap. Journal of
-Statistical Planning and Inference, 117(2), 275-303.
+<div id="ref-hubbard2016statistical" class="csl-entry">
 
-van der Laan, M. J., Polley, E. C., & Hubbard, A. E. (2007). Super
-learner. Statistical applications in genetics and molecular biology,
-6(1).
+Hubbard, Alan E., Sara Kherad-Pajouh, and Mark J. van der Laan. 2016.
+“Statistical Inference for Data Adaptive Target Parameters.” *The
+International Journal of Biostatistics* 12 (1): 3–19.
 
-van der Laan, M. J., & Rose, S. (2011). Targeted learning: causal
-inference for observational and experimental data. Springer Science &
+</div>
+
+<div id="ref-hubbard2013timedependent" class="csl-entry">
+
+Hubbard, Alan E., Ivan Diaz Munoz, Anna Decker, John B. Holcomb, Martin
+A. Schreiber, Eileen M. Bulger, et al. 2013. “Time-Dependent Prediction
+and Evaluation of Variable Importance Using SuperLearning in High
+Dimensional Clinical Data.” *The Journal of Trauma and Acute Care
+Surgery* 75 (1 Suppl 1): S53.
+
+</div>
+
+<div id="ref-hubbard2016mining" class="csl-entry">
+
+Hubbard, Alan E., and Mark J. van der Laan. 2016. “Mining with
+Inference: Data-Adaptive Target Parameters.” In *Handbook of Big Data*,
+edited by Peter Bühlmann et al., 439–52. Boca Raton, FL: CRC Press,
+Taylor & Francis Group.
+
+</div>
+
+<div id="ref-jerez2010missing" class="csl-entry">
+
+Jerez, José M., Ignacio Molina, Pedro J. García-Laencina, Emilio Alba,
+Nuria Ribelles, Miguel Martín, and Leonardo Franco. 2010. “Missing Data
+Imputation Using Statistical and Machine Learning Methods in a Real
+Breast Cancer Problem.” *Artificial Intelligence in Medicine* 50 (2):
+105–15.
+
+</div>
+
+<div id="ref-rozenholc2010combining" class="csl-entry">
+
+Rozenholc, Yves, Thoralf Mildenberger, and Ursula Gather. 2010.
+“Combining Regular and Irregular Histograms by Penalized Likelihood.”
+*Computational Statistics & Data Analysis* 54 (12): 3313–23.
+
+</div>
+
+<div id="ref-troyanskaya2001missing" class="csl-entry">
+
+Troyanskaya, Olga, Michael Cantor, Gavin Sherlock, Pat Brown, Trevor
+Hastie, Robert Tibshirani, David Botstein, and Russ B. Altman. 2001.
+“Missing Value Estimation Methods for DNA Microarrays.” *Bioinformatics*
+17 (6): 520–25.
+
+</div>
+
+<div id="ref-vanderlaan2006statistical" class="csl-entry">
+
+van der Laan, Mark J. 2006. “Statistical Inference for Variable
+Importance.” *The International Journal of Biostatistics* 2 (1).
+
+</div>
+
+<div id="ref-vanderlaan2003hopach" class="csl-entry">
+
+van der Laan, Mark J., and Katherine S. Pollard. 2003. “A New Algorithm
+for Hybrid Hierarchical Clustering with Visualization and the
+Bootstrap.” *Journal of Statistical Planning and Inference* 117 (2):
+275–303.
+
+</div>
+
+<div id="ref-vanderlaan2007super" class="csl-entry">
+
+van der Laan, Mark J., Eric C. Polley, and Alan E. Hubbard. 2007. “Super
+Learner.” *Statistical Applications in Genetics and Molecular Biology* 6
+(1).
+
+</div>
+
+<div id="ref-vanderlaan2011targeted" class="csl-entry">
+
+van der Laan, Mark J., and Sherri Rose. 2011. *Targeted Learning: Causal
+Inference for Observational and Experimental Data*. Springer Science &
 Business Media.
+
+</div>
+
+</div>

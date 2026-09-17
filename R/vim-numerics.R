@@ -13,6 +13,7 @@ vim_numerics =
            Qbounds,
            corthres,
            adjust_cutoff,
+           adjustment_exclusions = list(),
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE) {
@@ -238,6 +239,10 @@ vim_numerics =
           # (With the exception of the NA vectors possibly added above.
           W = W[, !apply(is.na(W), 2, all), drop = FALSE]
 
+          # Drop any adjustment variables the user excluded for this variable.
+          W = exclude_adjustment_vars(W, nameA, adjustment_exclusions,
+                                      verbose = verbose)
+
           # Separate adjustment matrix into the training and test folds.
           Wt = W[folds != fold_k, , drop = FALSE]
           Wv = W[folds == fold_k, , drop = FALSE]
@@ -280,7 +285,9 @@ vim_numerics =
           Wvsht = reduced_results$newX
 
           # Identify any constant columns.
-          is_constant = sapply(Wtsht, function(col) var(col) == 0)
+          # vapply: an empty adjustment set must yield an empty logical vector,
+          # not an empty list. See reduce_dimensions().
+          is_constant = vapply(Wtsht, function(col) var(col) == 0, logical(1))
           is_constant = is_constant[is_constant]
 
           if (verbose) {
@@ -345,6 +352,7 @@ vim_numerics =
               # Create a list to hold the results for this level.
               bin_result = list(
                 name = nameA,
+                W_names = colnames(W),
                 cv_fold = fold_k,
                 level = bin_j,
                 level_label = At_bin_labels[bin_j],
@@ -486,7 +494,13 @@ vim_numerics =
               do.call(rbind, lapply(bin_results, function(result) {
                 # Exclude certain elements from the list - here the prediction vectors.
                 # These should be saved separately.
-                data.frame(result[!names(result) %in% c("test_predictions")],
+                # W_names is excluded alongside test_predictions: both are
+                # vector-valued, and data.frame() recycles them into one row per
+                # element, which would silently emit one row per adjustment
+                # variable instead of one row per bin - or fail outright when the
+                # adjustment set is empty. Both stay available on bin_results.
+                data.frame(result[!names(result) %in%
+                                    c("test_predictions", "W_names")],
                           stringsAsFactors = FALSE)
             }))
 
