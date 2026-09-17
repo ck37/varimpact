@@ -2,10 +2,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 
-# Automated testing.
-^\.travis\.yml$
-^appveyor\.yml$
-
 # Misc.
 ^TODO.txt$
 ^images$
@@ -13,3 +9,9 @@
 # Github files.
 ^readme.Rmd$
 ^\.github$
+
+# Full license text. The License field in DESCRIPTION is the standard
+# GPL (>= 2) abbreviation, so R already knows these terms; shipping another
+# copy of them in the tarball just draws a CRAN note. Kept in the repository
+# so GitHub can detect and display the license.
+^LICENSE\.md$
