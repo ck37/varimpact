@@ -4,7 +4,7 @@
 #' all levels of each variable across all CV folds.
 #' @param verbose If true, display extra output.
 #' @importFrom magrittr %>%
-#' @importFrom dplyr group_by summarize_all funs select mutate first
+#' @importFrom dplyr group_by summarize_all select mutate first
 #' @importFrom modeest mlv
 results_by_level =
   function(results_by_fold_and_level,
@@ -24,8 +24,12 @@ results_by_level =
     # Remove test_msg for now.
     # TODO: take mode of test_msg or first value, rather than mean.
     select(-c(test_msg, train_msg)) %>%
-    # this generates a warning in mean() because test_msg is a character not a numeric.
-    summarize_all(dplyr::funs(mean)) %>%
+    # Pass mean bare rather than as list(mean = mean): a *named* list makes
+    # summarize_all append the name to every output column, so cv_fold becomes
+    # cv_fold_mean and the select() below can no longer find it. That is what
+    # broke results_by_level() in aa20337 and forced the revert in 1ee9675.
+    # An unnamed function keeps the original column names, as funs(mean) did.
+    summarize_all(mean) %>%
     select(-c(cv_fold, train_cell_size, test_cell_size))
 
     # Don't keep this as a tibble.
