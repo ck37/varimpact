@@ -7,9 +7,9 @@ library(varimpact)
 context("Single column support")
 
 # Helper: run an expression, collecting warning messages rather than emitting
-# them. varimpact() prints progress even with verbose = FALSE, and results_by_level()
-# still calls the deprecated dplyr::funs(), so expect_silent() can never hold
-# here; we assert on the specific warning we care about instead.
+# them. varimpact() prints progress even with verbose = FALSE, and the
+# estimation can warn about rank-deficient fits, so expect_silent() can never
+# hold here; we assert on the specific warning we care about instead.
 collect_warnings <- function(expr) {
   warnings <- character()
   value <- withCallingHandlers(
@@ -66,6 +66,28 @@ test_that("varimpact handles vector input", {
   expect_s3_class(vim, "varimpact")
   expect_s3_class(vim$results_all, "data.frame")
   expect_equal(nrow(vim$results_all), 1)
+})
+
+test_that("verbose reports the conversion and the single variable", {
+  # varimpact()'s argument checks have two verbose-only branches: one
+  # announcing that a vector was converted to a data frame, the other that only
+  # one variable is present. Both are worth saying out loud, because each
+  # changes what the run is actually doing relative to what was passed in.
+  set.seed(1)
+  N <- 200
+  X_vector <- rnorm(N)
+  Y <- rbinom(N, 1, plogis(0.2 * X_vector))
+
+  output <- capture.output(
+    expect_warning(
+      varimpact(Y = Y, data = X_vector, verbose = TRUE, V = 2L),
+      single_var_warning
+    ))
+
+  expect_true(any(grepl("Converting vector input to data frame", output,
+                        fixed = TRUE)))
+  expect_true(any(grepl("Single variable detected in data", output,
+                        fixed = TRUE)))
 })
 
 test_that("varimpact handles single column data frame", {
