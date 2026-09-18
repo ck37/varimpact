@@ -160,8 +160,45 @@ process_numerics =
       stop("Mean imputation not implemented yet. Please use another imputation method.")
     } else if (impute == "knn") {
       # NOTE: this also results in caret centering and scaling the data.
-      impute_info = caret::preProcess(data.num, method = "knnImpute")
-      data.numW = predict(impute_info, data.num)
+      #
+      # caret:::nnimp() stops on a row in which every column is missing - with
+      # no observed column there is nothing to match neighbors on - which took
+      # down the whole run. Such a row carries no covariate information at all,
+      # so no imputation can recover one; median and zero imputation do not
+      # refuse, they fill it and move on. Do the same here rather than making
+      # knn the one method that fails on data the others accept.
+      #
+      # Those rows are already excluded from caret's neighbor reference set,
+      # which is complete cases only, and they contribute to no column's mean
+      # or sd because they are NA in every column. So fitting without them
+      # gives the same centering and scaling, and filling them with 0 afterward
+      # is the column mean, caret having centered and scaled.
+      all_missing = rowSums(is.na(data.num)) == ncol(data.num)
+
+      if (all(all_missing)) {
+        # Every row is empty, so there is nothing to learn a neighbor from.
+        #
+        # Not reachable today, and deliberately kept anyway: an all-NA frame
+        # dies earlier in the binning above ("object 'var_binned_names' not
+        # found"), so this never runs and no test can drive it. It is here so
+        # that if the binning ever learns to handle such a frame, this says
+        # what is wrong instead of handing caret an empty one.
+        stop("Cannot impute: every row is missing every numeric covariate.")  # nocov
+      }
+
+      impute_info = caret::preProcess(data.num[!all_missing, , drop = FALSE],
+                                      method = "knnImpute")
+      data.numW[!all_missing, ] =
+        predict(impute_info, data.num[!all_missing, , drop = FALSE])
+
+      if (any(all_missing)) {
+        data.numW[all_missing, ] = 0
+        if (verbose) {
+          cat("Note:", sum(all_missing), "row(s) are missing every numeric",
+              "covariate and cannot be imputed from neighbors;",
+              "set to the column mean.\n")
+        }
+      }
     }
 
     # Confirm that there are no missing values remaining in data.numW
