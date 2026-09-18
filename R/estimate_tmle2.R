@@ -238,7 +238,20 @@ estimate_tmle2 =
   colnames(Qstar) <- c("QAW", "Q0W", "Q1W")
   Ystar <- stage1$Ystar
   if (map_to_ystar) {
-    Qstar <- plogis(Qstar)*diff(stage1$ab)+stage1$ab[1]
+    # Map the targeted predictions back onto the scale of the original outcome.
+    # NOTE: this block used to apply plogis() to Qstar twice. tmle::tmle() applies
+    # it once, and once is correct: after the first line Qstar is already on the
+    # outcome's own scale, so a second plogis() saturates it. How badly that
+    # behaved depended on the outcome's range, because plogis() only saturates
+    # once its argument is far from zero. An outcome ranging 31 to 68 collapsed
+    # entirely to stage1$ab[2], making the training theta identical in every
+    # bin - so which.max() and which.min() picked the same bin, every fold was
+    # discarded as "min and max level are the same", and varimpact() returned no
+    # results at all. An outcome ranging -2 to 3 did not collapse; it came back
+    # distorted instead, which is the harder case to notice. For a binary
+    # outcome stage1$ab is c(0, 1) and the extra transform was plogis() of a
+    # probability, which shifted theta into (0.5, 0.731) but left bin selection
+    # intact.
     Qstar <- plogis(Qstar)*diff(stage1$ab)+stage1$ab[1]
     q$Q <- plogis(q$Q)*diff(stage1$ab)+stage1$ab[1]
     Ystar <- Ystar*diff(stage1$ab)+stage1$ab[1]

@@ -740,7 +740,8 @@ vim_numerics =
         # e.g. lack of variation.
 
         if (!is.null(bin_df) && nrow(bin_df) > 0L) {
-          pooled_bin = estimate_pooled_results(bin_list, verbose = verbose)
+          pooled_bin = estimate_pooled_results(bin_list, verbose = verbose,
+                                               Qbounds = Qbounds)
           # Now we have $thetas and $influence_curves
 
           # Save the vector of estimates into the appropriate spot.
@@ -806,9 +807,11 @@ vim_numerics =
       # TODO: compile results into the new estimate.
 
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
-                                           verbose = verbose)
+                                           verbose = verbose,
+                                           Qbounds = Qbounds)
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
-                                           verbose = verbose)
+                                           verbose = verbose,
+                                           Qbounds = Qbounds)
 
       var_results$EY0V = pooled_min$thetas
       var_results$EY1V = pooled_max$thetas

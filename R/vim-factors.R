@@ -684,7 +684,8 @@ vim_factors =
         # bin_df can be NULL if the variable is skipped due to errors,
         # e.g. lack of variation.
         if (!is.null(bin_df) && nrow(bin_df) > 0L) {
-          pooled_bin = estimate_pooled_results(bin_list, verbose = verbose)
+          pooled_bin = estimate_pooled_results(bin_list, verbose = verbose,
+                                               Qbounds = Qbounds)
           # Now we have $thetas and $influence_curves
 
           # Save the vector of estimates into the appropriate spot.
@@ -755,11 +756,13 @@ vim_factors =
 
       if (verbose) cat("Estimating pooled min.\n")
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
-                                           verbose = verbose)
+                                           verbose = verbose,
+                                           Qbounds = Qbounds)
       cat("\n")
       if (verbose) cat("Estimating pooled max.\n")
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
-                                           verbose = verbose)
+                                           verbose = verbose,
+                                           Qbounds = Qbounds)
       cat("\n")
 
       var_results$EY0V = pooled_min$thetas

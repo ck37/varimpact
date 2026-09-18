@@ -1,6 +1,13 @@
+# Qbounds: the bounds that were used to map the outcome into [0, 1] before the
+# CV-TMLE was run, i.e. the same vector varimpact() passed down to
+# apply_tmle_to_validation(). For a binary outcome this is c(0, 1) and every
+# transformation below is the identity. For a continuous outcome it is the
+# (10%-widened) range of Y, and we use it to map the results back onto the
+# scale of the original outcome. See issue #8.
 estimate_pooled_results = function(fold_results,
                                    fluctuation = "logistic",
-                                   verbose = FALSE) {
+                                   verbose = FALSE,
+                                   Qbounds = c(0, 1)) {
   # Fold results is a list with test results from each fold.
 
   # Each fold result should have at least this element:
@@ -141,6 +148,34 @@ estimate_pooled_results = function(fold_results,
       #if (length(unique(data$Y)) == 2) {
       Q_star = plogis(Q_star)
       #}
+
+      # Map back onto the scale of the original outcome.
+      #
+      # apply_tmle_to_validation() ran the whole CV-TMLE on
+      # Y_star = (Y - Qbounds[1]) / diff(Qbounds), so both Q_star and Y_star
+      # currently live on that [0, 1] scale. The treatment-specific mean is
+      # linear in Y, so its inverse is just the inverse of that map, and every
+      # quantity built from Q_star and Y_star below inherits the right scale:
+      #
+      #   theta_original = theta_star * diff(Qbounds) + Qbounds[1]
+      #   IC_original    = diff(Qbounds) * IC_star
+      #
+      # The location shift cancels out of the influence curve, because both of
+      # its terms are differences: HAW * (Y_star - Q_star), and
+      # Q_star - mean(Q_star).
+      #
+      # For a binary outcome Qbounds is c(0, 1) and this is a no-op, which is
+      # why it is applied unconditionally rather than behind a family check.
+      if (!is.null(Qbounds) && length(Qbounds) == 2L) {
+        if (verbose && !identical(as.numeric(Qbounds), c(0, 1))) {
+          cat("Mapping Q_star back to the outcome scale using Qbounds:",
+              Qbounds, "\n")
+        }
+        Q_star = Q_star * diff(Qbounds) + Qbounds[1]
+        # Observations with delta == 0 carry a placeholder Y_star of 0; they get
+        # zero weight through HAW, so their rescaled value is irrelevant.
+        data$Y_star = data$Y_star * diff(Qbounds) + Qbounds[1]
+      }
 
       if (verbose) cat("Estimating per-fold thetas: ")
 
