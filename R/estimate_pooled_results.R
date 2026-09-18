@@ -37,7 +37,12 @@ estimate_pooled_results = function(fold_results,
   data = do.call(rbind, lapply(1:length(fold_results), function(i) {
     fold = fold_results[[i]]
     # Save the fold number so we can use it to generate fold-specific estimates.
-    if (is.null(fold$val_preds)) {
+    # A fold that produced no validation predictions for this bin leaves
+    # val_preds as a zero-row dataframe rather than NULL - the fold ran, this
+    # bin just had nothing in it. cbind()ing fold_num onto zero rows fails with
+    # "arguments imply differing number of rows: 0, 1", so treat it as a failed
+    # fold, which is what it is.
+    if (is.null(fold$val_preds) || NROW(fold$val_preds) == 0L) {
       # Skip folds that failed.
       NULL
     } else {
@@ -234,6 +239,32 @@ estimate_pooled_results = function(fold_results,
   if (is.null(thetas))  {
     # All folds must have failed.
     if (verbose) cat("No pooled results. All folds seemed to have failed.\n")
+  }
+
+  # tapply() and by() key on the fold numbers that actually appear in the data,
+  # so a fold contributing no rows for this bin gets no slot - and every later
+  # fold shifts down a position. Callers index these BY FOLD NUMBER
+  # (thetas[fold], influence_curves[[fold]]), so that shift either runs off the
+  # end or, worse, silently attributes one fold's estimate to another. Re-expand
+  # to one slot per fold, empty where the fold contributed nothing.
+  num_folds = length(fold_results)
+  align_by_fold = function(x, empty) {
+    present = suppressWarnings(as.integer(names(x)))
+    keep = !is.na(present) & present >= 1L & present <= num_folds
+    out = rep(empty, num_folds)
+    out[present[keep]] = x[keep]
+    out
+  }
+  if (!is.null(thetas)) {
+    # as.numeric() drops the fold-number names that align_by_fold() reads, so
+    # put them back.
+    thetas_flat = as.numeric(thetas)
+    names(thetas_flat) = names(thetas)
+    thetas = align_by_fold(thetas_flat, NA_real_)
+  }
+  if (!is.null(influence_curves)) {
+    # as.list() strips the "by" class while keeping the fold-number names.
+    influence_curves = align_by_fold(as.list(influence_curves), list(NULL))
   }
 
   # Compile results
