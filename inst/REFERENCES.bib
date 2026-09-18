@@ -5,9 +5,15 @@
 % author as "Laan, Mark J. van der", citing him as "(Laan 2007)". Most of the
 % methodology this package implements is his, so that matters here.
 %
+% Every entry carries a doi, each one looked up and checked against Crossref
+% rather than written from memory. readme.csl deliberately does not render
+% the DOI as a trailing link; pandoc's link-bibliography then hyperlinks the
+% entry's title to it instead, so a title with no link means a missing doi.
+%
 % Referenced from readme.Rmd, and available to Rd files via Rdpack.
 
 @article{benjamini1995controlling,
+  doi     = {10.1111/j.2517-6161.1995.tb02031.x},
   author  = {Benjamini, Yoav and Hochberg, Yosef},
   title   = {Controlling the False Discovery Rate: A Practical and Powerful
              Approach to Multiple Testing},
@@ -18,6 +24,7 @@
 }
 
 @article{gruber2012tmle,
+  doi     = {10.18637/jss.v051.i13},
   author  = {Gruber, Susan and {van der Laan}, Mark J.},
   title   = {tmle: An {R} Package for Targeted Maximum Likelihood Estimation},
   journal = {Journal of Statistical Software},
@@ -27,6 +34,7 @@
 }
 
 @incollection{hubbard2018dataadaptive,
+  doi       = {10.1007/978-3-319-65304-4_9},
   author    = {Hubbard, Alan E. and Kennedy, Chris J. and {van der Laan}, Mark J.},
   title     = {Data-Adaptive Target Parameters},
   booktitle = {Targeted Learning in Data Science},
@@ -36,6 +44,7 @@
 }
 
 @article{hubbard2016statistical,
+  doi     = {10.1515/ijb-2015-0013},
   author  = {Hubbard, Alan E. and Kherad-Pajouh, Sara and {van der Laan}, Mark J.},
   title   = {Statistical Inference for Data Adaptive Target Parameters},
   journal = {The International Journal of Biostatistics},
@@ -46,6 +55,7 @@
 }
 
 @article{hubbard2013timedependent,
+  doi     = {10.1097/ta.0b013e3182914553},
   author  = {Hubbard, Alan E. and Munoz, Ivan Diaz and Decker, Anna and
              Holcomb, John B. and Schreiber, Martin A. and Bulger, Eileen M.
              and others},
@@ -59,6 +69,7 @@
 }
 
 @incollection{hubbard2016mining,
+  doi       = {10.1201/b19567-36},
   author    = {Hubbard, Alan E. and {van der Laan}, Mark J.},
   title     = {Mining with Inference: Data-Adaptive Target Parameters},
   booktitle = {Handbook of Big Data},
@@ -70,6 +81,7 @@
 }
 
 @article{jerez2010missing,
+  doi     = {10.1016/j.artmed.2010.05.002},
   author  = {Jerez, Jos{\'e} M. and Molina, Ignacio and
              Garc{\'i}a-Laencina, Pedro J. and Alba, Emilio and
              Ribelles, Nuria and Mart{\'i}n, Miguel and Franco, Leonardo},
@@ -83,6 +95,7 @@
 }
 
 @article{rozenholc2010combining,
+  doi     = {10.1016/j.csda.2010.04.021},
   author  = {Rozenholc, Yves and Mildenberger, Thoralf and Gather, Ursula},
   title   = {Combining Regular and Irregular Histograms by Penalized
              Likelihood},
@@ -94,6 +107,7 @@
 }
 
 @article{troyanskaya2001missing,
+  doi     = {10.1093/bioinformatics/17.6.520},
   author  = {Troyanskaya, Olga and Cantor, Michael and Sherlock, Gavin and
              Brown, Pat and Hastie, Trevor and Tibshirani, Robert and
              Botstein, David and Altman, Russ B.},
@@ -106,6 +120,7 @@
 }
 
 @article{vanderlaan2006statistical,
+  doi     = {10.2202/1557-4679.1008},
   author  = {{van der Laan}, Mark J.},
   title   = {Statistical Inference for Variable Importance},
   journal = {The International Journal of Biostatistics},
@@ -115,6 +130,7 @@
 }
 
 @article{vanderlaan2003hopach,
+  doi     = {10.1016/s0378-3758(02)00388-9},
   author  = {{van der Laan}, Mark J. and Pollard, Katherine S.},
   title   = {A New Algorithm for Hybrid Hierarchical Clustering with
              Visualization and the Bootstrap},
@@ -126,6 +142,7 @@
 }
 
 @article{vanderlaan2007super,
+  doi     = {10.2202/1544-6115.1309},
   author  = {{van der Laan}, Mark J. and Polley, Eric C. and
              Hubbard, Alan E.},
   title   = {Super Learner},
@@ -136,6 +153,7 @@
 }
 
 @book{vanderlaan2011targeted,
+  doi       = {10.1007/978-1-4419-9782-1},
   author    = {{van der Laan}, Mark J. and Rose, Sherri},
   title     = {Targeted Learning: Causal Inference for Observational and
                Experimental Data},

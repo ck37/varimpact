@@ -230,71 +230,78 @@ Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 
 <div id="ref-benjamini1995controlling" class="csl-entry">
 
-Benjamini, Yoav, and Yosef Hochberg. 1995. “Controlling the False
-Discovery Rate: A Practical and Powerful Approach to Multiple Testing.”
-*Journal of the Royal Statistical Society. Series B (Methodological)*,
-289–300.
+Benjamini, Yoav, and Yosef Hochberg. 1995. “[Controlling the False
+Discovery Rate: A Practical and Powerful Approach to Multiple
+Testing](https://doi.org/10.1111/j.2517-6161.1995.tb02031.x).” *Journal
+of the Royal Statistical Society. Series B (Methodological)*, 289–300.
 
 </div>
 
 <div id="ref-gruber2012tmle" class="csl-entry">
 
-Gruber, Susan, and Mark J. van der Laan. 2012. “Tmle: An R Package for
-Targeted Maximum Likelihood Estimation.” *Journal of Statistical
-Software* 51 (13).
+Gruber, Susan, and Mark J. van der Laan. 2012. “[Tmle: An R Package for
+Targeted Maximum Likelihood
+Estimation](https://doi.org/10.18637/jss.v051.i13).” *Journal of
+Statistical Software* 51 (13).
 
 </div>
 
 <div id="ref-hubbard2018dataadaptive" class="csl-entry">
 
 Hubbard, Alan E., Chris J. Kennedy, and Mark J. van der Laan. 2018.
-“Data-Adaptive Target Parameters.” In *Targeted Learning in Data
-Science*, edited by Mark J. van der Laan and Sherri Rose. Springer.
+“[Data-Adaptive Target
+Parameters](https://doi.org/10.1007/978-3-319-65304-4_9).” In *Targeted
+Learning in Data Science*, edited by Mark J. van der Laan and Sherri
+Rose. Springer.
 
 </div>
 
 <div id="ref-hubbard2016statistical" class="csl-entry">
 
 Hubbard, Alan E., Sara Kherad-Pajouh, and Mark J. van der Laan. 2016.
-“Statistical Inference for Data Adaptive Target Parameters.” *The
-International Journal of Biostatistics* 12 (1): 3–19.
+“[Statistical Inference for Data Adaptive Target
+Parameters](https://doi.org/10.1515/ijb-2015-0013).” *The International
+Journal of Biostatistics* 12 (1): 3–19.
 
 </div>
 
 <div id="ref-hubbard2013timedependent" class="csl-entry">
 
 Hubbard, Alan E., Ivan Diaz Munoz, Anna Decker, John B. Holcomb, Martin
-A. Schreiber, Eileen M. Bulger, et al. 2013. “Time-Dependent Prediction
+A. Schreiber, Eileen M. Bulger, et al. 2013. “[Time-Dependent Prediction
 and Evaluation of Variable Importance Using SuperLearning in High
-Dimensional Clinical Data.” *The Journal of Trauma and Acute Care
-Surgery* 75 (1 Suppl 1): S53.
+Dimensional Clinical
+Data](https://doi.org/10.1097/ta.0b013e3182914553).” *The Journal of
+Trauma and Acute Care Surgery* 75 (1 Suppl 1): S53.
 
 </div>
 
 <div id="ref-hubbard2016mining" class="csl-entry">
 
-Hubbard, Alan E., and Mark J. van der Laan. 2016. “Mining with
-Inference: Data-Adaptive Target Parameters.” In *Handbook of Big Data*,
-edited by Peter Bühlmann et al., 439–52. Boca Raton, FL: CRC Press,
-Taylor & Francis Group.
+Hubbard, Alan E., and Mark J. van der Laan. 2016. “[Mining with
+Inference: Data-Adaptive Target
+Parameters](https://doi.org/10.1201/b19567-36).” In *Handbook of Big
+Data*, edited by Peter Bühlmann et al., 439–52. Boca Raton, FL: CRC
+Press, Taylor & Francis Group.
 
 </div>
 
 <div id="ref-jerez2010missing" class="csl-entry">
 
 Jerez, José M., Ignacio Molina, Pedro J. García-Laencina, Emilio Alba,
-Nuria Ribelles, Miguel Martín, and Leonardo Franco. 2010. “Missing Data
+Nuria Ribelles, Miguel Martín, and Leonardo Franco. 2010. “[Missing Data
 Imputation Using Statistical and Machine Learning Methods in a Real
-Breast Cancer Problem.” *Artificial Intelligence in Medicine* 50 (2):
-105–15.
+Breast Cancer Problem](https://doi.org/10.1016/j.artmed.2010.05.002).”
+*Artificial Intelligence in Medicine* 50 (2): 105–15.
 
 </div>
 
 <div id="ref-rozenholc2010combining" class="csl-entry">
 
 Rozenholc, Yves, Thoralf Mildenberger, and Ursula Gather. 2010.
-“Combining Regular and Irregular Histograms by Penalized Likelihood.”
-*Computational Statistics & Data Analysis* 54 (12): 3313–23.
+“[Combining Regular and Irregular Histograms by Penalized
+Likelihood](https://doi.org/10.1016/j.csda.2010.04.021).” *Computational
+Statistics & Data Analysis* 54 (12): 3313–23.
 
 </div>
 
@@ -302,39 +309,42 @@ Rozenholc, Yves, Thoralf Mildenberger, and Ursula Gather. 2010.
 
 Troyanskaya, Olga, Michael Cantor, Gavin Sherlock, Pat Brown, Trevor
 Hastie, Robert Tibshirani, David Botstein, and Russ B. Altman. 2001.
-“Missing Value Estimation Methods for DNA Microarrays.” *Bioinformatics*
-17 (6): 520–25.
+“[Missing Value Estimation Methods for DNA
+Microarrays](https://doi.org/10.1093/bioinformatics/17.6.520).”
+*Bioinformatics* 17 (6): 520–25.
 
 </div>
 
 <div id="ref-vanderlaan2006statistical" class="csl-entry">
 
-van der Laan, Mark J. 2006. “Statistical Inference for Variable
-Importance.” *The International Journal of Biostatistics* 2 (1).
+van der Laan, Mark J. 2006. “[Statistical Inference for Variable
+Importance](https://doi.org/10.2202/1557-4679.1008).” *The International
+Journal of Biostatistics* 2 (1).
 
 </div>
 
 <div id="ref-vanderlaan2003hopach" class="csl-entry">
 
-van der Laan, Mark J., and Katherine S. Pollard. 2003. “A New Algorithm
+van der Laan, Mark J., and Katherine S. Pollard. 2003. “[A New Algorithm
 for Hybrid Hierarchical Clustering with Visualization and the
-Bootstrap.” *Journal of Statistical Planning and Inference* 117 (2):
-275–303.
+Bootstrap](https://doi.org/10.1016/s0378-3758(02)00388-9).” *Journal of
+Statistical Planning and Inference* 117 (2): 275–303.
 
 </div>
 
 <div id="ref-vanderlaan2007super" class="csl-entry">
 
-van der Laan, Mark J., Eric C. Polley, and Alan E. Hubbard. 2007. “Super
-Learner.” *Statistical Applications in Genetics and Molecular Biology* 6
-(1).
+van der Laan, Mark J., Eric C. Polley, and Alan E. Hubbard. 2007.
+“[Super Learner](https://doi.org/10.2202/1544-6115.1309).” *Statistical
+Applications in Genetics and Molecular Biology* 6 (1).
 
 </div>
 
 <div id="ref-vanderlaan2011targeted" class="csl-entry">
 
-van der Laan, Mark J., and Sherri Rose. 2011. *Targeted Learning: Causal
-Inference for Observational and Experimental Data*. Springer Science &
+van der Laan, Mark J., and Sherri Rose. 2011. *[Targeted Learning:
+Causal Inference for Observational and Experimental
+Data](https://doi.org/10.1007/978-1-4419-9782-1)*. Springer Science &
 Business Media.
 
 </div>
