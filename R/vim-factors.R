@@ -356,8 +356,13 @@ vim_factors =
               if (verbose) cat("X")
               error_count = error_count + 1
 
-              # Initialize to NULL so validation code doesn't get subscript error
-              training_estimates[[bin_j]] = NULL
+              # `training_estimates[[bin_j]] = NULL` would DELETE an element
+              # rather than store a NULL placeholder, so the list never grew and
+              # the validation code below indexed past its end - the very
+              # "subscript out of bounds" this line was meant to prevent.
+              # `[bin_j] = list(NULL)` stores the placeholder and keeps bin
+              # positions aligned.
+              training_estimates[bin_j] = list(NULL)
             } else {
               # TMLE estimation successed.
 
@@ -492,7 +497,8 @@ vim_factors =
               minj == maxj ||
               is.null(training_estimates[[minj]]) || is.null(training_estimates[[maxj]])) {
             message = paste("Fold", fold_k, "failed,")
-            if (length(theta_estimates) == 0 || error_count == num.cat) {
+            if (length(theta_estimates) == 0 || error_count == num.cat ||
+                is.na(minj) || is.na(maxj)) {
               message = paste(message, "all", num.cat, "levels had errors.")
             } else if (minj == maxj) {
               message = paste(message, "min and max level are the same. (j = ", minj, ")")
@@ -698,7 +704,10 @@ vim_factors =
             bin_df = fold_results[[fold]]$bin_df
             row = bin_df$level == bin & bin_df$cv_fold == fold
             fold_results[[fold]]$bin_df[row, "test_theta_tmle"] = pooled_bin$thetas[fold]
-            fold_results[[fold]]$bin_df[row, "test_var_tmle"] = var(pooled_bin$influence_curves[[fold]])
+            # Empty when this fold had no validation rows for this bin.
+            fold_ic = pooled_bin$influence_curves[[fold]]
+            fold_results[[fold]]$bin_df[row, "test_var_tmle"] =
+              if (length(fold_ic) >= 2L) var(fold_ic) else NA_real_
           }
 
         } else {
@@ -804,9 +813,13 @@ vim_factors =
 
         # Influence_curves here is a list, with an element for each fold.
         var_results$varICV = sapply(1:V, function(index) {
-          if (length(pooled_max$influence_curves) >= index &&
-              length(pooled_min$influence_curves) >= index) {
-            var(pooled_max$influence_curves[[index]] - pooled_min$influence_curves[[index]])
+          # influence_curves is now one slot per fold, empty where that fold
+          # contributed no validation rows - so test the curves, not the list
+          # length, which is always V.
+          ic_max = pooled_max$influence_curves[[index]]
+          ic_min = pooled_min$influence_curves[[index]]
+          if (length(ic_max) >= 2L && length(ic_min) >= 2L) {
+            var(ic_max - ic_min)
           } else {
             NA
           }
@@ -815,12 +828,13 @@ vim_factors =
         # Parameter: relative risk
         # TODO: only calculate if Y is binary.
         var_results$varICV_log_rr = sapply(1:V, function(index) {
-          if (length(pooled_max$influence_curves) >= index &&
-              length(pooled_min$influence_curves) >= index) {
+          ic_max = pooled_max$influence_curves[[index]]
+          ic_min = pooled_min$influence_curves[[index]]
+          if (length(ic_max) >= 2L && length(ic_min) >= 2L) {
             # Variance for the risk difference (maximal contrast parameter).
             # TODO: double-check this.
-            var(pooled_max$influence_curves[[index]] / pooled_max$thetas[[index]] -
-                  pooled_min$influence_curves[[index]] / pooled_min$thetas[[index]])
+            var(ic_max / pooled_max$thetas[[index]] -
+                  ic_min / pooled_min$thetas[[index]])
           } else {
             NA
           }
