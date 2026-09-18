@@ -17,8 +17,9 @@ covariate list is ranked by order of importance. This can be used for
 exploratory data analysis, for dimensionality reduction, for
 experimental design (e.g. to determine blocking and re-randomization),
 to reduce variance in an estimation procedure, etc. See Hubbard,
-Kennedy, and van der Laan (2018) for more details, or Hubbard and van
-der Laan (2016) for an earlier description.
+Kennedy, and van der Laan ([2018](#ref-hubbard2018dataadaptive)) for
+more details, or Hubbard and van der Laan
+([2016](#ref-hubbard2016mining)) for an earlier description.
 
 ## Details
 
@@ -32,14 +33,17 @@ allows the asymptotics of TMLE to provide valid standard errors and
 p-values, unlike other variable importance algorithms.
 
 The results provide raw p-values as well as p-values adjusted for false
-discovery rate using the Benjamini-Hochberg procedure (Benjamini and
-Hochberg 1995). Adjustment variables are automatically clustered
-hierarchically using HOPACH (van der Laan and Pollard 2003) in order to
-reduce dimensionality. The package supports multi-core and multi-node
+discovery rate using the Benjamini-Hochberg procedure ([Benjamini and
+Hochberg 1995](#ref-benjamini1995controlling)). Adjustment variables are
+automatically clustered hierarchically using HOPACH ([van der Laan and
+Pollard 2003](#ref-vanderlaan2003hopach)) in order to reduce
+dimensionality. The package supports multi-core and multi-node
 parallelization, which are detected and used automatically when a
 parallel backend is registered. Missing values are automatically imputed
-using K-nearest neighbors (Troyanskaya et al. 2001; Jerez et al. 2010)
-and missingness indicator variables are incorporated into the analysis.
+using K-nearest neighbors ([Troyanskaya et al.
+2001](#ref-troyanskaya2001missing); [Jerez et al.
+2010](#ref-jerez2010missing)) and missingness indicator variables are
+incorporated into the analysis.
 
 varimpact is under active development so please submit any bug reports
 or feature requests to the [issue
