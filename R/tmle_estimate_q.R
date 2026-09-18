@@ -36,7 +36,6 @@
 #		coef, NA, unless Q is estimated using a parametric model
 # 		type, estimation method for Q
 #----------------------------------------
-#' @importFrom utils packageDescription
 #' @export
 tmle_estimate_q <-
   function(Y,
@@ -56,7 +55,6 @@ tmle_estimate_q <-
            verbose = F) {
 
   if (is.null(Qbounds)) stop("Qbounds must be defined.")
-  SL.version <- 2
   Qfamily <- family
   m <- NULL
   coef <- NA
@@ -104,13 +102,8 @@ tmle_estimate_q <-
           X11 <- data.frame(Z=1,A=1, W)
           newX <- rbind(newX, X10, X11)
         }
-        if(packageDescription("SuperLearner")$Version < SL.version){
-          arglist <- list(Y=Y[Delta==1],X=X[Delta==1,], newX=newX, SL.library=SL.library,
-                          V=V, family=family, save.fit.library=T, id=id[Delta==1])
-        } else {
-          arglist <- list(Y=Y[Delta==1],X=X[Delta==1,], newX=newX, SL.library=SL.library,
-                          cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=id[Delta==1])
-        }
+        arglist <- list(Y=Y[Delta==1],X=X[Delta==1,], newX=newX, SL.library=SL.library,
+                        cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=id[Delta==1])
         suppressWarnings({
           # CK: try to eliminate messages from loading packages.
           out = utils::capture.output({

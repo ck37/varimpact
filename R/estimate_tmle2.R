@@ -16,7 +16,6 @@
 #' @param verbose If true output extra information during execution.
 #' @importFrom tmle tmle
 #' @importFrom stats as.formula binomial coef glm offset plogis poisson predict qlogis
-#' @importFrom utils packageDescription
 #' @export
 estimate_tmle2 =
   function(Y,
@@ -178,10 +177,6 @@ estimate_tmle2 =
   # cat(class(q$Q), paste(dim(q$Q)), paste(colnames(q$Q)), "\n")
   # TODO: check if our custom q$QAW equals the tmle Q.
 
-  # Specify random arguments from tmle::tmle()
-  pDelta1 = NULL
-  g.Deltaform = NULL
-
   # From tmle::tmle()
   ############################################
   if (verbose) cat("Estimating g.Delta (missingness mechanism)\n")
@@ -213,9 +208,7 @@ estimate_tmle2 =
 
   g.Delta <- suppressWarnings({
     tmle_estimate_g(d = data.frame(delta, Z=1, A, W),
-                    pDelta1,
-                    g.Deltaform,
-                    g.lib,
+                    SL.library = g.lib,
                     id = id, V = delta_V,
                     stratify = min_delta_cell >= delta_V,
                     verbose = verbose,
