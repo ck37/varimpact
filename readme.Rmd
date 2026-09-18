@@ -2,6 +2,7 @@
 output: github_document
 bibliography: inst/REFERENCES.bib
 nocite: '@*'
+link-citations: true
 ---
 
 <!-- README.md is generated from readme.Rmd. Please edit that file -->
