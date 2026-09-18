@@ -5,8 +5,10 @@
 # Misc.
 ^TODO.txt$
 
-# Github files.
-^readme.Rmd$
+# Github files. readme.csl is the citation style readme.Rmd renders with;
+# it is not needed by the installed package.
+^readme\.Rmd$
+^readme\.csl$
 ^\.github$
 
 # Full license text. The License field in DESCRIPTION is the standard

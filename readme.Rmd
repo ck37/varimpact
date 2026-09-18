@@ -1,6 +1,7 @@
 ---
 output: github_document
 bibliography: inst/REFERENCES.bib
+csl: readme.csl
 nocite: '@*'
 link-citations: true
 ---
