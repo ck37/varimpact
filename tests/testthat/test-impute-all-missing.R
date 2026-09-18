@@ -69,6 +69,17 @@ test_that("knn output is unchanged when no row is all-missing", {
   expect_equal(out, reference, tolerance = 0, check.attributes = FALSE)
 })
 
+test_that("knn reports the rows it could not impute from neighbors", {
+  # These rows are filled with a value no neighbor supplied, so saying so when
+  # the caller asked for output is part of the behaviour, not decoration.
+  d = make_data(all_missing_rows = c(13, 77))
+  expect_output(impute_with(d, "knn", verbose = TRUE),
+                "2 row\\(s\\) are missing every numeric covariate")
+
+  # And it stays quiet when there is nothing to report.
+  expect_silent(impute_with(make_data(), "knn", verbose = FALSE))
+})
+
 test_that("varimpact() itself runs with an all-missing row", {
   # The end-to-end path issue #7 reported against.
   set.seed(1, "L'Ecuyer-CMRG")

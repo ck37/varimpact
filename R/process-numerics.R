@@ -177,9 +177,13 @@ process_numerics =
 
       if (all(all_missing)) {
         # Every row is empty, so there is nothing to learn a neighbor from.
-        # Unreachable in practice: a column that is entirely NA is dropped
-        # before this point, so an all-empty matrix has no columns left.
-        stop("Cannot impute: every row is missing every numeric covariate.")
+        #
+        # Not reachable today, and deliberately kept anyway: an all-NA frame
+        # dies earlier in the binning above ("object 'var_binned_names' not
+        # found"), so this never runs and no test can drive it. It is here so
+        # that if the binning ever learns to handle such a frame, this says
+        # what is wrong instead of handing caret an empty one.
+        stop("Cannot impute: every row is missing every numeric covariate.")  # nocov
       }
 
       impute_info = caret::preProcess(data.num[!all_missing, , drop = FALSE],
