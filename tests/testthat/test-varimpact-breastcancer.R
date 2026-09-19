@@ -25,7 +25,7 @@ dim(x)
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
   # Use multicore parallelization to speed up processing.
-  future::plan("multiprocess", workers = 2)
+  future::plan("multisession", workers = 2)
 }
 
 test_that("varimpact runs on BreastCancer dataset", {

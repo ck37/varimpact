@@ -27,7 +27,7 @@ miss_num = 10
 for (i in 1:miss_num) X[sample(nrow(X), 1), sample(ncol(X), 1)] = NA
 
 # Basic test - binary outcome.
-#future::plan("multiprocess")
+#future::plan("multisession")
 future::plan("sequential")
 vim = varimpact(Y = Y_bin, data = X[, 1:3], V = 3L,
                 Q.library = c("SL.mean", "SL.glm"),
@@ -60,7 +60,7 @@ print(vim)
 # Only run in RStudio so that automated CRAN checks don't give errors.
 if (.Platform$GUI == "RStudio") {
   # Test parallelization
-  future::plan("multiprocess", workers = 2)
+  future::plan("multisession", workers = 2)
   vim = varimpact(Y = Y_bin, data = X[, 1:3], verbose = TRUE)
   print(vim)
 }
@@ -104,7 +104,7 @@ print(vim)
 # Disabled for now - need to review.
 if (F && .Platform$GUI == "RStudio") {
   # Test parallelization.
-  future::plan("multiprocess")
+  future::plan("multisession")
 
   # Try a snow cluster, which does return the output to STDOUT.
   if (F) {
