@@ -64,8 +64,9 @@ reduction.}
 \item{corthres}{cut-off correlation with explanatory
 variable for inclusion of an adjustment variables}
 
-\item{impute}{Type of missing value imputation to conduct. One of: "zero",
-"median", "knn" (default). Note: knn results in the covariate data being centered/scaled.}
+\item{impute}{Type of missing value imputation to conduct. One of:
+"median" (default), "knn", "zero". Note: knn results in the covariate
+data being centered and scaled.}
 
 \item{miss.cut}{eliminates explanatory (X) variables with proportion
 of missing obs > cut.off}
@@ -243,7 +244,7 @@ set.seed(1, "L'Ecuyer-CMRG")
 # Create a numeric outcome variable.
 data$Y <- as.numeric(data$Class == "malignant")
 # Use multicore parallelization to speed up processing.
-future::plan("multiprocess", workers = 2)
+future::plan("multisession", workers = 2)
 vim <- varimpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 }
 

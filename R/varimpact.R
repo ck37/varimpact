@@ -53,8 +53,9 @@
 #'   reduction.
 #' @param corthres cut-off correlation with explanatory
 #' variable for inclusion of an adjustment variables
-#' @param impute Type of missing value imputation to conduct. One of: "zero",
-#'   "median", "knn" (default). Note: knn results in the covariate data being centered/scaled.
+#' @param impute Type of missing value imputation to conduct. One of:
+#'   "median" (default), "knn", "zero". Note: knn results in the covariate
+#'   data being centered and scaled.
 #' @param miss.cut eliminates explanatory (X) variables with proportion
 #' of missing obs > cut.off
 #' @param bins_numeric Number of quantile bins used to discretize a numeric
@@ -197,7 +198,7 @@
 #' data$Y <- as.numeric(data$Class == "malignant")
 #
 #' # Use multicore parallelization to speed up processing.
-#' future::plan("multiprocess", workers = 2)
+#' future::plan("multisession", workers = 2)
 #' vim <- varimpact(Y = data$Y, data = subset(data, select=-c(Y, Class, Id)))
 #' }
 #'
@@ -262,6 +263,13 @@ varimpact =
   if (!family %in% c("binomial", "gaussian")) {
     stop('Family must be either "binomial" or "gaussian".')
   }
+
+  # Without this an unrecognized value falls through every branch in
+  # process_numerics() and surfaces much later as
+  # "sum(is.na(data.numW)) == 0 is not TRUE", which says nothing about the
+  # typo that caused it. "mean" is accepted here so that it still reaches its
+  # own not-implemented message rather than being reported as a bad value.
+  impute = match.arg(impute, c("median", "knn", "zero", "mean"))
 
   if (parallel && verbose) {
     cat("Future backend set to the following:\n")
