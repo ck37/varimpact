@@ -47,13 +47,22 @@ jobs:
       # use-public-rspm above does not cover this: it only rewrites Linux
       # URLs, so macOS falls through to CRAN.
       #
-      # Drop this step once pak can extract zstd archives.
+      # PKG_CRAN_MIRROR is pak's own documented setting for this. An earlier
+      # attempt set options(repos=) in ~/.Rprofile instead - pak's cran_mirror
+      # does default to that option - but pak still fetched from CRAN, so the
+      # profile evidently was not in effect for the process that resolved the
+      # packages. The environment variable does not depend on R startup files
+      # being loaded.
+      #
+      # Drop this step once pak can extract zstd archives. As of pak 0.11.1
+      # and 0.11.1.9000 it cannot, so bumping pak-version is not a way out.
       - name: Use P3M binaries on macOS
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/latest"))' >> "${HOME}/.Rprofile"
-          Rscript -e 'cat("repos in effect:", getOption("repos"), "\n")'
+          P3M='https://packagemanager.posit.co/cran/latest'
+          echo "PKG_CRAN_MIRROR=${P3M}" >> "$GITHUB_ENV"
+          echo "PKG_CRAN_MIRROR set to ${P3M}"
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
