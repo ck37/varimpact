@@ -38,6 +38,23 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      # CRAN has begun publishing Zstandard-compressed macOS binaries that are
+      # still named .tgz. pak's pkgdepends recognises gzip, bzip2 and xz only,
+      # so installing one fails with "unknown archive type" during dependency
+      # setup - before R CMD check even starts. Posit Package Manager serves
+      # gzip builds of the same package versions, so point macOS at it.
+      #
+      # use-public-rspm above does not cover this: it only rewrites Linux
+      # URLs, so macOS falls through to CRAN.
+      #
+      # Drop this step once pak can extract zstd archives.
+      - name: Use P3M binaries on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/latest"))' >> "${HOME}/.Rprofile"
+          Rscript -e 'cat("repos in effect:", getOption("repos"), "\n")'
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
