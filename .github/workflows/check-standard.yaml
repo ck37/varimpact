@@ -18,7 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest,   r: 'release'}
+          # extra-packages: see the macOS step below for why gower is built
+          # from source there.
+          - {os: macOS-latest,   r: 'release', extra-packages: 'any::rcmdcheck, gower?source'}
           - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
@@ -38,10 +40,74 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      # CRAN has begun publishing Zstandard-compressed macOS binaries that are
+      # still named .tgz. pak's pkgdepends recognises gzip, zip, bzip2 and xz
+      # only, so installing one fails with "unknown archive type" during
+      # dependency setup - before R CMD check even starts. Three settings are
+      # needed to get macOS through dependency setup and R CMD check, and
+      # none of them works on its own.
+      #
+      # 1. PKG_CRAN_MIRROR points pak at Posit Package Manager, which serves
+      #    gzip builds of the same package versions. use-public-rspm above
+      #    does not cover this: it only rewrites Linux URLs, so macOS falls
+      #    through to CRAN.
+      #
+      # 2. Blocking mac.cran.dev. pak's bundled pkgcache attaches a second
+      #    URL, https://mac.cran.dev/<path>, to every macOS CRAN binary
+      #    (packages_make_sources in packages-gz.R) and races the two
+      #    downloads, keeping whichever finishes first. mac.cran.dev serves
+      #    CRAN's zstd build directly, while P3M answers with a redirect,
+      #    so the zstd file won every time and the mirror setting never had
+      #    an effect. Pointing that host at localhost makes its download
+      #    fail at connect time, which pkgcache tolerates as long as another
+      #    URL succeeds, and P3M's gzip build is what gets installed.
+      #
+      # 3. gower from source (the extra-packages entry in the matrix above).
+      #    P3M's macOS gower binary is compiled with OpenMP but not linked
+      #    against libomp - its Makevars puts $(SHLIB_OPENMP_CFLAGS) in
+      #    PKG_LIBS, which adds no -lomp - so it expects the OpenMP runtime
+      #    to already be in the process and fails to load on CRAN's R with
+      #    "symbol not found in flat namespace '___kmpc_barrier'". It was
+      #    the only one of the 70 compiled dependencies with that problem
+      #    (data.table also uses OpenMP but links libomp by path and loads
+      #    fine). Built here, SHLIB_OPENMP_CFLAGS is empty, so the source
+      #    build has no OpenMP and no libomp dependency.
+      #
+      # Drop all three once pak can extract zstd archives. As of pak 0.11.1,
+      # pkgdepends 0.9.1.9000 and pkgcache 2.2.5.9000 it cannot, and the
+      # mac.cran.dev race is still there, so bumping pak-version is not a
+      # way out.
+      - name: Use P3M binaries on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          P3M='https://packagemanager.posit.co/cran/latest'
+          echo "PKG_CRAN_MIRROR=${P3M}" >> "$GITHUB_ENV"
+          echo '127.0.0.1 mac.cran.dev' | sudo tee -a /etc/hosts > /dev/null
+          echo "PKG_CRAN_MIRROR set to ${P3M}; mac.cran.dev blocked"
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          extra-packages: ${{ matrix.config.extra-packages || 'any::rcmdcheck' }}
           needs: check
+
+      # Diagnostic for the problem above. Deliberately compact: only the tail
+      # of a job log is readable through the API, GitHub echoes a step's
+      # whole script into the log, and a verbose version of this step pushed
+      # the actual pak error out of that window.
+      #
+      # setup-r-dependencies deletes .github/pkg.lock only after a successful
+      # install, so on failure it still records every source URL per package
+      # and can be re-run. The re-run is what surfaces pak's error, with the
+      # path of the file it could not extract, at the very end of the log.
+      # Counting every URL rather than the first is what exposed the
+      # mac.cran.dev fallback.
+      - name: Show resolved package hosts (on failure)
+        if: failure() && runner.os == 'macOS'
+        shell: bash
+        run: |
+          python3 -c "import collections,json,os,urllib.parse as u;f='.github/pkg.lock';p=json.load(open(f))['packages'] if os.path.exists(f) else [];print('hosts by source index:',{i:dict(collections.Counter(u.urlparse(x['sources'][i]).netloc for x in p if len(x.get('sources') or [])>i)) for i in range(2)})"
+          Rscript -e 'library(pak,lib.loc=Sys.getenv("R_LIB_FOR_PAK"));pak::lockfile_install(".github/pkg.lock")' 2>&1 | tail -25 || true
 
       - uses: r-lib/actions/check-r-package@v2
         with:
