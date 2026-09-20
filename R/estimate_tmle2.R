@@ -201,8 +201,6 @@ estimate_tmle2 =
     }
   }
   g0W.total <- .bound((1-g$g1W)*g.Delta$g1W[,"Z0A0"], gbound)
-  if(all(g1W.total==0)){g1W.total <- rep(10^-9, length(g1W.total))}
-  if(all(g0W.total==0)){g0W.total <- rep(10^-9, length(g0W.total))}
   H1W <- A/g1W.total
   H0W <- (1-A)/g0W.total
 

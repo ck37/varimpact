@@ -6,7 +6,6 @@
 \usage{
 tmle_estimate_q(
   Y,
-  Z = rep(0, length(Y)),
   A,
   W,
   Delta,
@@ -23,8 +22,6 @@ tmle_estimate_q(
 }
 \arguments{
 \item{Y}{outcome}
-
-\item{Z}{intermediate variable between A and Y (default= 0 when no int. var.)}
 
 \item{A}{treatment indicator (1=treatment, 0=control)}
 
