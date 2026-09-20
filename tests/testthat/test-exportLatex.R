@@ -130,3 +130,42 @@ test_that("exportLatex with custom outname and directory", {
   # Test manual cleanup with custom names
   # Files should be cleaned up by on.exit() handler
 })
+# The tests above run a real varimpact() fit, so they skip under R CMD check
+# and never exercise two branches: every variable significant (no hline
+# after the p = 0.05 cut-off) and a non-empty consistent table. A hand-built
+# result object reaches both without a fit, and writes into a scratch
+# directory so it can run anywhere.
+test_that("all-significant results and a consistent table are exported", {
+  results_all = data.frame(
+    Estimate = c(0.30, 0.20),
+    "Adj. p-value" = c(0.001, 0.010),
+    check.names = FALSE,
+    row.names = c("x1", "x2"))
+  mock_vim = list(
+    results_by_fold = data.frame(x1 = c("1 vs 3", "1 vs 3"), x2 = c("2 vs 3", "1 vs 3"),
+                                 row.names = c("fold 1", "fold 2")),
+    results_all = results_all,
+    results_consistent = results_all)
+
+  out_dir = tempfile("latex")
+  dir.create(out_dir)
+  on.exit(unlink(out_dir, recursive = TRUE))
+
+  result = exportLatex(mock_vim, dir = out_dir)
+
+  expect_s3_class(result$xtables$consistent, "xtable")
+  expect_equal(nrow(result$tables$consistent), 2L)
+  for (f in c("varimpByFold.tex", "varimpAll.tex", "varimpConsistent.tex")) {
+    expect_true(file.exists(file.path(out_dir, f)), info = f)
+  }
+  expect_true(any(grepl("consisRes", readLines(file.path(out_dir, "varimpConsistent.tex")))))
+
+  # cleanup_latex_files() reports what it removed, and then that there is
+  # nothing left to remove.
+  expect_output(removed <- cleanup_latex_files(dir = out_dir, verbose = TRUE),
+                "Successfully removed 3 of 3")
+  expect_equal(removed, rep(TRUE, 3))
+  expect_output(again <- cleanup_latex_files(dir = out_dir, verbose = TRUE),
+                "No LaTeX files found")
+  expect_identical(again, logical(0))
+})
