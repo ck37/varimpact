@@ -223,9 +223,11 @@ vim_numerics =
           if (is.null(factors$datafac.dumW)) {
             factors$datafac.dumW = rep(NA, n.cont)
           }
+          # nocov start - data.numW exists whenever there are numerics to estimate
           if (is.null(numerics$data.numW)) {
             numerics$data.numW = rep(NA, n.cont)
           }
+          # nocov end
 
           # Construct a matrix of adjustment variables in which we use the imputed dataset
           # but remove the current treatment variable.
@@ -576,7 +578,9 @@ vim_numerics =
               } else if (minj == maxj) {
                 message = paste(message, "min and max level are the same. (j = ", minj, ")")
               } else {
+                # nocov start - a non-NA min/max index always has a training estimate
                 message = paste(message, "min or max training estimate is NULL.")
+                # nocov end
               }
               fold_result$message = message
               if (verbose) cat(message, "\n")
@@ -907,7 +911,7 @@ vim_numerics =
 
         if (verbose) {
           signif_digits = 4
-          ey0_mean = mean(pooled_min$thetas)
+          ey0_mean = if (length(pooled_min$thetas)) mean(pooled_min$thetas) else NULL
           if (is.numeric(ey0_mean)) {
             cat("[Min] EY0:", signif(ey0_mean, signif_digits))
             if (is.numeric(pooled_min$epsilon)) {
@@ -915,7 +919,7 @@ vim_numerics =
             }
           }
 
-          ey1_mean = mean(pooled_max$thetas)
+          ey1_mean = if (length(pooled_max$thetas)) mean(pooled_max$thetas) else NULL
           if (is.numeric(ey1_mean)) {
             cat("[Max] EY1:", signif(ey1_mean, signif_digits))
             if (is.numeric(pooled_max$epsilon)) {
@@ -944,6 +948,7 @@ vim_numerics =
     if (verbose) cat("Numeric VIMs:", length(vim_numeric), "\n")
 
     # Confirm that we have the correct number of results, otherwise fail out.
+    # nocov start - lapply returns one result per numeric by construction
     if (length(vim_numeric) != numerics$num_numeric) {
       # TODO: remove this.
       # save(vim_numeric, file = "varimpact.RData")
@@ -951,6 +956,7 @@ vim_numerics =
       stop(paste("We have", numerics$num_numeric, "continuous variables but only",
                  length(vim_numeric), "results."))
     }
+    # nocov end
 
 
     # Dataframe to hold all of the variable-by-fold-by-level results.

@@ -72,3 +72,12 @@ test_that("only the logistic fluctuation is supported", {
   expect_error(varimpact:::estimate_pooled_results(fold_results, fluctuation = "linear"),
                "Only support logistic fluctuation")
 })
+
+test_that("val_preds without a delta column are treated as fully observed", {
+  no_delta = lapply(fold_results, function(fold) {
+    fold$val_preds$delta = NULL
+    fold
+  })
+  pooled = varimpact:::estimate_pooled_results(no_delta)
+  expect_equal(pooled$thetas, varimpact:::estimate_pooled_results(fold_results)$thetas)
+})

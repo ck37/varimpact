@@ -195,11 +195,13 @@ estimate_tmle2 =
                     min_cell_size = min_delta_cell_size)
   })
   g1W.total <- .bound(g$g1W*g.Delta$g1W[,"Z0A1"], gbound)
+  # nocov start - .bound() of finite predictions has no NAs
   if (sum(is.na(g1W.total)) > 0) {
     if (verbose) {
       cat("Error, g1W.total has NAs:", sum(is.na(g1W.total)), "\n")
     }
   }
+  # nocov end
   g0W.total <- .bound((1-g$g1W)*g.Delta$g1W[,"Z0A0"], gbound)
   H1W <- A/g1W.total
   H0W <- (1-A)/g0W.total

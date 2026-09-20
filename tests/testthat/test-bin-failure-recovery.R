@@ -21,11 +21,11 @@ with_failing_tmle = function(should_fail, expr) {
   with_failing("estimate_tmle2", should_fail, expr)
 }
 
-run_varimpact = function(data, Y, ...) {
+run_varimpact = function(data, Y, verbose = FALSE, ...) {
   varimpact(Y = Y, data = data, V = 2L,
             Q.library = c("SL.mean", "SL.glm"),
             g.library = c("SL.mean", "SL.glm"),
-            verbose = FALSE, ...)
+            verbose = verbose, ...)
 }
 
 set.seed(1, "L'Ecuyer-CMRG")
@@ -114,4 +114,20 @@ test_that("the happy path is unaffected and estimate_tmle2 is restored", {
   vim = run_varimpact(X_num, Y_bin)
   expect_s3_class(vim, "varimpact")
   expect_true(nrow(vim$results_all) > 0)
+})
+
+test_that("training-bin failures are marked in verbose output", {
+  for (X in list(X_num, X_fac)) {
+    out = capture.output(
+      vim <- with_failing_tmle(function(i) i %% 2 == 0,
+                               run_varimpact(X, Y_bin, verbose = TRUE)))
+    expect_s3_class(vim, "varimpact")
+    # Each failed bin prints an X while the training estimates are running.
+    expect_true(any(grepl("X", out, fixed = TRUE)))
+  }
+  # When every bin fails, compile_results() explains what it found.
+  out = capture.output(suppressWarnings(
+    vim <- with_failing_tmle(function(i) TRUE,
+                             run_varimpact(X_num, Y_bin, verbose = TRUE))))
+  expect_true(any(grepl("EY1 lengths:", out, fixed = TRUE)))
 })

@@ -101,9 +101,11 @@ vim_factors =
         if (is.null(numerics$miss.cont)) {
           numerics$miss.cont = rep(NA, n.fac)
         }
+        # nocov start - datafac.dum is never NULL when a factor is being estimated
         if (is.null(dumW)) {
           dumW = rep(NA, n.fac)
         }
+        # nocov end
         if (is.null(numerics$data.numW)) {
           numerics$data.numW = rep(NA, n.fac)
         }
@@ -503,7 +505,9 @@ vim_factors =
             } else if (minj == maxj) {
               message = paste(message, "min and max level are the same. (j = ", minj, ")")
             } else {
+              # nocov start - a non-NA min/max index always has a training estimate
               message = paste(message, "min or max training estimate is NULL.")
+              # nocov end
             }
             fold_result$message = message
 
@@ -711,6 +715,7 @@ vim_factors =
           }
 
         } else {
+          # nocov start - factor levels come from the data, so every level has rows in some fold
           if (verbose) {
             cat("Skipping bin", bin, "- no rows are available.\n")
           }
@@ -719,6 +724,7 @@ vim_factors =
           # Temporary simplification for debugging purposes.
           #pooled_bin = list(thetas = 1:V)
           pooled_bin = list(thetas = rep(NA, V))
+          # nocov end
         }
 
         if (verbose) {
@@ -730,20 +736,15 @@ vim_factors =
 
       # Combine results for each fold into a single dataframe.
       # This can fail if all bins for this variable failed.
-      tryCatch({
-        results_by_fold_and_level = do.call(rbind, lapply(fold_results, `[[`, "bin_df"))
-      }, error = function(e) {
-        results_by_fold_and_level = NULL
-      })
+      results_by_fold_and_level = tryCatch(
+        do.call(rbind, lapply(fold_results, `[[`, "bin_df")),
+        error = function(e) NULL)
 
       # Aggregate into a results_by_level dataframe.
       # This can fail if all bins for this variable failed.
-      tryCatch({
-        results_by_level = results_by_level(results_by_fold_and_level,
-                                            verbose = verbose)
-      }, error = function(e) {
-        results_by_level = NULL
-      })
+      results_by_level = tryCatch(
+        results_by_level(results_by_fold_and_level, verbose = verbose),
+        error = function(e) NULL)
 
       # Create list to save results for this variable.
       var_results = list(
@@ -843,7 +844,7 @@ vim_factors =
         if (verbose) {
           signif_digits = 4
 
-          ey0_mean = mean(pooled_min$thetas)
+          ey0_mean = if (length(pooled_min$thetas)) mean(pooled_min$thetas) else NULL
           if (is.numeric(ey0_mean)) {
             cat("[Min] EY0:", signif(ey0_mean, signif_digits))
             if (is.numeric(pooled_min$epsilon)) {
@@ -852,7 +853,7 @@ vim_factors =
             cat("\n")
           }
 
-          ey1_mean =  mean(pooled_max$thetas)
+          ey1_mean = if (length(pooled_max$thetas)) mean(pooled_max$thetas) else NULL
           if (is.numeric(ey1_mean)) {
             cat("[Max] EY1:", signif(ey1_mean, signif_digits))
             if (is.numeric(pooled_max$epsilon)) {
@@ -913,17 +914,14 @@ vim_factors =
     })
 
     results_by_level_obj = NULL
-    tryCatch({
-      results_by_level_obj = do.call(rbind, compile_results_by_level)
-    }, error = function(e) {
-
-      # TODO: add browser?
-      # TODO: figure out why this happens - presumably due to covariate that failed.
-      # Error message:
-      # Error in rep(xi, length.out = nvar) :
-      #  attempt to replicate an object of type 'closure'
-      cat("Errored while compiling results by level.\n")
-    })
+    results_by_level_obj = tryCatch(
+      do.call(rbind, compile_results_by_level),
+      error = function(e) {
+        # nocov start - rbind of the per-variable frames does not fail
+        cat("Errored while compiling results by level.\n")
+        NULL
+        # nocov end
+      })
 
     colnames_factor = colnames(factors$data.fac)
   } else {

@@ -209,3 +209,65 @@ test_that("verbose reports the outcome mapping", {
                                          delta = Delta, tmle = fit, verbose = TRUE),
     "Mapped Y to Y_star")
 })
+
+# ---- the paths varimpact() never takes --------------------------------------
+
+test_that("estimate_tmle2 reports missing values in A and Y before fitting", {
+  A_na = A
+  A_na[1:2] = NA
+  expect_output(
+    try(estimate_tmle2(Y = Y_bin, A = A_na, W = W, family = "binomial",
+                       Q.lib = lib, g.lib = lib, V = 2), silent = TRUE),
+    "found 2 NAs in A")
+  Y_na = Y_bin
+  Y_na[1:4] = NA
+  expect_output(
+    try(estimate_tmle2(Y = Y_na, A = A, W = W, family = "binomial",
+                       Q.lib = lib, g.lib = lib, V = 2), silent = TRUE),
+    "found 4 NAs in Y")
+})
+
+test_that("estimate_tmle2 reduces the CV folds when A or delta has a small cell", {
+  # Three treated observations and ten folds: the propensity model cannot be
+  # cross-validated ten ways, so the folds are reduced to the cell size.
+  A_rare = c(rep(1, 3), rep(0, n - 3))
+  expect_output(
+    estimate_tmle2(Y = Y_cont, A = A_rare, W = W, family = "gaussian",
+                   Q.lib = "SL.mean", g.lib = "SL.mean", V = 10, verbose = TRUE),
+    "Reducing folds to 3")
+  # The same for the missingness mechanism.
+  delta_rare = c(rep(0, 3), rep(1, n - 3))
+  expect_output(
+    estimate_tmle2(Y = Y_cont, A = A, W = W, family = "gaussian", delta = delta_rare,
+                   Q.lib = "SL.mean", g.lib = "SL.mean", V = 10, verbose = TRUE),
+    "Delta's minimum cell size 3")
+})
+
+test_that("tmle_estimate_q falls back to a main-terms glm when supplied Q values are unusable", {
+  Q_bad = matrix(NA_real_, nrow = n, ncol = 3,
+                 dimnames = list(NULL, c("QAW", "Q0W", "Q1W")))
+  expect_output(
+    q <- tmle_estimate_q(Y = Y_bin, A = A, W = W, Delta = Delta, Q = Q_bad,
+                         Qbounds = c(0, 1), maptoYstar = FALSE, SL.library = lib,
+                         family = "binomial", verbose = TRUE),
+    "main terms regression")
+  expect_equal(q$type, "glm, main terms model")
+  expect_s3_class(q$model, "glm")
+  expect_false(any(is.na(q$Q)))
+})
+
+test_that("apply_tmle_to_validation reports which prediction failed", {
+  broken_q = fit
+  broken_q$q_model = list(not = "a model")
+  expect_error(
+    suppressWarnings(varimpact:::apply_tmle_to_validation(
+      Y_cont, A, W, "gaussian", delta = Delta, tmle = broken_q)),
+    "failed during prediction of Q\\(1, W\\)")
+
+  broken_delta = fit
+  broken_delta$g_delta_model = list(not = "a model")
+  expect_error(
+    varimpact:::apply_tmle_to_validation(Y_cont, A, W, "gaussian",
+                                         delta = Delta, tmle = broken_delta),
+    "failed during prediction of g.Delta")
+})

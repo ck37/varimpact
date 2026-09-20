@@ -122,3 +122,32 @@ test_that("when HOPACH fails on every attempt the data is returned unreduced", {
   expect_identical(result$data, data)
   expect_equal(ncol(result$newX), ncol(newX))
 })
+
+test_that("verbose reports constant columns being removed first", {
+  data = make_df(5L)
+  data$V2 = 3
+  expect_output(reduce_dimensions(data, data, max_variables = 10L, verbose = TRUE),
+                "First removing 1 constant columns")
+})
+
+test_that("newX really is optional", {
+  # The signature has always said so, but the step that adds missing
+  # columns to newX assumed there was one and failed on NULL.
+  data = make_df(5L)
+  data$V2 = 3
+  result = reduce_dimensions(data, NULL, max_variables = 10L)
+  expect_identical(colnames(result$data), c("V1", "V3", "V4", "V5"))
+  expect_null(result$newX)
+})
+
+test_that("a failed distance matrix is reported and the data returned unreduced", {
+  data = make_df(20L)
+  newX = make_df(20L, seed = 12L)
+  testthat::local_mocked_bindings(
+    distancematrix = function(...) stop("synthetic distance failure"),
+    .package = "hopach")
+  expect_output(
+    result <- reduce_dimensions(data, newX, max_variables = 5L, verbose = TRUE),
+    "failed to calculate distance matrix")
+  expect_identical(result$data, data)
+})

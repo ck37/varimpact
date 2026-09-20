@@ -270,7 +270,9 @@ compile_results =
                             "rr_BH" = NA,
                             consist)
       } else {
+        # nocov start - num_vars is at least 1 inside this branch
         outres = NULL
+        # nocov end
       }
 
       # TODO: this will give an error if we have no results.

@@ -42,3 +42,28 @@ test_that("a verbose run says when every factor is dropped", {
   expect_s3_class(vim, "varimpact")
   expect_true(any(grepl("All factors were dropped", out, fixed = TRUE)))
 })
+
+test_that("a verbose run reports variables left out of A_names and correlated columns", {
+  set.seed(14, "L'Ecuyer-CMRG")
+  n = 120
+  f1 = factor(sample(c("a", "b", "c"), n, replace = TRUE))
+  X = data.frame(x1 = rnorm(n),
+                 f2 = factor(sample(c("p", "q"), n, replace = TRUE)),
+                 # Nearly an indicator of f1 == "c", so it is dropped from
+                 # f1's adjustment set under the default corthres = 0.8. (The
+                 # check correlates against f1's dummy columns, which omit
+                 # the reference level "a", so the level has to be another.)
+                 x_corr = as.numeric(f1 == "c") + rnorm(n, sd = 0.05),
+                 f1 = f1)
+  Y = rbinom(n, 1, plogis(0.5 * X$x1))
+  out = capture.output(
+    vim <- varimpact(Y = Y, data = X, V = 2L, verbose = TRUE,
+                     A_names = c("x1", "f1"),
+                     Q.library = "SL.mean", g.library = "SL.mean",
+                     bins_numeric = 3L))
+  text = paste(out, collapse = "\n")
+  expect_s3_class(vim, "varimpact")
+  expect_true(grepl("Skipping x_corr  as it is not in A_names", text, fixed = TRUE))
+  expect_true(grepl("Skipping f2 as it is not in A_names", text, fixed = TRUE))
+  expect_true(grepl("columns based on correlation threshold", text, fixed = TRUE))
+})
