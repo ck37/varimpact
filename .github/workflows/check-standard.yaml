@@ -75,11 +75,17 @@ jobs:
       # was verbose enough to push the actual pak error out of that window.
       #
       # setup-r-dependencies deletes .github/pkg.lock only after a successful
-      # install, so on failure it still records where each package came from.
+      # install, so on failure it still records where each package came from,
+      # and can be re-run. Re-running it here is the only way to see what pak
+      # actually reports: the roughly 8 KB of git cleanup that ends every job
+      # pushes the original error past the readable tail, and the API caps
+      # what it returns by bytes, so asking for more lines does not help.
       - name: Show resolved package hosts (on failure)
         if: failure() && runner.os == 'macOS'
         shell: bash
-        run: python3 -c "import collections,json,os,urllib.parse as u;f='.github/pkg.lock';p=json.load(open(f))['packages'] if os.path.exists(f) else [];print('PKG_CRAN_MIRROR='+os.environ.get('PKG_CRAN_MIRROR','<unset>'));print('hosts:',dict(collections.Counter(u.urlparse((x.get('sources') or [''])[0]).netloc for x in p)))"
+        run: |
+          python3 -c "import collections,json,os,urllib.parse as u;f='.github/pkg.lock';p=json.load(open(f))['packages'] if os.path.exists(f) else [];print('hosts:',dict(collections.Counter(u.urlparse((x.get('sources') or [''])[0]).netloc for x in p)))"
+          Rscript -e 'library(pak,lib.loc=Sys.getenv("R_LIB_FOR_PAK"));pak::lockfile_install(".github/pkg.lock")' 2>&1 | tail -25 || true
 
       - uses: r-lib/actions/check-r-package@v2
         with:
