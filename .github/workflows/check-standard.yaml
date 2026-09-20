@@ -18,9 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # extra-packages: see the macOS step below for why gower is built
-          # from source there.
-          - {os: macOS-latest,   r: 'release', extra-packages: 'any::rcmdcheck, gower?source'}
+          - {os: macOS-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
@@ -43,9 +41,9 @@ jobs:
       # CRAN has begun publishing Zstandard-compressed macOS binaries that are
       # still named .tgz. pak's pkgdepends recognises gzip, zip, bzip2 and xz
       # only, so installing one fails with "unknown archive type" during
-      # dependency setup - before R CMD check even starts. Three settings are
-      # needed to get macOS through dependency setup and R CMD check, and
-      # none of them works on its own.
+      # dependency setup - before R CMD check even starts. Two settings are
+      # needed to get macOS through dependency setup, and neither works on
+      # its own.
       #
       # 1. PKG_CRAN_MIRROR points pak at Posit Package Manager, which serves
       #    gzip builds of the same package versions. use-public-rspm above
@@ -62,18 +60,14 @@ jobs:
       #    fail at connect time, which pkgcache tolerates as long as another
       #    URL succeeds, and P3M's gzip build is what gets installed.
       #
-      # 3. gower from source (the extra-packages entry in the matrix above).
-      #    P3M's macOS gower binary is compiled with OpenMP but not linked
-      #    against libomp - its Makevars puts $(SHLIB_OPENMP_CFLAGS) in
-      #    PKG_LIBS, which adds no -lomp - so it expects the OpenMP runtime
-      #    to already be in the process and fails to load on CRAN's R with
-      #    "symbol not found in flat namespace '___kmpc_barrier'". It was
-      #    the only one of the 70 compiled dependencies with that problem
-      #    (data.table also uses OpenMP but links libomp by path and loads
-      #    fine). Built here, SHLIB_OPENMP_CFLAGS is empty, so the source
-      #    build has no OpenMP and no libomp dependency.
+      # A third setting used to build gower from source, because P3M's macOS
+      # gower binary is compiled with OpenMP but not linked against libomp
+      # and fails to load. gower came in through caret, which is no longer a
+      # dependency, so that is gone. If a P3M binary ever fails to load with
+      # "symbol not found in flat namespace '___kmpc_barrier'" again, the fix
+      # is an extra-packages entry of '<pkg>?source' on the macOS matrix row.
       #
-      # Drop all three once pak can extract zstd archives. As of pak 0.11.1,
+      # Drop both once pak can extract zstd archives. As of pak 0.11.1,
       # pkgdepends 0.9.1.9000 and pkgcache 2.2.5.9000 it cannot, and the
       # mac.cran.dev race is still there, so bumping pak-version is not a
       # way out.
@@ -88,7 +82,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: ${{ matrix.config.extra-packages || 'any::rcmdcheck' }}
+          extra-packages: any::rcmdcheck
           needs: check
 
       # Diagnostic for the problem above. Deliberately compact: only the tail

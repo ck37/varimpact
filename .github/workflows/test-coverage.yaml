@@ -23,8 +23,8 @@ jobs:
         with:
           use-public-rspm: true
 
-      # The Bioconductor dependencies (hopach, multtest) resolve through the
-      # biocViews field in DESCRIPTION, the same way R-CMD-check resolves them.
+      # The Bioconductor dependency (hopach) resolves through the biocViews
+      # field in DESCRIPTION, the same way R-CMD-check resolves it.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::covr, any::xml2

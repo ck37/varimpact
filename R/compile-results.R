@@ -223,32 +223,27 @@ compile_results =
       # CK: but really, shouldn't they all be positive? May want to remove abs()
       consist = cons == 1 & abs(apply(theta, 1, signsum)) == V
 
-      procedures = c("Holm", "BH")
       if (num_vars > 1) {
-        # Adjust p-values for multiple testing.
-        res = multtest::mt.rawp2adjp(pvalue, procedures)
-        res_rr = multtest::mt.rawp2adjp(pvalue_rr, procedures)
+        # Adjust p-values for multiple testing (Holm and Benjamini-Hochberg).
+        adjusted = adjust_pvalues(pvalue)
+        adjusted_rr = adjust_pvalues(pvalue_rr)
 
-        # Attempt to prepend these names with "rr_" for the relative risk version.
-        colnames(res_rr$adj) = paste0("rr_", colnames(res_rr$adj))
+        # Prepend these names with "rr_" for the relative risk version.
+        colnames(adjusted_rr) = paste0("rr_", colnames(adjusted_rr))
 
-        # This indexing sorts the results in ascending order of unadjusted p-value,
-        # then descending by impact estimate.
-        # TODO: this may need to be fixed.
-        #sorted_rows = base::order(res$index, -psi)
-        sorted_rows = res$index
+        # Sort the results in ascending order of unadjusted p-value.
+        sorted_rows = order(pvalue)
 
-        #browser()
         outres = data.frame(var_type = variable_types[sorted_rows],
                             theta[sorted_rows, , drop = FALSE],
                             psi[sorted_rows],
                             CI95[sorted_rows],
-                            res$adj,
+                            adjusted[sorted_rows, , drop = FALSE],
                             labels[sorted_rows, , drop = FALSE],
                             # Relative risk parameter.
                             "AvePsi_rr" = psi_rr[sorted_rows],
                             "CI95_rr" = CI95_rr[sorted_rows],
-                            res_rr$adj,
+                            adjusted_rr[sorted_rows, , drop = FALSE],
                             # Consistency
                             consist[sorted_rows])
       } else if (num_vars == 1) {

@@ -24,19 +24,13 @@ Depends:
     SuperLearner (>= 2.0.0)
 Imports:
     arules,
-    caret,
-    cvTools,
     dplyr,
     future,
     future.apply,
     ggplot2,
-    glmnet,
     histogram,
     hopach,
     magrittr,
-    MASS,
-    modeest,
-    multtest,
     RANN,
     tmle,
     xtable
@@ -44,6 +38,8 @@ biocViews:
 Suggests:
     doSNOW,
     foreach,
+    glmnet,
+    MASS,
     mlbench,
     RhpcBLASctl,
     snow,

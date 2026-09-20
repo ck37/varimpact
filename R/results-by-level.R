@@ -5,7 +5,6 @@
 #' @param verbose If true, display extra output.
 #' @importFrom magrittr %>%
 #' @importFrom dplyr group_by summarize_all select mutate first
-#' @importFrom modeest mlv
 results_by_level =
   function(results_by_fold_and_level,
            verbose = FALSE) {
@@ -15,8 +14,6 @@ results_by_level =
     # penalization happened outside of the CV to ensure that the levels are
     # the same across training folds.
     group_by(name, level) %>%
-    # TEMP: restrict to the most common label.
-    #mutate(level_label = as.character(mlv(as.factor(level_label), method = "mfv")$M)) %>%
     # TEMP: restrict to the first label
     mutate(level_label = first(level_label)) %>%
     # Now we can also group by level_label because they will be the same for a given level.

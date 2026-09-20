@@ -1,7 +1,7 @@
 # Builds the pkgdown documentation site and deploys it to Netlify.
 #
 # The build runs here rather than on Netlify because rendering the site needs R
-# and the package's dependencies, several of which (hopach, multtest) come from
+# and the package's dependencies, one of which (hopach) comes from
 # Bioconductor. Netlify's build image has none of that. So GitHub Actions builds
 # the site and uploads the finished directory, and Netlify only serves it.
 #
