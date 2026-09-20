@@ -34,7 +34,30 @@ create_cv_folds = function(V, Y, verbose = F) {
   return(out)
 }
 
-#' Randomly assign observations to folds of as equal size as possible
+#' Assign observations to folds of as equal size as possible
+#'
+#' Observation i goes to fold ((i - 1) mod V) + 1, so within a stratum the
+#' folds interleave by row order: 1, 2, ..., V, 1, 2, ... This is exactly what
+#' \code{cvTools::cvFolds(n, K = V, type = "random")$which} returned, which
+#' create_cv_folds() used to read: \code{$which} is the fold of the
+#' \emph{permuted} observation, \code{rep(seq_len(K), length.out = n)}, and
+#' the permutation itself is in \code{$subsets}, which was never read. So the
+#' assignment has always been deterministic, whatever the seed.
+#'
+#' It is kept that way here on purpose. Drawing the folds at random
+#' (\code{rep_len(seq_len(V), n)[sample.int(n)]}) changes the training sets
+#' every adjustment step sees, and on the mlbench BreastCancer data that
+#' exposed a case where \code{hopach::hopach(mss = "mean")} in
+#' reduce_dimensions() never returns. Randomizing the folds therefore needs a
+#' guard around HOPACH first, and is a change in its own right rather than
+#' part of dropping the cvTools dependency.
+#'
+#' The unused permutation still consumed n random numbers, and everything
+#' downstream that draws from the RNG (SuperLearner's own cross-validation
+#' folds, the per-variable future seeds) continues from where it left off. So
+#' the same draw is made and discarded here, and a fit from a given seed is
+#' identical to one from the previous version. Drop it when the folds become
+#' random, since results change then anyway.
 #'
 #' @param n Number of observations.
 #' @param V Number of folds.
@@ -45,7 +68,7 @@ create_cv_folds = function(V, Y, verbose = F) {
 #'
 #' @noRd
 assign_folds = function(n, V) {
-  # Indexing by sample.int() rather than calling sample() on the vector: for
-  # n = 1 the vector has one element and sample() would treat it as a range.
-  rep_len(seq_len(V), n)[sample.int(n)]
+  # Consumed and discarded, to keep the RNG stream where cvFolds() left it.
+  sample.int(n)
+  rep_len(seq_len(V), n)
 }

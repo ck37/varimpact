@@ -31,25 +31,42 @@ test_that("a non-binary outcome is split evenly without stratification", {
   expect_balanced(folds, 4L)
 })
 
-test_that("assignment is random, and reproducible from the seed", {
-  Y = rbinom(60, 1, 0.5)
-  set.seed(3, "L'Ecuyer-CMRG")
-  first = varimpact:::create_cv_folds(V = 2L, Y = Y)
-  set.seed(3, "L'Ecuyer-CMRG")
-  again = varimpact:::create_cv_folds(V = 2L, Y = Y)
-  set.seed(4, "L'Ecuyer-CMRG")
-  other = varimpact:::create_cv_folds(V = 2L, Y = Y)
+test_that("assignment interleaves by row order, as the cvTools version did", {
+  # create_cv_folds() read cvTools::cvFolds(type = "random")$which, which is
+  # rep(seq_len(V), length.out = n): the fold of the permuted observation, not
+  # of the original one. The permutation was never used, so the assignment was
+  # deterministic all along. This pins that so the cvTools removal changes no
+  # result; see assign_folds() for why it is not randomized here.
+  Y = c(rep(0, 7), rep(1, 5))
+  folds = varimpact:::create_cv_folds(V = 3L, Y = Y)
+  expect_identical(folds[Y == 0], rep_len(1:3, 7))
+  expect_identical(folds[Y == 1], rep_len(1:3, 5))
 
-  expect_identical(first, again)
-  expect_false(identical(first, other))
-  # Not the interleaved pattern 1, 2, 1, 2, ... that the cvTools-based version
-  # produced, which never used the permutation it drew.
-  expect_false(identical(first[Y == 0], rep_len(1:2, sum(Y == 0))))
+  set.seed(1)
+  expect_identical(varimpact:::create_cv_folds(V = 2L, Y = Y),
+                   varimpact:::create_cv_folds(V = 2L, Y = Y))
+  expect_identical(varimpact:::assign_folds(10L, 4L), rep_len(1:4, 10))
+})
+
+test_that("the RNG advances as it did with cvTools, so seeded fits are unchanged", {
+  # cvFolds() drew an unused permutation of each stratum. assign_folds() makes
+  # the same draw so that whatever draws from the RNG afterward gets the same
+  # numbers as before, and a fit from a given seed reproduces the previous
+  # version's. Every stratum is one sample.int(n) call, and the RNG state
+  # after create_cv_folds() must equal the state after those calls.
+  Y = c(rep(0, 7), rep(1, 5), NA, NA)
+  set.seed(3, "L'Ecuyer-CMRG")
+  invisible(varimpact:::create_cv_folds(V = 2L, Y = Y))
+  after_folds = runif(1)
+
+  set.seed(3, "L'Ecuyer-CMRG")
+  for (n in c(7L, 5L, 2L)) sample.int(n)
+  expect_identical(runif(1), after_folds)
 })
 
 test_that("a stratum smaller than V does not error", {
   # cvTools::cvFolds() refused K > n. A rare outcome level with fewer
-  # observations than folds should still get spread over the folds it can.
+  # observations than folds is still spread over the folds it can reach.
   set.seed(5, "L'Ecuyer-CMRG")
   Y = c(rep(0, 30), 1, 1)
   folds = varimpact:::create_cv_folds(V = 5L, Y = Y)
