@@ -15,27 +15,10 @@ context("Recovery when a bin's TMLE estimation fails")
 # estimate_tmle2(), which is hardened enough that ordinary degenerate data no
 # longer trips it.
 
-# Replace estimate_tmle2() in the package namespace with one that throws on a
-# chosen subset of calls, and restore it afterwards.
+# with_failing() (helper-failure-injection.R) swaps estimate_tmle2() for a
+# version that throws on a chosen subset of calls, and restores it afterwards.
 with_failing_tmle = function(should_fail, expr) {
-  ns = asNamespace("varimpact")
-  original = get("estimate_tmle2", envir = ns)
-  call_i = 0L
-  patched = function(...) {
-    call_i <<- call_i + 1L
-    if (should_fail(call_i)) stop("synthetic TMLE failure in this bin")
-    original(...)
-  }
-  # devtools::load_all() leaves bindings unlocked; an installed package locks
-  # them. Only re-lock what was locked to begin with.
-  was_locked = bindingIsLocked("estimate_tmle2", ns)
-  if (was_locked) unlockBinding("estimate_tmle2", ns)
-  assign("estimate_tmle2", patched, envir = ns)
-  on.exit({
-    assign("estimate_tmle2", original, envir = ns)
-    if (was_locked) lockBinding("estimate_tmle2", ns)
-  }, add = TRUE)
-  force(expr)
+  with_failing("estimate_tmle2", should_fail, expr)
 }
 
 run_varimpact = function(data, Y, ...) {

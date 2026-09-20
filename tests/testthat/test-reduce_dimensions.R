@@ -93,3 +93,32 @@ test_that("a NULL max_variables disables reduction", {
   expect_equal(ncol(result$data), ncol(data))
   expect_identical(result$variables, colnames(data))
 })
+
+test_that("verbose reports the reduction and the columns added to newX", {
+  data = make_df(20L)
+  newX = make_df(20L, seed = 12L)
+  expect_output(reduce_dimensions(data, newX, max_variables = 5L, verbose = TRUE),
+                "Reducing dimensions via clustering")
+
+  data = make_df(4L)
+  newX = make_df(4L, seed = 12L)[, 1:3]
+  expect_output(reduce_dimensions(data, newX, max_variables = 10L, verbose = TRUE),
+                "Adding missing columns in prediction data: V4")
+})
+
+test_that("when HOPACH fails on every attempt the data is returned unreduced", {
+  # reduce_dimensions() retries hopach() with different settings, then gives
+  # up and keeps the full data. hopach itself does not fail on well-formed
+  # input, so make it.
+  data = make_df(20L)
+  newX = make_df(20L, seed = 12L)
+  testthat::local_mocked_bindings(
+    hopach = function(...) stop("synthetic HOPACH failure"),
+    .package = "hopach")
+
+  expect_output(
+    result <- reduce_dimensions(data, newX, max_variables = 5L, verbose = TRUE),
+    "Attempt 3 fail")
+  expect_identical(result$data, data)
+  expect_equal(ncol(result$newX), ncol(newX))
+})
