@@ -22,7 +22,6 @@ reference:
     The CV-TMLE machinery underneath varimpact(). Documented so a fit can be
     inspected, not normally called directly.
   contents:
-  - estimate_tmle
   - estimate_tmle2
   - tmle_estimate_q
   - create_cv_folds
