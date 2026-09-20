@@ -147,7 +147,8 @@ reduce_dimensions = function(data, newX = NULL, max_variables, verbose = FALSE) 
   # If training data contains any columsn that don't exist in the validation data
   # create them and assign a value of 0.
 
-  missing_cols = setdiff(colnames(Wtsht), colnames(Wvsht))
+  # Only when there is a validation frame to align; newX is optional.
+  missing_cols = if (is.null(Wvsht)) character() else setdiff(colnames(Wtsht), colnames(Wvsht))
   if (length(missing_cols) > 0) {
     if (verbose) cat(paste("Adding missing columns in prediction data:",
                   paste(missing_cols, collapse = ", ")))

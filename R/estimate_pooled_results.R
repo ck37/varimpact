@@ -90,8 +90,10 @@ estimate_pooled_results = function(fold_results,
     # See tmle::estimateQ where it does this after predicting Q.
     data$logit_Q_hat = try(stats::qlogis(data$Q_hat))
     if (inherits(data$logit_Q_hat, "try-error")) {
+      # nocov start - qlogis() does not fail on values already bounded to [0, 1]
       stop("estimate_pooled_results(): qlogis() failed on Q_hat: ",
            conditionMessage(attr(data$logit_Q_hat, "condition")))
+      # nocov end
     }
     #}
 
@@ -111,8 +113,10 @@ estimate_pooled_results = function(fold_results,
                   data = data, family = "binomial",
                   subset = data$delta == 1))
         if ("try-error" %in% class(reg)) {
+          # nocov start - a fluctuation glm on well-formed input does not fail
           stop("estimate_pooled_results(): the fluctuation regression for epsilon ",
                "failed: ", conditionMessage(attr(reg, "condition")))
+          # nocov end
         }
         epsilon = try(stats::coef(reg))
       })
@@ -135,8 +139,10 @@ estimate_pooled_results = function(fold_results,
     }
 
     if ("try-error" %in% class(epsilon)) {
+      # nocov start - coef() of a fitted glm does not fail
       stop("estimate_pooled_results(): could not extract epsilon from the ",
            "fluctuation regression: ", conditionMessage(attr(epsilon, "condition")))
+      # nocov end
     } else {
 
       if (verbose) cat("Fluctuating Q_star\n")
@@ -209,6 +215,7 @@ estimate_pooled_results = function(fold_results,
 
       # Check for NaNs.
       num_nans = sum(sapply(influence_curves, function(curve) sum(is.nan(curve))))
+      # nocov start - HAW and Q_star are bounded, so the influence curve has no NaNs
       if (num_nans > 0) {
         if (verbose) {
           cat("Error: influence curves contain", num_nans, "NaNs.\n")
@@ -216,6 +223,7 @@ estimate_pooled_results = function(fold_results,
           cat("gAW_total zeros:", sum(data$gAW_total == 0), "\n")
         }
       }
+      # nocov end
 
       #if (verbose) cat("IC class:", class(influence_curves), "\n")
 
@@ -227,10 +235,12 @@ estimate_pooled_results = function(fold_results,
     }
   }
 
+  # nocov start - thetas is NULL only when data is, which returned above
   if (is.null(thetas))  {
     # All folds must have failed.
     if (verbose) cat("No pooled results. All folds seemed to have failed.\n")
   }
+  # nocov end
 
   # tapply() and by() key on the fold numbers that actually appear in the data,
   # so a fold contributing no rows for this bin gets no slot - and every later
