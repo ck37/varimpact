@@ -3,10 +3,11 @@ library(testthat)
 
 context("Imputation when a row is missing every numeric covariate")
 
-# caret:::nnimp() stops on a row in which every column is missing - with no
-# observed column there is nothing to match neighbors on. That took down the
-# whole run for impute = "knn", while median and zero imputation filled the
-# same row and carried on (issue #7).
+# A row in which every column is missing has no observed column to match
+# neighbors on. The caret-based knn imputation this package used to call
+# stopped on such a row, which took down the whole run for impute = "knn",
+# while median and zero imputation filled the same row and carried on
+# (issue #7).
 
 make_data = function(n = 120, all_missing_rows = integer(0)) {
   set.seed(3, "L'Ecuyer-CMRG")
@@ -41,31 +42,32 @@ test_that("knn puts all-missing rows at the column mean", {
   d = make_data(all_missing_rows = c(13, 77))
   all_missing = rowSums(is.na(d)) == ncol(d)
   out = as.matrix(impute_with(d, "knn"))
-  # caret's knnImpute centers and scales, so the column mean is 0.
+  # knn imputation centers and scales, so the column mean is 0.
   expect_true(all(out[all_missing, ] == 0))
 })
 
 test_that("all-missing rows do not disturb the other rows", {
   # The rows that can be imputed must come out exactly as they would from a
-  # fit that never saw the all-missing rows - those are excluded from caret's
-  # neighbor reference set and contribute to no column's mean or sd anyway.
+  # frame that never had the all-missing rows - those are not complete cases,
+  # so they are never anyone's neighbor, and being NA in every column they
+  # contribute to no column's mean or sd either.
   d = make_data(all_missing_rows = c(13, 77))
   all_missing = rowSums(is.na(d)) == ncol(d)
   out = as.matrix(impute_with(d, "knn"))
 
   sub = d[!all_missing, , drop = FALSE]
-  reference = as.matrix(predict(caret::preProcess(sub, method = "knnImpute"), sub))
+  reference = as.matrix(impute_with(sub, "knn"))
   expect_equal(out[!all_missing, ], reference,
                tolerance = 0, check.attributes = FALSE)
 })
 
-test_that("knn output is unchanged when no row is all-missing", {
-  # Guards the common case: with nothing to skip, this must reproduce what
-  # fitting on the whole frame produced before the fix, to the bit.
+test_that("process_numerics() returns what impute_knn() computes", {
+  # Guards the common case: with nothing to skip, the numeric processing must
+  # hand back the imputation helper's output as is, to the bit.
   d = make_data()
   expect_false(any(rowSums(is.na(d)) == ncol(d)))
   out = as.matrix(impute_with(d, "knn"))
-  reference = as.matrix(predict(caret::preProcess(d, method = "knnImpute"), d))
+  reference = as.matrix(varimpact:::impute_knn(d)$data)
   expect_equal(out, reference, tolerance = 0, check.attributes = FALSE)
 })
 
