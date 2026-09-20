@@ -66,10 +66,8 @@ estimate_pooled_results = function(fold_results,
   }
 
   if (min(data$Q_hat) < 0 || max(data$Q_hat) > 1) {
-    cat("Error: some predicted values of Q_hat are out of bounds.",
-        "They should be in [0, 1].\n")
-    print(summary(data$Q_hat))
-    browser()
+    stop("estimate_pooled_results(): predicted Q_hat values must lie in [0, 1]; ",
+         "observed range ", paste(signif(range(data$Q_hat), 4), collapse = " to "), ".")
   }
 
   # Set some default values in case of a future error.
@@ -92,9 +90,8 @@ estimate_pooled_results = function(fold_results,
     # See tmle::estimateQ where it does this after predicting Q.
     data$logit_Q_hat = try(stats::qlogis(data$Q_hat))
     if (inherits(data$logit_Q_hat, "try-error")) {
-      cat("Error in estimate_pooled_results() with qlogis()\n")
-      print(summary(data$Q_hat))
-      browser()
+      stop("estimate_pooled_results(): qlogis() failed on Q_hat: ",
+           conditionMessage(attr(data$logit_Q_hat, "condition")))
     }
     #}
 
@@ -114,8 +111,8 @@ estimate_pooled_results = function(fold_results,
                   data = data, family = "binomial",
                   subset = data$delta == 1))
         if ("try-error" %in% class(reg)) {
-          cat("Error in epsilon regression.\n")
-          browser()
+          stop("estimate_pooled_results(): the fluctuation regression for epsilon ",
+               "failed: ", conditionMessage(attr(reg, "condition")))
         }
         epsilon = try(stats::coef(reg))
       })
@@ -138,9 +135,8 @@ estimate_pooled_results = function(fold_results,
     }
 
     if ("try-error" %in% class(epsilon)) {
-      if (verbose) cat("Error when estimating epsilon.\n")
-      print(summary(data$Y_star))
-      browser()
+      stop("estimate_pooled_results(): could not extract epsilon from the ",
+           "fluctuation regression: ", conditionMessage(attr(epsilon, "condition")))
     } else {
 
       if (verbose) cat("Fluctuating Q_star\n")
@@ -202,11 +198,6 @@ estimate_pooled_results = function(fold_results,
       # We can't convert to a matrix because lengths are different.
       # TODO: figure out why this can generate NaNs
       influence_curves = base::by(data, data$fold_num, function(fold_data) {
-        if (F && verbose) {
-          with(fold_data,
-               cat("A:", length(A), "g1W_hat:", length(g1W_hat), "Y_star:", length(Y_star),
-                   "Q_star:", length(Q_star), "\n"))
-        }
         #with(fold_data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)
         # HAW = A * delta / (g1W * g.Delta), so observations missing Y or A
         # drop out of the residual term rather than turning it into an NA.

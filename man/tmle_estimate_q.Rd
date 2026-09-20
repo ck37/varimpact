@@ -15,7 +15,6 @@ tmle_estimate_q(
   Qform = NULL,
   maptoYstar,
   SL.library,
-  cvQinit = F,
   family,
   id = 1:length(Y),
   V = 10,
@@ -42,8 +41,6 @@ tmle_estimate_q(
 \item{maptoYstar}{if TRUE, using logistic fluctuation for bounded, continuous outcomes}
 
 \item{SL.library}{library of prediction algorithms for Super Learner}
-
-\item{cvQinit}{flag, if TRUE, cross-validate SL.}
 
 \item{family}{regression family}
 

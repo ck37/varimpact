@@ -14,7 +14,6 @@
 #' @param fluctuation Only logistic is currently supported.
 #' @param V Number of folds for SuperLearner
 #' @param verbose If true output extra information during execution.
-#' @importFrom tmle tmle
 #' @importFrom stats as.formula binomial coef glm offset plogis poisson predict qlogis
 #' @export
 estimate_tmle2 =
@@ -78,17 +77,6 @@ estimate_tmle2 =
     cat("Warning: found", missing_vals, "NAs in Y.\n")
   }
 
-  # Here we are using tmle but not using the treatment effect estimate.
-  # We're actually using the underlying variables to estimate Y_a.
-  # TODO: disable this call, we're just running it now to double-check
-  # the custom results.
-  if (F) {
-    tmle.1 = tmle::tmle(Y, A, W, Delta = delta, g.SL.library = g.lib,
-                      Q.SL.library = Q.lib, family = family, verbose = verbose)
-  } else {
-    tmle.1 = NULL
-  }
-
   if (verbose) {
     cat("Estimating g. A distribution:\n")
     print(table(A))
@@ -126,16 +114,7 @@ estimate_tmle2 =
   g$bound = gbound
 
   # Propensity score for treatment.
-  #g1 = tmle.1$g$g1W
   g1 = g$g1W
-
-  # Check if these two are highly correlated.
-  if (!is.null(tmle.1) && verbose) {
-    # This will generate a warning of SD is zero for either vector.
-    # If this is the case we'll see an NA here.
-    suppressWarnings(cat("Correlation of custom g to tmle-based g:",
-        stats::cor(tmle.1$g$g1W, g1), "\n"))
-  }
 
   # This is copied from within tmle::tmle()
   map_to_ystar = fluctuation == "logistic"
@@ -154,7 +133,6 @@ estimate_tmle2 =
   if (verbose) cat("TMLE q\n")
 
   # Estimate Qinit
-  # cvQinit = F by default, meaning that we don't need CV.SuperLearner.
   q = tmle_estimate_q(Y = stage1$Ystar,
                       A = A,
                       W = W,
@@ -278,8 +256,6 @@ estimate_tmle2 =
 
   # Unit's estimated outcome under treatment: hat(Y) | A = 1, W
   # This is after the fluctuation step, so it is targeted.
-  # Qst = tmle.1$Qstar[, 2]
-  # Qst = tmle.1$Qstar$Q1W
   # Qst = Qbar1W_star
   Qst = Qstar[, "Q1W"]
 
@@ -298,7 +274,7 @@ estimate_tmle2 =
                 # to a validation fold. NULL if the training fold had no
                 # missingness in Y or A.
                 g_delta_model = g.Delta$model,
-                tmle = tmle.1, alpha = alpha,
+                alpha = alpha,
                 Qbounds = Qbounds,
                 stage1_Qbounds = stage1$Qbounds,
                 gbounds = g$bound,
