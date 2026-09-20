@@ -64,13 +64,11 @@ factors_to_indicators = function(factor_df, miss_name_prefix = "Imiss_",
     # Note: we want to keep this variable name as x so that the names are short
     # from model.matrix. We rely on this variable name being only 1 character.
     x = factor_df[, i]
-    # CK: looks like we are omitting the first level?
-    if (T || sum_nas[i] == 0) {
-      omit_levels = -1
-    } else {
-      # if there is missing data, also omit the last level (NA)
-      omit_levels = -1 * c(1, length(levels(x)))
-    }
+    # The first level is the reference and gets no indicator. (An earlier
+    # version also dropped the NA level when the factor had missing values,
+    # but that branch had been disabled with `if (T || ...)`; missing values
+    # are handled by the indicator columns below instead.)
+    omit_levels = -1
 
     # Convert to a series of indicators.
     indicators = model.matrix(~ x - 1)[, omit_levels]

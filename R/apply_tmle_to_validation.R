@@ -86,10 +86,7 @@ apply_tmle_to_validation =
     stop("Y values must be 0 <= y <= 1")
   }
 
-  # We only include this because TMLE functions use Z.
-  Z = rep(0, length(Y))
-
-  q_df = data.frame(Z, A = 1, W)
+  q_df = data.frame(A = 1, W)
 
   # Predict Q(1, W)
   tryCatch({
@@ -104,11 +101,6 @@ apply_tmle_to_validation =
 
   if (verbose) cat("Bounding Q_hat to", tmle$stage1_Qbounds, "\n")
   Q_hat = .bound(Q_hat, tmle$stage1_Qbounds)
-
-  if (min(Q_hat) < 0 || max(Q_hat) > 1) {
-    cat("Error: predicted Q_hat outside of [0, 1] bounds.\n")
-    #browser()
-  }
 
   # Predict g
   tryCatch({

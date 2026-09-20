@@ -12,7 +12,6 @@
 #' initial values or a regression formula
 #' arguments:
 #' @param Y outcome
-#' @param Z intermediate variable between A and Y (default= 0 when no int. var.)
 #' @param A treatment indicator (1=treatment, 0=control)
 #' @param W baseline covariates
 #' @param	Delta missingness indicator
@@ -29,7 +28,6 @@
 #' @param V number of folds for SuperLearner
 #' @param verbose Set T for extra output
 # returns matrix of linear predictors for Q(A,W), Q(0,W), Q(1,W),
-#   (for controlled direct effect, 2 additional columns: Q(Z=1,A=0,W), Q(Z=1,A=1,W))
 #		family for stage 2 targeting
 #		coef, NA, unless Q is estimated using a parametric model
 # 		type, estimation method for Q
@@ -37,7 +35,6 @@
 #' @export
 tmle_estimate_q <-
   function(Y,
-           Z = rep(0, length(Y)),
            A,
            W,
            Delta,
@@ -55,41 +52,29 @@ tmle_estimate_q <-
   Qfamily <- family
   m <- NULL
   coef <- NA
-  CDE <- length(unique(Z)) > 1
   type <- "user-supplied values"
   if(is.null(Q)){
     if(verbose) { cat("\tEstimating initial regression of Y on A and W\n")}
-    Q <- matrix(NA, nrow=length(Y), ncol = 5)
-    colnames(Q)<- c("QAW", "Q0W", "Q1W", "Q0W.Z1", "Q1W.Z1")
+    Q <- matrix(NA, nrow=length(Y), ncol = 3)
+    colnames(Q)<- c("QAW", "Q0W", "Q1W")
     if(!(is.null(Qform))){
       if(identical(as.character(as.formula(Qform)), c("~","Y", "."))){
-        if(CDE){
-          Qform <- paste("Y~Z+A+", paste(colnames(W), collapse="+"))
-        } else {
-          Qform <- paste("Y~A+", paste(colnames(W), collapse="+"))
-        }
+        Qform <- paste("Y~A+", paste(colnames(W), collapse="+"))
       }
-      m <- suppressWarnings(glm(Qform, data=data.frame(Y,Z,A,W, Delta), family=family, subset=Delta==1))
-      Q[,"QAW"] <- predict(m, newdata=data.frame(Y,Z,A,W), type="response")
-      Q[,"Q0W"] <- predict(m, newdata=data.frame(Y,Z=0,A=0,W), type="response")
-      Q[,"Q1W"] <- predict(m, newdata=data.frame(Y,Z=0,A=1,W), type="response")
-      Q[,"Q0W.Z1"] <- predict(m, newdata=data.frame(Y,Z=1,A=0,W), type="response")
-      Q[,"Q1W.Z1"] <- predict(m, newdata=data.frame(Y,Z=1,A=1,W), type="response")
+      m <- suppressWarnings(glm(Qform, data=data.frame(Y,A,W, Delta), family=family, subset=Delta==1))
+      Q[,"QAW"] <- predict(m, newdata=data.frame(Y,A,W), type="response")
+      Q[,"Q0W"] <- predict(m, newdata=data.frame(Y,A=0,W), type="response")
+      Q[,"Q1W"] <- predict(m, newdata=data.frame(Y,A=1,W), type="response")
       coef <- coef(m)
       type="glm, user-supplied model"
     } else {
       if(verbose) {cat("\t using SuperLearner\n")}
       n <- length(Y)
-      X <- data.frame(Z,A,W)
-      X00 <- data.frame(Z=0,A=0, W)
-      X01 <- data.frame(Z=0,A=1, W)
+      X <- data.frame(A,W)
+      X00 <- data.frame(A=0, W)
+      X01 <- data.frame(A=1, W)
       newX <- rbind(X, X00, X01)
-      if(CDE) {
-        X10 <- data.frame(Z=1,A=0, W)
-        X11 <- data.frame(Z=1,A=1, W)
-        newX <- rbind(newX, X10, X11)
-      }
-      arglist <- list(Y=Y[Delta==1],X=X[Delta==1,], newX=newX, SL.library=SL.library,
+      arglist <- list(Y=Y[Delta==1],X=X[Delta==1, , drop = FALSE], newX=newX, SL.library=SL.library,
                       cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=id[Delta==1])
       suppressWarnings({
         # CK: try to eliminate messages from loading packages.
@@ -106,10 +91,6 @@ tmle_estimate_q <-
         Q[,"QAW"] <- m$SL.predict[1:n]
         Q[,"Q0W"] <- m$SL.predict[(n+1):(2*n)]
         Q[,"Q1W"] <- m$SL.predict[(2*n+1):(3*n)]
-        if(CDE){
-          Q[,"Q0W.Z1"] <- m$SL.predict[(3*n+1):(4*n)]
-          Q[,"Q1W.Z1"] <- m$SL.predict[(4*n+1):(5*n)]
-        }
         type <- "SuperLearner"
       } else {
         stop("Super Learner failed when estimating Q. Exiting program\n")
@@ -118,14 +99,11 @@ tmle_estimate_q <-
   }
   if(is.na(Q[1,1]) | identical(class(m), "try-error")){
     if(verbose) {cat("\t Running main terms regression for 'Q' using glm\n")}
-    Qform <- paste("Y~Z+A+", paste(colnames(W), collapse="+"))
-    m <- glm(Qform, data=data.frame(Y,Z,A,W, Delta), family=family, subset=Delta==1)
-    Q[,"QAW"] <- predict(m, newdata=data.frame(Y,Z,A,W), type="response")
-    Q[,"Q1W"] <- predict(m, newdata=data.frame(Y,Z=0,A=1,W), type="response")
-    Q[,"Q0W"] <- predict(m, newdata=data.frame(Y,Z=0,A=0,W), type="response")
-    Q[,"Q0W.Z1"] <- predict(m, newdata=data.frame(Y,Z=1,A=0,W), type="response")
-    Q[,"Q1W.Z1"] <- predict(m, newdata=data.frame(Y,Z=1,A=1,W), type="response")
-
+    Qform <- paste("Y~A+", paste(colnames(W), collapse="+"))
+    m <- glm(Qform, data=data.frame(Y,A,W, Delta), family=family, subset=Delta==1)
+    Q[,"QAW"] <- predict(m, newdata=data.frame(Y,A,W), type="response")
+    Q[,"Q1W"] <- predict(m, newdata=data.frame(Y,A=1,W), type="response")
+    Q[,"Q0W"] <- predict(m, newdata=data.frame(Y,A=0,W), type="response")
     coef <- coef(m)
     type="glm, main terms model"
   }
@@ -136,9 +114,6 @@ tmle_estimate_q <-
   } else if (identical(Qfamily, "poisson") | identical(Qfamily, poisson)) {
     Q <- log(Q)
     Qfamily <- "poisson"
-  }
-  if(!CDE){
-    Q <- Q[,1:3]
   }
   Qinit <- list(Q=Q, family=Qfamily, coef=coef, type=type, model = m)
   if(type=="SuperLearner"){

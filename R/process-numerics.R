@@ -79,32 +79,17 @@ process_numerics =
         arules_method = "interval"
       }
 
+      # Discretize into up to bins_numeric quantile bins. This returns an
+      # ordered factor. Skewed data can give non-unique breaks; arules then
+      # warns and collapses them rather than erroring, which is why the error
+      # fallback that used to sit here (cluster-based, then raw levels) never
+      # ran. It could not have worked anyway: its assignments were local to
+      # the handler functions and never reached this scope.
       suppressWarnings({
-        # Discretize into up to 10 quantiles (by default), configurable based on
-        # bins_numeric argument.
-        # This returns a factor version of the discretized variable.
-        tryCatch({ var_binned_names = arules::discretize(Xt,
+        var_binned_names = arules::discretize(Xt,
                                               method = arules_method,
                                               breaks = num_breaks,
                                               ordered = TRUE)
-        }, error = function(error) {
-          # This can happen with skewed distributions where multiple breaks are not unique.
-          print(error)
-          cat("Error: could not discretize numeric", numeric_i, "", name, "\n")
-          cat("Unique values:", length(unique(Xt)), "\n")
-          cat("Switching to cluster-based discretization.\n")
-          tryCatch({
-          var_binned_names = arules::discretize(Xt, method = "cluster",
-                                                breaks = num_breaks,
-                                                ordered = TRUE)},
-            error = function(error2) {
-              # TODO: use another package/function to discretize.
-              print(error2)
-              cat("Cluster-based discretization failed - using all levels.")
-              var_binned_names = factor(Xt)
-            })
-
-        })
       })
 
       # Save the levels for future usage.

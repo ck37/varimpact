@@ -10,7 +10,7 @@
 #			(-Inf,+Inf) is default for linear regression
 #   ab - bounding levels used to transform Y to Ystar
 #-----------------------------------------------
-tmle_init_stage1 <- function(Y,A, Q, Q.Z1=NULL, Delta, Qbounds, alpha, maptoYstar, family){
+tmle_init_stage1 <- function(Y,A, Q, Delta, Qbounds, alpha, maptoYstar, family){
   if(family=="binomial") {Qbounds <- c(0,1)}
   if(is.null(Qbounds)) {
     if(maptoYstar){
@@ -23,9 +23,6 @@ tmle_init_stage1 <- function(Y,A, Q, Q.Z1=NULL, Delta, Qbounds, alpha, maptoYsta
   if(!is.null(Q)){
     QAW <- (1-A)*Q[,1] + A*Q[,2]
     Q <- cbind(QAW, Q0W=Q[,1], Q1W=Q[,2])
-  }
-  if(!is.null(Q.Z1)){
-    Q <- cbind(Q, Q0W.Z1=Q.Z1[,1], Q1W.Z1=Q.Z1[,2])
   }
   ab <- c(0,1)
   Ystar <- Y
