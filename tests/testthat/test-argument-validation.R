@@ -36,3 +36,15 @@ test_that("the supported impute methods are accepted", {
     expect_s3_class(fit(impute = method), "varimpact")
   }
 })
+
+test_that("a binomial outcome must lie in [0, 1]", {
+  X = data.frame(a = rnorm(30), b = rnorm(30))
+  expect_error(varimpact(Y = rpois(30, 3), data = X, family = "binomial"),
+               "bounded by \\[0, 1\\]")
+})
+
+test_that("only binomial and gaussian families are accepted", {
+  X = data.frame(a = rnorm(30), b = rnorm(30))
+  expect_error(varimpact(Y = rpois(30, 3), data = X, family = "poisson"),
+               "Family must be either")
+})
