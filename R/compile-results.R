@@ -138,7 +138,8 @@ compile_results =
       # contrast carried by few clusters has few effective degrees of freedom
       # is from Bell & McCaffrey (2002) and Imbens & Kolesar (2016); the count
       # in contrast_df() is a simple, conservative heuristic for it, not a
-      # published rule.
+      # published rule. The resulting false-positive rates are checked by the
+      # simulation study in tests/testthat/test-cluster-simulation.R.
       if (is.finite(df)) {
         # pmin() keeps the names of its first argument, the variable names.
         df_var = pmin(vapply(results_no_na,

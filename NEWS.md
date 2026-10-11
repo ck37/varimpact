@@ -41,7 +41,9 @@
   aside with a message. The ids in use and the degrees of freedom are returned
   as `cluster_id` and `cluster_df` (the largest df), and `print()` notes when
   standard errors are clustered. The README has an example. Without `id`,
-  results are unchanged. (Pratik Khadse, #71)
+  results are unchanged. A simulation study of the clustered inference is in
+  `tests/testthat/test-cluster-simulation.R`; it is skipped unless
+  `VARIMPACT_RUN_SIMULATIONS=true`. (Pratik Khadse, #71)
 
 ## Bug fixes
 

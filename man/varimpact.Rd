@@ -137,7 +137,10 @@ high levels (fold by fold), minus one, and are at most (fewest clusters -
 variables. A contrast carried by few clusters has few effective degrees
 of freedom (Bell & McCaffrey 2002; Imbens & Kolesar 2016); this count is
 a simple, conservative heuristic for them rather than a published rule.
-A variable
+These choices were checked by simulation: the study in
+\code{tests/testthat/test-cluster-simulation.R} of the source repository
+reports false-positive rates and interval coverage across cluster
+designs. A variable
 nested in another (family within site) is covered by clustering on the
 outer one and is dropped with a message. The asymptotics rely on the
 number of clusters, not observations, so results with few clusters
@@ -157,7 +160,11 @@ the variables not folded on, so a fold's choice of low and high levels
 carries over to its validation data through those clusters, which biases
 variables that vary with them (a factor measured at that level, say). The
 clustered variance cannot correct this, so name here the variable that
-the variables of interest vary with.}
+the variables of interest vary with. In the simulation study in
+\code{tests/testthat/test-cluster-simulation.R} of the source
+repository, with sites crossed with schools, a factor constant within
+sites was flagged 13\% of the time at the 5\% level when folding on
+school and 3\% when folding on site.}
 }
 \value{
 Results object. TODO: add more detail here.

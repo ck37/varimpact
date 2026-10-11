@@ -230,7 +230,9 @@ ic_var = function(ic, rows = NULL, cluster_id = NULL) {
 #' equals the usual G / (G - 1) (CR1) version. It corrects the
 #' understatement from a cluster that holds a large share of the data: in
 #' simulations of varimpact() with one cluster holding half the rows, false
-#' positives for a null variable fell from 7.6% to 4.6%.
+#' positives for a null variable fell from 7.6% to 4.6%. The simulation study
+#' in tests/testthat/test-cluster-simulation.R checks the coverage of this
+#' variance across cluster designs.
 #'
 #' @param ic_list List with one influence-curve vector per fold.
 #' @param rows_list List with the matching row numbers in the full data.
@@ -310,7 +312,9 @@ cv_cluster_vars = function(pooled_min, pooled_max, V, cluster_id) {
 #' With several clustering variables the smallest count is used. In
 #' simulations this kept false positives for cluster-level factors nearer 5%
 #' than a single global df or a Welch-type df that also counts the other
-#' level's clusters, at the cost of being conservative with very few clusters.
+#' level's clusters, at the cost of being conservative with very few clusters;
+#' the simulation study in tests/testthat/test-cluster-simulation.R checks the
+#' false-positive rates it gives.
 #'
 #' @param fold_results List with one element per fold, each holding
 #'   \code{level_min$val_preds} and \code{level_max$val_preds} from
