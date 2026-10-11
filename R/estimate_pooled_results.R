@@ -9,7 +9,7 @@ estimate_pooled_results = function(fold_results,
                                    verbose = FALSE,
                                    Qbounds = c(0, 1)) {
   # Fold results is a list with test results from each fold.
-  
+
   # Each fold result should have at least this element:
   # val_preds dataframe, with Y_star, g, Q, H.
   # TODO: need to change this check, it doesn't work correctly.
@@ -17,7 +17,7 @@ estimate_pooled_results = function(fold_results,
   #if (verbose) {
   #  cat("Number of fold failures:", num_fails, "of", length(fold_results), "\n")
   #}
-  
+
   # Placeholder results to return in case of error.
   results = list(
     thetas = NULL,
@@ -25,15 +25,15 @@ estimate_pooled_results = function(fold_results,
     rows = NULL,
     epsilon = NULL
   )
-  
+
   #if (num_fails == length(fold_results)) {
-  # Every fold failed.
+    # Every fold failed.
   #  if (verbose) cat("Error: every fold failed.\n")
   #  return(results)
   #}
-  
+
   # browser()
-  
+
   # Extract the results from each CV-TMLE fold and rbind into a single dataframe.
   data = do.call(rbind, lapply(1:length(fold_results), function(i) {
     fold = fold_results[[i]]
@@ -52,42 +52,42 @@ estimate_pooled_results = function(fold_results,
       df
     }
   }))
-  
+
   if (is.null(data)) {
     # Every fold failed.
     if (verbose) cat("Error: every fold failed.\n")
     return(results)
   }
-  
+
   # delta = 0 marks validation observations that are missing Y or A. Their
   # clever covariate (HAW) is already 0, so they contribute nothing to the
   # fluctuation or to the influence curve.
   if (is.null(data$delta)) {
     data$delta = 1
   }
-  
+
   if (min(data$Q_hat) < 0 || max(data$Q_hat) > 1) {
     stop("estimate_pooled_results(): predicted Q_hat values must lie in [0, 1]; ",
          "observed range ", paste(signif(range(data$Q_hat), 4), collapse = " to "), ".")
   }
-  
+
   # Set some default values in case of a future error.
   thetas = NULL
   influence_curves = NULL
   ic_rows = NULL
   epsilon = NULL
-  
-  
+
+
   if (!is.null(data)) {
     n = nrow(data)
-    
+
     # If Y is binary, take logit of Q.
     #if (length(unique(data$Y)) == 2) {
-    
+
     # Look at thetas prior to fluctuation.
     pre_thetas = tapply(data$Q_hat, data$fold_num, mean, na.rm = TRUE)
     if (verbose) cat("Pre-fluctuation thetas:", pre_thetas, "\n")
-    
+
     # If Q is binary or continuous we still want to take logit of predicted values.
     # See tmle::estimateQ where it does this after predicting Q.
     data$logit_Q_hat = try(stats::qlogis(data$Q_hat))
@@ -98,10 +98,10 @@ estimate_pooled_results = function(fold_results,
       # nocov end
     }
     #}
-    
+
     # Estimate epsilon
     if (verbose) cat("Estimating epsilon: ")
-    
+
     if (fluctuation == "logistic") {
       suppressWarnings({
         #epsilon = coef(glm(Y_star ~ -1 + offset(logit_Q_hat) + H1W,
@@ -112,8 +112,8 @@ estimate_pooled_results = function(fold_results,
         # fit as an ordinary covariate and epsilon would come back with two
         # elements instead of one.
         reg = try(stats::glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
-                             data = data, family = "binomial",
-                             subset = data$delta == 1))
+                  data = data, family = "binomial",
+                  subset = data$delta == 1))
         if ("try-error" %in% class(reg)) {
           # nocov start - a fluctuation glm on well-formed input does not fail
           stop("estimate_pooled_results(): the fluctuation regression for epsilon ",
@@ -126,8 +126,8 @@ estimate_pooled_results = function(fold_results,
       # have an intercept. Causal 2, Lecture 3, slide 51.
       # We have to suppressWarnings about "non-integrate #successes in binomial glm".
       #suppressWarnings({
-      # Catch an error if one occurs here.
-      #epsilon = try(coef(glm(Y_star ~ offset(logit_Q_hat),
+        # Catch an error if one occurs here.
+        #epsilon = try(coef(glm(Y_star ~ offset(logit_Q_hat),
       #  epsilon = try(coef(glm(Y_star ~ .,
       #                         offset = logit_Q_hat,
       #                         weights = H1W,
@@ -139,25 +139,25 @@ estimate_pooled_results = function(fold_results,
       stop("Only support logistic fluctuation currently.")
       # TBD.
     }
-    
+
     if ("try-error" %in% class(epsilon)) {
       # nocov start - coef() of a fitted glm does not fail
       stop("estimate_pooled_results(): could not extract epsilon from the ",
            "fluctuation regression: ", conditionMessage(attr(epsilon, "condition")))
       # nocov end
     } else {
-      
+
       if (verbose) cat("Fluctuating Q_star\n")
-      
+
       # Fluctuate Q to get Q_star
       Q_star = data$logit_Q_hat + epsilon * data$H1W
       #Q_star = data$logit_Q_hat + epsilon * data$HAW
-      
+
       if (verbose) cat("Transforming Q_star\n")
       #if (length(unique(data$Y)) == 2) {
       Q_star = plogis(Q_star)
       #}
-      
+
       # Map back onto the scale of the original outcome.
       #
       # apply_tmle_to_validation() ran the whole CV-TMLE on
@@ -185,22 +185,22 @@ estimate_pooled_results = function(fold_results,
         # zero weight through HAW, so their rescaled value is irrelevant.
         data$Y_star = data$Y_star * diff(Qbounds) + Qbounds[1]
       }
-      
+
       if (verbose) cat("Estimating per-fold thetas: ")
-      
+
       # Estimate treatment-specific mean parameter on every validation fold.
       thetas = tapply(Q_star, data$fold_num, mean, na.rm = TRUE)
       if (verbose) cat(thetas, "\n")
-      
+
       # Take average across folds to get final estimate.
       #theta = mean(thetas)
-      
+
       # Move Q_star into the data so that it can be analyzed per-fold.
       data$Q_star = Q_star
       rm(Q_star)
-      
+
       if (verbose) cat("Calculating per-fold influence curves\n")
-      
+
       # Get influence curve per fold - for treatment-specific mean.
       # Influence_curves here is a list, where each element is a result.
       # We can't convert to a matrix because lengths are different.
@@ -214,7 +214,7 @@ estimate_pooled_results = function(fold_results,
         #if (verbose) cat("Result:", class(result), "Length:", length(result), "\n")
         result
       })
-      
+
       # Row numbers (in the full data) behind each fold's influence curve, in
       # the same order, so that clustered variances can look up cluster ids by
       # row. by() splits the rows exactly as it split the curves above. Absent
@@ -224,7 +224,7 @@ estimate_pooled_results = function(fold_results,
           fold_data$row_index
         })
       }
-      
+
       # Check for NaNs.
       num_nans = sum(sapply(influence_curves, function(curve) sum(is.nan(curve))))
       # nocov start - HAW and Q_star are bounded, so the influence curve has no NaNs
@@ -236,24 +236,24 @@ estimate_pooled_results = function(fold_results,
         }
       }
       # nocov end
-      
+
       #if (verbose) cat("IC class:", class(influence_curves), "\n")
-      
+
       # Old version:
       #influence_curve = with(data, (A / g1W_hat) * (Y - Q_star) + Q_star - theta)
-      
+
       # Calculate standard error.
       #std_err = stats::var(influence_curves) / n
     }
   }
-  
+
   # nocov start - thetas is NULL only when data is, which returned above
   if (is.null(thetas))  {
     # All folds must have failed.
     if (verbose) cat("No pooled results. All folds seemed to have failed.\n")
   }
   # nocov end
-  
+
   # tapply() and by() key on the fold numbers that actually appear in the data,
   # so a fold contributing no rows for this bin gets no slot - and every later
   # fold shifts down a position. Callers index these BY FOLD NUMBER
@@ -282,7 +282,7 @@ estimate_pooled_results = function(fold_results,
   if (!is.null(ic_rows)) {
     ic_rows = align_by_fold(as.list(ic_rows), list(NULL))
   }
-  
+
   # Compile results
   results = list(
     #theta = theta,
@@ -293,6 +293,6 @@ estimate_pooled_results = function(fold_results,
     #std_err = std_err,
     epsilon = epsilon
   )
-  
+
   return(results)
 }

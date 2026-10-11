@@ -12,7 +12,10 @@ Authors@R: c(
     comment = c(ORCID = "0000-0001-7444-2766")),
   person("Daniela", "Rodrigues",
     role = c("ctb"),
-    comment = c(ORCID = "0000-0002-5791-5573", "adjustment_exclusions")))
+    comment = c(ORCID = "0000-0002-5791-5573", "adjustment_exclusions")),
+  person("Pratik", "Khadse",
+    role = c("ctb"),
+    comment = c(ORCID = "0009-0004-7075-6994", "cluster-robust standard errors")))
 URL: https://ck37-varimpact.netlify.app, https://github.com/ck37/varimpact
 BugReports: https://github.com/ck37/varimpact/issues
 Description: Automated data processing and variable importance using data-
@@ -45,4 +48,4 @@ Suggests:
     sandwich,
     snow,
     testthat
-Config/roxygen2/version: 8.1.0
+RoxygenNote: 7.3.2

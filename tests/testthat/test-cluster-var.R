@@ -84,21 +84,21 @@ test_that("check_cluster_id accepts vectors, data frames, matrices and lists", {
   expect_s3_class(v, "data.frame")
   expect_identical(names(v), "id")
   expect_true(is.integer(v$id))
-  
+
   d = check_cluster_id(data.frame(site = site, school = school), n)
   expect_identical(names(d), c("site", "school"))
-  
+
   m = check_cluster_id(cbind(site, school), n)
   expect_identical(names(m), c("site", "school"))
-  
+
   l = check_cluster_id(list(site = site, school = school), n)
   expect_identical(names(l), c("site", "school"))
-  
+
   # Unnamed columns still get distinct names.
   u = check_cluster_id(unname(cbind(site, school)), n)
   expect_equal(ncol(u), 2L)
   expect_false(anyDuplicated(names(u)) > 0)
-  
+
   # Character ids are fine.
   expect_equal(cluster_var(ic, as.character(site)), cluster_var(ic, site))
 })
@@ -108,20 +108,20 @@ test_that("check_cluster_id drops nested and singleton columns", {
                                        verbose = TRUE),
                  "'family' is nested in 'site'")
   expect_identical(names(d), "site")
-  
+
   expect_message(d <- check_cluster_id(data.frame(row = seq_len(n), site),
                                        n, verbose = TRUE),
                  "one observation per cluster")
   expect_identical(names(d), "site")
-  
+
   # Only singletons: no clustering at all.
   expect_null(check_cluster_id(seq_len(n), n))
   expect_null(check_cluster_id(NULL, n))
-  
+
   # Duplicate columns keep one copy.
   d = check_cluster_id(data.frame(a = site, b = site), n)
   expect_equal(ncol(d), 1L)
-  
+
   # Crossed variables are both kept.
   d = check_cluster_id(data.frame(site, school), n)
   expect_identical(names(d), c("site", "school"))

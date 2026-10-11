@@ -106,7 +106,7 @@ assign_group_folds = function(id, V, Y, verbose = FALSE) {
     stop("There are ", G, " clusters to form folds on, fewer than V = ", V,
          ". Reduce V or cluster on a finer variable.")
   }
-  
+
   group_index = match(id, groups)
   size = tabulate(group_index, nbins = G)
   Ys = unique(Y[!is.na(Y)])
@@ -116,12 +116,12 @@ assign_group_folds = function(id, V, Y, verbose = FALSE) {
   } else {
     rep(0L, G)
   }
-  
+
   # Shuffle so that ties are broken at random, then order: groups with more
   # events first, then larger groups first.
   shuffled = sample.int(G)
   ord = shuffled[order(-events[shuffled], -size[shuffled])]
-  
+
   fold_n = rep(0L, V)
   fold_events = rep(0L, V)
   group_fold = integer(G)
@@ -136,7 +136,7 @@ assign_group_folds = function(id, V, Y, verbose = FALSE) {
     fold_n[f] = fold_n[f] + size[g]
     fold_events[f] = fold_events[f] + events[g]
   }
-  
+
   out = group_fold[group_index]
   if (verbose) {
     cat("Cluster-grouped cross-validation:", G, "clusters in", V, "folds.\n")

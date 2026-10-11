@@ -81,7 +81,7 @@ test_that("bad cluster input is rejected before any fitting", {
 
 test_that("id can name columns of data, which are then not analyzed", {
   Xid = cbind(X, family = family, site = site)
-  
+
   set.seed(5, "L'Ecuyer-CMRG")
   by_name = suppressWarnings(
     varimpact(Y = Y, data = cbind(X, family = family), id = "family", V = 2L,
@@ -92,7 +92,7 @@ test_that("id can name columns of data, which are then not analyzed", {
   # Same result as passing the vector itself, and family is not a predictor.
   expect_identical(by_name$results_all, by_vector$results_all)
   expect_false("family" %in% rownames(by_name$results_all))
-  
+
   # Several names: multiway (here nested, so site is kept).
   set.seed(6, "L'Ecuyer-CMRG")
   expect_message(

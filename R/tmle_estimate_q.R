@@ -47,86 +47,86 @@ tmle_estimate_q <-
            id = 1:length(Y),
            V = 10,
            verbose = F) {
-    
-    if (is.null(Qbounds)) stop("Qbounds must be defined.")
-    Qfamily <- family
-    m <- NULL
-    coef <- NA
-    type <- "user-supplied values"
-    if(is.null(Q)){
-      if(verbose) { cat("\tEstimating initial regression of Y on A and W\n")}
-      Q <- matrix(NA, nrow=length(Y), ncol = 3)
-      colnames(Q)<- c("QAW", "Q0W", "Q1W")
-      if(!(is.null(Qform))){
-        if(identical(as.character(as.formula(Qform)), c("~","Y", "."))){
-          Qform <- paste("Y~A+", paste(colnames(W), collapse="+"))
-        }
-        m <- suppressWarnings(glm(Qform, data=data.frame(Y,A,W, Delta), family=family, subset=Delta==1))
-        Q[,"QAW"] <- predict(m, newdata=data.frame(Y,A,W), type="response")
-        Q[,"Q0W"] <- predict(m, newdata=data.frame(Y,A=0,W), type="response")
-        Q[,"Q1W"] <- predict(m, newdata=data.frame(Y,A=1,W), type="response")
-        coef <- coef(m)
-        type="glm, user-supplied model"
-      } else {
-        if(verbose) {cat("\t using SuperLearner\n")}
-        n <- length(Y)
-        X <- data.frame(A,W)
-        X00 <- data.frame(A=0, W)
-        X01 <- data.frame(A=1, W)
-        newX <- rbind(X, X00, X01)
-        # With clustered ids, CVFolds() needs at least V distinct ids; with few
-        # clusters use one fold per cluster. Unique ids leave V unchanged.
-        sl_id <- id[Delta==1]
-        V <- cluster_sl_folds(sl_id, V)
-        if (V < 2L) {
-          sl_id <- NULL
-          V <- 2L
-        }
-        arglist <- list(Y=Y[Delta==1],X=X[Delta==1, , drop = FALSE], newX=newX, SL.library=SL.library,
-                        cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=sl_id)
-        suppressWarnings({
-          # CK: try to eliminate messages from loading packages.
-          out = utils::capture.output({
-            suppressPackageStartupMessages({
-              m <- try(do.call(SuperLearner::SuperLearner, arglist))
-            })
+
+  if (is.null(Qbounds)) stop("Qbounds must be defined.")
+  Qfamily <- family
+  m <- NULL
+  coef <- NA
+  type <- "user-supplied values"
+  if(is.null(Q)){
+    if(verbose) { cat("\tEstimating initial regression of Y on A and W\n")}
+    Q <- matrix(NA, nrow=length(Y), ncol = 3)
+    colnames(Q)<- c("QAW", "Q0W", "Q1W")
+    if(!(is.null(Qform))){
+      if(identical(as.character(as.formula(Qform)), c("~","Y", "."))){
+        Qform <- paste("Y~A+", paste(colnames(W), collapse="+"))
+      }
+      m <- suppressWarnings(glm(Qform, data=data.frame(Y,A,W, Delta), family=family, subset=Delta==1))
+      Q[,"QAW"] <- predict(m, newdata=data.frame(Y,A,W), type="response")
+      Q[,"Q0W"] <- predict(m, newdata=data.frame(Y,A=0,W), type="response")
+      Q[,"Q1W"] <- predict(m, newdata=data.frame(Y,A=1,W), type="response")
+      coef <- coef(m)
+      type="glm, user-supplied model"
+    } else {
+      if(verbose) {cat("\t using SuperLearner\n")}
+      n <- length(Y)
+      X <- data.frame(A,W)
+      X00 <- data.frame(A=0, W)
+      X01 <- data.frame(A=1, W)
+      newX <- rbind(X, X00, X01)
+      # With clustered ids, CVFolds() needs at least V distinct ids; with few
+      # clusters use one fold per cluster. Unique ids leave V unchanged.
+      sl_id <- id[Delta==1]
+      V <- cluster_sl_folds(sl_id, V)
+      if (V < 2L) {
+        sl_id <- NULL
+        V <- 2L
+      }
+      arglist <- list(Y=Y[Delta==1],X=X[Delta==1, , drop = FALSE], newX=newX, SL.library=SL.library,
+                      cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=sl_id)
+      suppressWarnings({
+        # CK: try to eliminate messages from loading packages.
+        out = utils::capture.output({
+          suppressPackageStartupMessages({
+            m <- try(do.call(SuperLearner::SuperLearner, arglist))
           })
-          # Set call to null because do.call() messes up that element.
-          m$call = NULL
         })
-        if (identical(class(m),"SuperLearner")){
-          #if (verbose) print(m)
-          Q[,"QAW"] <- m$SL.predict[1:n]
-          Q[,"Q0W"] <- m$SL.predict[(n+1):(2*n)]
-          Q[,"Q1W"] <- m$SL.predict[(2*n+1):(3*n)]
-          type <- "SuperLearner"
-        } else {
-          stop("Super Learner failed when estimating Q. Exiting program\n")
-        }
+        # Set call to null because do.call() messes up that element.
+        m$call = NULL
+      })
+      if (identical(class(m),"SuperLearner")){
+        #if (verbose) print(m)
+        Q[,"QAW"] <- m$SL.predict[1:n]
+        Q[,"Q0W"] <- m$SL.predict[(n+1):(2*n)]
+        Q[,"Q1W"] <- m$SL.predict[(2*n+1):(3*n)]
+        type <- "SuperLearner"
+      } else {
+        stop("Super Learner failed when estimating Q. Exiting program\n")
       }
     }
-    if(is.na(Q[1,1]) | identical(class(m), "try-error")){
-      if(verbose) {cat("\t Running main terms regression for 'Q' using glm\n")}
-      Qform <- paste("Y~A+", paste(colnames(W), collapse="+"))
-      m <- glm(Qform, data=data.frame(Y,A,W, Delta), family=family, subset=Delta==1)
-      Q[,"QAW"] <- predict(m, newdata=data.frame(Y,A,W), type="response")
-      Q[,"Q1W"] <- predict(m, newdata=data.frame(Y,A=1,W), type="response")
-      Q[,"Q0W"] <- predict(m, newdata=data.frame(Y,A=0,W), type="response")
-      coef <- coef(m)
-      type="glm, main terms model"
-    }
-    Q <- varimpact::.bound(Q, Qbounds)
-    if(maptoYstar | identical(Qfamily,"binomial") | identical(Qfamily, binomial)){
-      Q <- qlogis(Q)
-      Qfamily <- "binomial"
-    } else if (identical(Qfamily, "poisson") | identical(Qfamily, poisson)) {
-      Q <- log(Q)
-      Qfamily <- "poisson"
-    }
-    Qinit <- list(Q=Q, family=Qfamily, coef=coef, type=type, model = m)
-    if(type=="SuperLearner"){
-      Qinit$SL.library=SL.library
-      Qinit$coef=m$coef
-    }
-    return(Qinit)
   }
+  if(is.na(Q[1,1]) | identical(class(m), "try-error")){
+    if(verbose) {cat("\t Running main terms regression for 'Q' using glm\n")}
+    Qform <- paste("Y~A+", paste(colnames(W), collapse="+"))
+    m <- glm(Qform, data=data.frame(Y,A,W, Delta), family=family, subset=Delta==1)
+    Q[,"QAW"] <- predict(m, newdata=data.frame(Y,A,W), type="response")
+    Q[,"Q1W"] <- predict(m, newdata=data.frame(Y,A=1,W), type="response")
+    Q[,"Q0W"] <- predict(m, newdata=data.frame(Y,A=0,W), type="response")
+    coef <- coef(m)
+    type="glm, main terms model"
+  }
+  Q <- varimpact::.bound(Q, Qbounds)
+  if(maptoYstar | identical(Qfamily,"binomial") | identical(Qfamily, binomial)){
+    Q <- qlogis(Q)
+    Qfamily <- "binomial"
+  } else if (identical(Qfamily, "poisson") | identical(Qfamily, poisson)) {
+    Q <- log(Q)
+    Qfamily <- "poisson"
+  }
+  Qinit <- list(Q=Q, family=Qfamily, coef=coef, type=type, model = m)
+  if(type=="SuperLearner"){
+    Qinit$SL.library=SL.library
+    Qinit$coef=m$coef
+  }
+  return(Qinit)
+}

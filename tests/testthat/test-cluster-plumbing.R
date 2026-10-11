@@ -41,7 +41,7 @@ test_that("estimate_pooled_results returns rows aligned with each fold's curve",
     expect_identical(pooled$rows[[k]], halves[[k]])
     expect_length(pooled$influence_curves[[k]], length(halves[[k]]))
   }
-  
+
   # An empty fold keeps its slot empty, as for the curves.
   fold_results[[2]]$val_preds = NULL
   pooled = varimpact:::estimate_pooled_results(fold_results)

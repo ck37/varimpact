@@ -60,7 +60,7 @@ check_cluster_id = function(id, n, verbose = FALSE) {
     names(id) = paste0("id", seq_len(ncol(id)))
   }
   id[] = lapply(id, function(x) as.integer(factor(x)))
-  
+
   # Singleton-only columns carry no clustering.
   singleton = vapply(id, function(x) length(unique(x)) == n, logical(1))
   if (verbose && any(singleton)) {
@@ -69,7 +69,7 @@ check_cluster_id = function(id, n, verbose = FALSE) {
   }
   id = id[, !singleton, drop = FALSE]
   if (ncol(id) == 0L) return(NULL)
-  
+
   # Drop columns nested within another column (this also removes duplicates).
   k = ncol(id)
   keep = rep(TRUE, k)
@@ -132,7 +132,7 @@ one_way_var = function(ic, g) {
 cluster_var = function(ic, id = NULL) {
   id = check_cluster_id(id, length(ic))
   if (is.null(id)) return(stats::var(ic))
-  
+
   k = ncol(id)
   v = 0
   for (m in seq_len(k)) {
@@ -142,7 +142,7 @@ cluster_var = function(ic, id = NULL) {
       v = v + (-1)^(m + 1) * one_way_var(ic, g)
     }
   }
-  
+
   if (k > 1L && v <= 0) {
     v = max(vapply(id, one_way_var, numeric(1), ic = ic))
     warning("The multiway clustered variance was not positive; using the ",
@@ -231,7 +231,7 @@ cluster_fold_groups = function(cluster_id, V, folds_by = NULL) {
     return(cluster_id[[folds_by]])
   }
   if (ncol(cluster_id) == 1L) return(cluster_id[[1]])
-  
+
   # Connected components by label propagation across the clustering variables.
   comp = seq_len(nrow(cluster_id))
   repeat {
@@ -241,7 +241,7 @@ cluster_fold_groups = function(cluster_id, V, folds_by = NULL) {
   }
   comp = as.integer(factor(comp))
   if (length(unique(comp)) >= V) return(comp)
-  
+
   G = vapply(cluster_id, function(x) length(unique(x)), numeric(1))
   ok = which(G >= V)
   if (length(ok) == 0L) {
