@@ -284,6 +284,22 @@ test_that("cv_cluster_var counts a cluster that spans folds once", {
                cluster_var(scaled, data.frame(site, school), weights))
 })
 
+test_that("copying every row within its cluster leaves the standard error", {
+  # Two copies of each row double n, so the variance must double for the
+  # standard error, sqrt(variance / n), to stay the same (issue #18).
+  fold = ifelse(site <= 7, 1L, 2L)
+  copies = rep(seq_len(n), each = 2)
+  for (id in list(site, data.frame(site, school))) {
+    id_copies = if (is.data.frame(id)) id[copies, ] else id[copies]
+    once = cv_cluster_var(split(ic, fold), split(seq_len(n), fold),
+                          check_cluster_id(id, n))
+    twice = cv_cluster_var(split(ic[copies], fold[copies]),
+                           split(seq_len(2 * n), fold[copies]),
+                           check_cluster_id(id_copies, 2 * n))
+    expect_equal(twice, 2 * once)
+  }
+})
+
 test_that("cv_cluster_vars keeps the variation of a fold with one cluster", {
   # One cluster alone in fold 1, the rest in fold 2. Centering within each
   # fold would leave fold 1 contributing nothing.

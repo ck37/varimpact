@@ -147,6 +147,38 @@ test_that("missing outcomes are handled with id", {
                          function(x) length(unique(x))) == 1L))
 })
 
+test_that("duplicating every row under a shared id leaves the intervals", {
+  # Issue #18: two copies of each row, sharing an id, carry no more
+  # information than one. Without id the intervals narrow by about sqrt(2);
+  # with id they should match the original data's. Point estimates can still
+  # move, since the folds, and so each variable's low and high levels, differ.
+  set.seed(18, "L'Ecuyer-CMRG")
+  n1 = 200
+  Xi = data.frame(x1 = rnorm(n1), x2 = rnorm(n1),
+                  f1 = factor(sample(c("a", "b", "c"), n1, replace = TRUE)))
+  Yi = rbinom(n1, 1, plogis(-0.5 + 0.8 * Xi$x1 + 0.5 * (Xi$f1 == "b")))
+  copies = rep(seq_len(n1), each = 2)
+  half_width = function(...) {
+    set.seed(19, "L'Ecuyer-CMRG")
+    res = suppressWarnings(suppressMessages(
+      varimpact(V = 2L, Q.library = c("SL.mean", "SL.glm"),
+                g.library = c("SL.mean", "SL.glm"), bins_numeric = 3L, ...)
+    ))$results_all
+    bounds = strsplit(gsub("[()]", "", res$CI95), " - ", fixed = TRUE)
+    stats::setNames(vapply(bounds, function(b) diff(as.numeric(b)) / 2,
+                           numeric(1)),
+                    rownames(res))
+  }
+  vars = c("x1", "x2", "f1")
+  original = half_width(Y = Yi, data = Xi)[vars]
+  copied = half_width(Y = Yi[copies], data = Xi[copies, ])[vars]
+  copied_id = half_width(Y = Yi[copies], data = Xi[copies, ], id = copies)[vars]
+  expect_false(anyNA(c(original, copied, copied_id)))
+  # Across data seeds the ratios ran 0.92-1.21 with id and 1.39-1.8 without.
+  expect_true(all(copied_id / original > 1 / 1.3 & copied_id / original < 1.3))
+  expect_true(all(copied_id / copied > 1.3))
+})
+
 test_that("a cluster id left in data as a factor is set aside with a message", {
   # site is the cluster and is also a column of data. Each site sits in one
   # fold, so its levels never match between training and validation.
