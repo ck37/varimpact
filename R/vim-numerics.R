@@ -485,7 +485,7 @@ vim_numerics =
               if (!is.null(training_estimates[[bin_j]])) {
                 preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                                    deltav, training_estimates[[bin_j]],
-                                                   id = val_rows, verbose = verbose))
+                                                   row_index = val_rows, verbose = verbose))
                 if (inherits(preds, "try-error")) {
                   bin_result$test_msg = paste("CV-TMLE prediction on validation failed")
                 } else {
@@ -657,7 +657,7 @@ vim_numerics =
               # CV-TMLE: predict g, Q, and clever covariate on validation data.
               min_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                                        deltav, training_estimates[[minj]],
-                                                       id = val_rows, verbose = verbose))
+                                                       row_index = val_rows, verbose = verbose))
 
               # Old version:
               #res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
@@ -688,7 +688,7 @@ vim_numerics =
 
                 max_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                                          deltav, training_estimates[[maxj]],
-                                                         id = val_rows, verbose = verbose))
+                                                         row_index = val_rows, verbose = verbose))
                 # Old code:
                 #res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
                 #                         Q.lib = Q.library,
@@ -919,6 +919,15 @@ vim_numerics =
           }
         })
 
+        # With clusters, the standard errors come from one clustered variance
+        # over every fold's influence curve, which counts a cluster that spans
+        # folds once and copes with a fold that holds a single cluster.
+        if (!is.null(cluster_id)) {
+          clustered = cv_cluster_vars(pooled_min, pooled_max, V, cluster_id)
+          var_results$varIC_cluster = clustered$rd
+          var_results$varIC_log_rr_cluster = clustered$log_rr
+          var_results$contrast_df = contrast_df(fold_results, cluster_id)
+        }
 
 
         if (verbose) {

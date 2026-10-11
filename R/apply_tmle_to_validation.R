@@ -38,7 +38,7 @@ apply_tmle_to_validation =
            family,
            delta = rep(1, length(Y)),
            tmle,
-           id = 1:length(Y),
+           row_index = 1:length(Y),
            verbose = FALSE) {
 
   # delta = 1 when both Y and A are observed, 0 otherwise. Observations with
@@ -156,15 +156,15 @@ apply_tmle_to_validation =
   ####################
   # Return results
 
-  if (length(id) != length(Y)) {
-    stop("apply_tmle_to_validation(): id has ", length(id), " values but Y has ",
-         length(Y), ".")
+  if (length(row_index) != length(Y)) {
+    stop("apply_tmle_to_validation(): row_index has ", length(row_index),
+         " values but Y has ", length(Y), ".")
   }
 
   # We return Y_star rather than Y, for use in pooled fluctuation step.
-  # row_index carries each observation's row number in the full data (the
-  # callers pass it as id), so that estimate_pooled_results() can hand it back
-  # alongside the influence curve and cluster ids can be matched by row.
+  # row_index carries each observation's row number in the full data, so that
+  # estimate_pooled_results() can hand it back alongside the influence curve
+  # and cluster ids can be matched by row.
   data = data.frame(Y_star = Y_star, A = A, Q_hat = Q_hat,
                     g1W_hat = g1W_hat_truncated,
                     gDelta_hat = gDelta_hat,
@@ -172,7 +172,7 @@ apply_tmle_to_validation =
                     delta = delta,
                     H1W = H1W,
                     HAW = HAW,
-                    row_index = id)
+                    row_index = row_index)
 
   results = data
 

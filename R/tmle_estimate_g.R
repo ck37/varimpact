@@ -97,16 +97,21 @@ tmle_estimate_g <-
     if (length(unique(id)) == length(id)) {
       sl_id = NULL
     } else {
-      # SuperLearner cannot stratify its folds and keep ids together at the
-      # same time (CVFolds() stops with "stratified sampling with id not
-      # currently implemented"), so keeping clusters intact takes priority.
-      cvControl$stratifyCV = FALSE
-      # CVFolds() also needs at least V distinct ids; with few clusters (e.g.
-      # a handful of sites in a training fold) use one fold per cluster.
+      # Keep each cluster within one of SuperLearner's folds. CVFolds() needs
+      # at least V distinct ids, so with few clusters (e.g. a handful of sites
+      # in a training fold) use one fold per cluster.
       cvControl$V = cluster_sl_folds(id, cvControl$V)
       if (cvControl$V < 2L) {
+        # A single cluster cannot be split, so use ordinary folds.
         sl_id = NULL
         cvControl$V = 2L
+      } else if (cvControl$stratifyCV) {
+        # CVFolds() cannot stratify and keep ids together at the same time (it
+        # stops with "stratified sampling with id not currently implemented"),
+        # so build grouped, stratified folds the way varimpact builds its own.
+        folds = assign_group_folds(id, cvControl$V, d[, 1])
+        cvControl$validRows = unname(split(seq_along(id), folds))
+        cvControl$stratifyCV = FALSE
       }
     }
     arglist <- list(Y=d[,1], X=d[,-1, drop=FALSE], newX=newdata[,-1, drop=FALSE],

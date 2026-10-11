@@ -168,6 +168,47 @@ set.seed(1, "L'Ecuyer-CMRG")
 #> V4 (0.595 - 1.95)  0.4018732       0.4018732       TRUE
 ```
 
+### Example: clustered observations
+
+When observations are correlated within groups, such as siblings in a family
+or patients in a hospital, pass the groups as `id` to get cluster-robust
+standard errors. Whole clusters are kept within the CV folds, and confidence
+intervals and p-values use a t distribution whose degrees of freedom (the `df`
+column) count the clusters behind each estimate. `id` can name a column of
+`data`, as here, or be the cluster ids themselves; naming several columns,
+e.g. `id = c("school", "neighborhood")`, gives multiway clustering.
+
+``` r
+# Clustered observations: 100 families of 2 to 6 members, where members of a
+# family share an unmeasured influence on the outcome.
+set.seed(1, "L'Ecuyer-CMRG")
+family <- rep(1:100, times = sample(2:6, 100, replace = TRUE))
+n <- length(family)
+X_fam <- data.frame(age = rnorm(100)[family] + rnorm(n, sd = 0.5),
+                    income = rnorm(n),
+                    family = family)
+Y_fam <- rbinom(n, 1, plogis(0.8 * X_fam$age + rnorm(100)[family]))
+
+# Name the cluster column in id: it is used for clustering, not analyzed.
+(vim <- varimpact(Y = Y_fam, data = X_fam, id = "family"))
+#> Finished pre-processing variables.
+#> 
+#> Processing results:
+#> - Factor variables: 0 
+#> - Numeric variables: 2 
+#> 
+#> No factor variables - skip VIM estimation.
+#> 
+#> Estimating variable importance for 2 numerics.
+#> Cluster-robust standard errors: family (100 clusters). Intervals and p-values use a t distribution with the df shown for each variable (at most 99).
+#> 
+#> Significant and consistent results:
+#>        Type  Estimate            CI95 df     P-value Adj. p-value  Est. RR
+#> age Ordered 0.3142568 (0.125 - 0.503) 16 0.001404986  0.002809972 2.197069
+#>          CI95 RR P-value RR Adj. p-value RR
+#> age (1.1 - 4.37) 0.01377947      0.02755894
+```
+
 ### Example: parallel via multicore
 
 ``` r

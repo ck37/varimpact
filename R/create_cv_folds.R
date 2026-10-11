@@ -83,9 +83,15 @@ assign_folds = function(n, V) {
 #'
 #' Groups are shuffled, then placed largest first into the fold that currently
 #' has the fewest observations, which keeps fold sizes close. For a binary
-#' outcome, groups containing events are placed first, each into the fold with
-#' the fewest events so far, so events are spread across folds as evenly as
-#' whole groups allow. Missing outcomes count as non-events here.
+#' outcome, groups containing the rarer value (the events) are placed first,
+#' each into the fold with the fewest events so far, so events are spread
+#' across folds as evenly as whole groups allow. Missing outcomes count as
+#' non-events here. Before either rule, every fold is given two groups when
+#' there are enough: otherwise a group holding about 1 / V of the data or
+#' more fills a fold by itself, and then a variable measured at the group
+#' level has a single value in the other folds' training data and cannot be
+#' estimated, and SuperLearner cannot keep groups together within that
+#' training data.
 #'
 #' @param id Grouping vector, one value per observation.
 #' @param V Number of folds.
@@ -112,7 +118,11 @@ assign_group_folds = function(id, V, Y, verbose = FALSE) {
   Ys = unique(Y[!is.na(Y)])
   binary = length(Ys) == 2L
   events = if (binary) {
-    tabulate(group_index[!is.na(Y) & Y == max(Ys)], nbins = G)
+    # Balance whichever value is rarer: usually Y = 1, but for a missingness
+    # indicator, say, it is the 0s that are scarce.
+    counts = table(Y[!is.na(Y)])
+    rare = as.character(Y) == names(counts)[which.min(counts)]
+    tabulate(group_index[!is.na(Y) & rare], nbins = G)
   } else {
     rep(0L, G)
   }
@@ -124,17 +134,24 @@ assign_group_folds = function(id, V, Y, verbose = FALSE) {
 
   fold_n = rep(0L, V)
   fold_events = rep(0L, V)
+  fold_groups = rep(0L, V)
   group_fold = integer(G)
   for (g in ord) {
+    candidates = seq_len(V)
+    # Until every fold has two groups, only folds with the fewest groups are
+    # eligible.
+    if (min(fold_groups) < 2L) {
+      candidates = which(fold_groups == min(fold_groups))
+    }
     if (events[g] > 0L) {
-      candidates = which(fold_events == min(fold_events))
-    } else {
-      candidates = seq_len(V)
+      fewest = min(fold_events[candidates])
+      candidates = candidates[fold_events[candidates] == fewest]
     }
     f = candidates[which.min(fold_n[candidates])]
     group_fold[g] = f
     fold_n[f] = fold_n[f] + size[g]
     fold_events[f] = fold_events[f] + events[g]
+    fold_groups[f] = fold_groups[f] + 1L
   }
 
   out = group_fold[group_index]

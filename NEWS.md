@@ -12,21 +12,36 @@
   * whole clusters are assigned to CV folds, so each validation fold is
     independent of its training folds;
   * SuperLearner's internal cross-validation for g, g.Delta and Q keeps
-    clusters together (and caps its folds at the number of clusters);
-  * influence-curve variances sum within clusters, with a G/(G - 1)
-    small-sample factor, and use Cameron, Gelbach & Miller (2011)
+    clusters together (and caps its folds at the number of clusters), and
+    stays stratified for g and g.Delta;
+  * influence-curve variances sum within clusters across all folds at once,
+    so a cluster that spans folds counts once and a fold may hold a single
+    cluster, with a jackknife-style (CR3) small-sample correction that scales
+    each cluster by its share of the data (the usual G/(G - 1) factor when
+    clusters are the same size), and use Cameron, Gelbach & Miller (2011)
     inclusion-exclusion for several clustering variables;
-  * confidence intervals and p-values use a t distribution with
-    (fewest clusters - 1) degrees of freedom.
+  * confidence intervals and p-values use a t distribution, with degrees of
+    freedom for each variable from the clusters behind its estimate: the
+    clusters holding the scarcer of its low and high levels (fold by fold),
+    minus one, and at most (fewest clusters - 1). They are shown in a `df`
+    column of `results_all`. A variable whose low or high level comes from a
+    single cluster gets no interval or p-value, with a message.
 
-  A variable nested in another (family within site) is dropped with a
-  message, since clustering on the outer variable already covers it. An id
-  with one observation per cluster is ignored. Crossed variables that cannot
-  all be kept within single folds fall back to the coarsest variable with at
-  least `V` clusters; the new `folds_by` argument overrides this choice. A
-  supplied `id` that is `NULL` (e.g. a misspelled `data$column`) triggers a
-  warning. The ids in use and the degrees of freedom are returned as
-  `cluster_id` and `cluster_df`. Without `id`, results are unchanged.
+  A variable nested in another (family within site) is dropped with a message,
+  since clustering on the outer variable already covers it. An id with one
+  observation per cluster is ignored. Crossed variables that cannot all be
+  kept within single folds fall back to the coarsest variable with at least
+  `V` clusters; the new `folds_by` argument overrides this choice. Training
+  and validation folds then share clusters of the other variables, which can
+  bias variables that vary with them, so `folds_by` should name the variable
+  that the variables of interest vary with. An `id` written as `data$column`
+  that is `NULL` (a misspelled column) triggers a warning. A factor whose
+  levels each fall within one cluster, such as the cluster id left in `data`,
+  never appears in both a training fold and its validation fold, so it is set
+  aside with a message. The ids in use and the degrees of freedom are returned
+  as `cluster_id` and `cluster_df` (the largest df), and `print()` notes when
+  standard errors are clustered. The README has an example. Without `id`,
+  results are unchanged. (Pratik Khadse, #71)
 
 ## Bug fixes
 

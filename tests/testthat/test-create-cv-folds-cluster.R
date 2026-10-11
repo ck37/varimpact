@@ -47,9 +47,38 @@ test_that("fold sizes and events are close to balanced", {
   expect_lte(max(events) - min(events), max(tapply(Y, family, sum)))
 })
 
+test_that("no fold is a single cluster when there are enough clusters", {
+  clusters_per_fold = function(g, folds) {
+    as.vector(tapply(g, folds, function(x) length(unique(x))))
+  }
+  # One cluster holds over half the rows: it shares its fold with another.
+  g = c(rep(1L, 165), rep(2:21, each = 7))
+  for (Yd in list(rbinom(length(g), 1, 0.3), rnorm(length(g)))) {
+    folds = varimpact:::assign_group_folds(g, 2L, Yd)
+    expect_true(intact(folds, g))
+    expect_true(all(clusters_per_fold(g, folds) >= 2L))
+  }
+  # Five clusters in three folds cannot all get two; they are spread out.
+  g = rep(1:5, each = 10)
+  folds = varimpact:::assign_group_folds(g, 3L, rbinom(50, 1, 0.5))
+  expect_identical(sort(clusters_per_fold(g, folds)), c(1L, 2L, 2L))
+})
+
+test_that("the rarer outcome value is the one spread across folds", {
+  # Mostly 1s, as for a missingness indicator: the 0s are what need spreading.
+  Yr = 1 - rbinom(n, 1, 0.1)
+  V = 4L
+  folds = varimpact:::assign_group_folds(family, V, Yr)
+  zeros = tabulate(folds[Yr == 0], nbins = V)
+  expect_lte(max(zeros) - min(zeros), max(tapply(Yr == 0, family, sum)))
+  expect_true(intact(folds, family))
+})
+
 test_that("a continuous outcome is also grouped", {
   Yc = rnorm(n)
   folds = create_cv_folds(4L, Yc, id = family)
+  expect_output(create_cv_folds(4L, Yc, verbose = TRUE, id = family),
+                "Cluster-grouped cross-validation: 120 clusters in 4 folds")
   expect_true(intact(folds, family))
   expect_setequal(unique(folds), 1:4)
 })
