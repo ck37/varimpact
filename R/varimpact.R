@@ -79,6 +79,58 @@
 #' @param verbose_reduction Boolean - if TRUE, will display more detail during
 #'   variable reduction step (clustering).
 #' @param digits Number of digits to round the value labels.
+#' @param id Optional cluster identifier(s) for cluster-robust standard
+#'   errors, for data in which observations are correlated within groups
+#'   (siblings in a family, patients in a hospital, students in a school).
+#'   The simplest form is the name(s) of columns in \code{data}, e.g.
+#'   \code{id = "family"}, or \code{id = c("school", "neighborhood")} for
+#'   multiway clustering (Cameron, Gelbach & Miller 2011); those columns are
+#'   used as clusters and are not analyzed as predictors. Alternatively pass
+#'   the ids directly: a vector with one value per observation, or a list or
+#'   data frame of such vectors. When given: every cluster is kept within a
+#'   single CV fold; SuperLearner's internal cross-validation keeps clusters
+#'   together; influence-curve variances sum within clusters, across all
+#'   folds at once, which follows from the cross-validated TMLE's influence
+#'   curve (Zheng & van der Laan 2010; Hubbard, Kherad-Pajouh & van der Laan
+#'   2016) with clusters as the independent units, with a small-sample (CR3)
+#'   correction for clusters of unequal size (MacKinnon, Nielsen & Webb
+#'   2023); and confidence intervals
+#'   and p-values use a t distribution, as normal critical values over-reject
+#'   when clusters are few (Cameron, Gelbach & Miller 2008; Cameron & Miller
+#'   2015). Its degrees of freedom, shown in the \code{df} column of the
+#'   results, count the clusters behind the scarcer of the variable's low and
+#'   high levels (fold by fold), minus one, and are at most (fewest clusters -
+#'   1), following Cameron, Gelbach & Miller (2011) for several clustering
+#'   variables. A contrast carried by few clusters has few effective degrees
+#'   of freedom (Bell & McCaffrey 2002; Imbens & Kolesar 2016); this count is
+#'   a simple, conservative heuristic for them rather than a published rule.
+#'   These choices were checked by simulation: the study in
+#'   \code{tests/testthat/test-cluster-simulation.R} of the source repository
+#'   reports false-positive rates and interval coverage across cluster
+#'   designs. A variable
+#'   nested in another (family within site) is covered by clustering on the
+#'   outer one and is dropped with a message. The asymptotics rely on the
+#'   number of clusters, not observations, so results with few clusters
+#'   (fewer than about 40) should be read with caution. Learners that tune
+#'   themselves by internal cross-validation, such as \code{SL.glmnet}, still
+#'   choose their own folds without regard to clusters; that does not affect
+#'   the validity of the results, since the CV-TMLE folds keep clusters
+#'   intact, but it can make their tuning optimistic. NULL (the default)
+#'   assumes independent observations.
+#' @param folds_by With several crossed cluster variables, the name of the
+#'   column of \code{id} to form CV folds on. By default folds keep every
+#'   cluster variable intact when that is possible, and otherwise fall back to
+#'   the coarsest variable with at least \code{V} clusters, with a warning.
+#'   With crossed variables, training and validation folds share clusters of
+#'   the variables not folded on, so a fold's choice of low and high levels
+#'   carries over to its validation data through those clusters, which biases
+#'   variables that vary with them (a factor measured at that level, say). The
+#'   clustered variance cannot correct this, so name here the variable that
+#'   the variables of interest vary with. In the simulation study in
+#'   \code{tests/testthat/test-cluster-simulation.R} of the source
+#'   repository, with sites crossed with schools, a factor constant within
+#'   sites was flagged 13\% of the time at the 5\% level when folding on
+#'   school and 3\% when folding on site.
 #' @param adjustment_exclusions Named list specifying adjustment variables to
 #'   exclude when estimating the importance of a given variable. Each name is a
 #'   column of \code{data} whose importance is being estimated, and each element
@@ -104,9 +156,24 @@
 #'
 #'
 #' @section References:
+#' Bell, R. M., & McCaffrey, D. F. (2002). \emph{Bias reduction in standard
+#' errors for linear regression with multi-stage samples}. Survey Methodology,
+#' 28(2), 169-181.
+#'
 #' Benjamini, Y., & Hochberg, Y. (1995). \emph{Controlling the false discovery
 #' rate: a practical and powerful approach to multiple testing}. Journal of the
 #' royal statistical society. Series B (Methodological), 289-300.
+#'
+#' Cameron, A. C., Gelbach, J. B., & Miller, D. L. (2008). \emph{Bootstrap-based
+#' improvements for inference with clustered errors}. The Review of Economics
+#' and Statistics, 90(3), 414-427.
+#'
+#' Cameron, A. C., Gelbach, J. B., & Miller, D. L. (2011). \emph{Robust
+#' inference with multiway clustering}. Journal of Business & Economic
+#' Statistics, 29(2), 238-249.
+#'
+#' Cameron, A. C., & Miller, D. L. (2015). \emph{A practitioner's guide to
+#' cluster-robust inference}. Journal of Human Resources, 50(2), 317-372.
 #'
 #' Gruber, S., & van der Laan, M. J. (2012). \emph{tmle: An R Package for
 #' Targeted Maximum Likelihood Estimation}. Journal of Statistical Software,
@@ -126,6 +193,14 @@
 #' \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca
 #' Raton, FL.
 #'
+#' Imbens, G. W., & Kolesar, M. (2016). \emph{Robust standard errors in small
+#' samples: some practical advice}. The Review of Economics and Statistics,
+#' 98(4), 701-712.
+#'
+#' MacKinnon, J. G., Nielsen, M. O., & Webb, M. D. (2023). \emph{Cluster-robust
+#' inference: a guide to empirical practice}. Journal of Econometrics, 232(2),
+#' 272-299.
+#'
 #' van der Laan, M. J. (2006). \emph{Statistical inference for variable
 #' importance}. The International Journal of Biostatistics, 2(1).
 #'
@@ -139,6 +214,10 @@
 #' van der Laan, M. J., & Rose, S. (2011). \emph{Targeted learning: causal
 #' inference for observational and experimental data}. Springer Science &
 #' Business Media.
+#'
+#' Zheng, W., & van der Laan, M. J. (2010). \emph{Asymptotic theory for
+#' cross-validated targeted maximum likelihood estimation}. U.C. Berkeley
+#' Division of Biostatistics Working Paper Series, Working Paper 273.
 #'
 #' @examples
 #' ####################################
@@ -163,6 +242,20 @@
 #' # Impute by median rather than knn.
 #' \dontrun{
 #' vim <- varimpact(Y = Y, data = X[, 1:3], impute = "median")
+#' }
+#'
+#' ####################################
+#' # Clustered observations: cluster-robust standard errors.
+#' \dontrun{
+#' # Suppose the 100 observations are 25 families of four.
+#' family <- rep(1:25, each = 4)
+#' vim <- varimpact(Y = Y, data = X[, 1:3], id = family)
+#'
+#' # Or name a column of data, which is then not analyzed as a predictor.
+#' vim <- varimpact(Y = Y, data = cbind(X[, 1:3], family), id = "family")
+#'
+#' # Several clustering variables give multiway clustering, e.g.
+#' # varimpact(Y = Y, data = data, id = c("school", "neighborhood"))
 #' }
 #'
 #' ####################################
@@ -228,7 +321,9 @@ varimpact =
            verbose_reduction = FALSE,
            parallel = TRUE,
            digits = 4L,
-           adjustment_exclusions = list()) {
+           adjustment_exclusions = list(),
+           id = NULL,
+           folds_by = NULL) {
 
   # Time the full function execution.
   time_start = proc.time()
@@ -240,6 +335,40 @@ varimpact =
   if (is.vector(data) && !is.list(data)) {
     if (verbose) cat("Converting vector input to data frame.\n")
     data <- data.frame(X1 = data)
+  }
+
+  # An id written as data$column or data[["column"]] that evaluates to NULL is
+  # almost always a typo such as id = data$famly (a missing column gives NULL),
+  # which would otherwise silently turn clustering off. Other NULLs, such as a
+  # wrapper passing on its own id = NULL default, just mean no clustering.
+  id_expr = substitute(id)
+  if (is.null(id) && is.call(id_expr) &&
+      as.character(id_expr[[1]])[1] %in% c("$", "[[")) {
+    warning("id was supplied but is NULL (for example data$column with a ",
+            "misspelled column name), so standard errors are NOT clustered.",
+            call. = FALSE)
+  }
+
+  # id can name columns of data, e.g. id = "family" or id = c("family",
+  # "site"). Those columns become the cluster ids and are removed from data so
+  # they are not analyzed as predictors. A character vector as long as the
+  # data is taken as the ids themselves, not as column names.
+  if (is.character(id) && length(id) < nrow(data)) {
+    missing_cols = setdiff(id, colnames(data))
+    if (length(missing_cols) > 0L) {
+      stop("id names column(s) not found in data: ",
+           paste(missing_cols, collapse = ", "), ".")
+    }
+    id_cols = unique(id)
+    id = data[, id_cols, drop = FALSE]
+    data = data[, setdiff(colnames(data), id_cols), drop = FALSE]
+    if (ncol(data) == 0L) {
+      stop("After removing the id column(s), data has no variables left.")
+    }
+    if (verbose) {
+      cat("Clustering on column(s)", paste(id_cols, collapse = ", "),
+          "of data; they are not analyzed as predictors.\n")
+    }
   }
 
   # Handle single column case with warning
@@ -254,6 +383,29 @@ varimpact =
 
   # Ensure that Y is numeric; e.g. can't be a factor.
   stopifnot(class(Y) %in% c("numeric", "integer"))
+
+  if (length(Y) != nrow(data)) {
+    stop("Y has ", length(Y), " values but data has ", nrow(data), " rows.")
+  }
+
+  # Validate the cluster ids once, up front. NULL means no clustering, which
+  # includes an id in which every observation is its own cluster.
+  cluster_id = check_cluster_id(id, length(Y), verbose = TRUE)
+  df_cluster = cluster_df(cluster_id)
+  if (!is.null(cluster_id) && verbose) {
+    cat("Cluster-robust standard errors using:",
+        paste0(names(cluster_id), " (",
+               vapply(cluster_id, function(x) length(unique(x)), numeric(1)),
+               " clusters)", collapse = ", "),
+        "\nt critical values with at most", df_cluster,
+        "degrees of freedom.\n")
+  }
+
+  # The grouping that CV folds keep intact. Predictors whose values each fall
+  # within one such group cannot be compared across folds, so they are set
+  # aside here rather than dropping out of the results unexplained.
+  fold_groups = cluster_fold_groups(cluster_id, V, folds_by)
+  data = drop_cluster_level_columns(data, fold_groups)
 
   if (family == "binomial" &&
       (min(Y, na.rm = TRUE) < 0 || max(Y, na.rm = TRUE) > 1)) {
@@ -333,7 +485,8 @@ varimpact =
   cat("- Numeric variables:", numerics$num_numeric, "\n\n")
 
   # Create cross-validation folds (2 by default).
-  folds = create_cv_folds(V, Y, verbose = verbose)
+  # With clustering, whole clusters are assigned to folds.
+  folds = create_cv_folds(V, Y, verbose = verbose, id = fold_groups)
 
   # VIM for factors.
   factor_vims =
@@ -349,6 +502,8 @@ varimpact =
                 corthres = corthres,
                 adjust_cutoff = adjust_cutoff,
                 adjustment_exclusions = adjustment_exclusions,
+                cluster_id = cluster_id,
+                fold_groups = fold_groups,
                 verbose = verbose,
                 verbose_tmle = verbose_tmle,
                 verbose_reduction = verbose_reduction)
@@ -369,7 +524,9 @@ varimpact =
                  verbose = verbose,
                  verbose_tmle = verbose_tmle,
                  verbose_reduction = verbose_reduction,
-                 adjustment_exclusions = adjustment_exclusions)
+                 adjustment_exclusions = adjustment_exclusions,
+                 cluster_id = cluster_id,
+                 fold_groups = fold_groups)
 
   # Combine the separate continuous and factor results.
   results =
@@ -378,7 +535,8 @@ varimpact =
                     numeric_vims$vim_numeric,
                     factor_vims$vim_factor,
                     V = V,
-                    verbose = verbose)
+                    verbose = verbose,
+                    df = df_cluster)
 
   # End timing the full execution.
   time_end = proc.time()
@@ -400,7 +558,13 @@ varimpact =
                    factor_vims = factor_vims,
                    impute_info = numerics$impute_info,
                    time = time_end - time_start,
-                   cv_folds = folds))
+                   cv_folds = folds,
+                   # Cluster ids actually used (after dropping nested and
+                   # singleton variables; NULL without clustering) and the
+                   # largest degrees of freedom for the t critical values;
+                   # each variable's own df is in results_all$df.
+                   cluster_id = cluster_id,
+                   cluster_df = df_cluster))
 
   # Set a custom class so that we can override print and summary.
   class(results) = "varimpact"

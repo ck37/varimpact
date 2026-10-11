@@ -74,8 +74,16 @@ tmle_estimate_q <-
       X00 <- data.frame(A=0, W)
       X01 <- data.frame(A=1, W)
       newX <- rbind(X, X00, X01)
+      # With clustered ids, CVFolds() needs at least V distinct ids; with few
+      # clusters use one fold per cluster. Unique ids leave V unchanged.
+      sl_id <- id[Delta==1]
+      V <- cluster_sl_folds(sl_id, V)
+      if (V < 2L) {
+        sl_id <- NULL
+        V <- 2L
+      }
       arglist <- list(Y=Y[Delta==1],X=X[Delta==1, , drop = FALSE], newX=newX, SL.library=SL.library,
-                      cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=id[Delta==1])
+                      cvControl=list(V=V), family=family, control = list(saveFitLibrary=T), id=sl_id)
       suppressWarnings({
         # CK: try to eliminate messages from loading packages.
         out = utils::capture.output({

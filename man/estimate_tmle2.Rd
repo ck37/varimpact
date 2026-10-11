@@ -36,7 +36,10 @@ estimate_tmle2(
 
 \item{g.lib}{SuperLearner library for estimating g (propensity score)}
 
-\item{id}{Optional subject-level identifier.}
+\item{id}{Optional cluster identifier, one value per observation. When
+observations share an id, SuperLearner's internal cross-validation keeps
+each id within a single fold for the g, g.Delta, and Q fits. The default
+gives every observation its own id, which leaves the fits unchanged.}
 
 \item{Qbounds}{Bounds on Q}
 

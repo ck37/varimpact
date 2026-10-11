@@ -4,7 +4,7 @@
 \alias{create_cv_folds}
 \title{Stratified CV to insure balance (by one grouping variable, Y)}
 \usage{
-create_cv_folds(V, Y, verbose = F)
+create_cv_folds(V, Y, verbose = F, id = NULL)
 }
 \arguments{
 \item{V}{number of folds}
@@ -12,6 +12,10 @@ create_cv_folds(V, Y, verbose = F)
 \item{Y}{Outcome variable. If binary will be used for stratification.}
 
 \item{verbose}{If T will display extra output.}
+
+\item{id}{Optional grouping vector, one value per observation, from
+cluster_fold_groups(). When given, every group is kept within a single
+fold. NULL (the default) leaves fold assignment exactly as before.}
 }
 \value{
 Vector of fold assignments.

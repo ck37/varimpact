@@ -14,6 +14,8 @@ vim_factors =
            corthres,
            adjust_cutoff,
            adjustment_exclusions = list(),
+           cluster_id = NULL,
+           fold_groups = NULL,
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE) {
@@ -82,6 +84,15 @@ vim_factors =
 
         Yt = Y[folds != fold_k]
         Yv = Y[folds == fold_k]
+
+        # Row numbers of the validation observations in the full data, carried
+        # through to the influence curves so cluster ids can be matched by row.
+        val_rows = which(folds == fold_k)
+        # Cluster grouping of the training observations, so SuperLearner's own
+        # cross-validation keeps clusters together. Unique ids (no clustering)
+        # leave the nuisance fits exactly as before.
+        train_id = if (is.null(fold_groups)) seq_along(Yt) else
+          fold_groups[folds != fold_k]
 
 
         #######################################
@@ -350,7 +361,7 @@ vim_factors =
             tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
                                     Q.lib = Q.library,
                                     Qbounds = Qbounds,
-                                    g.lib = g.library, verbose = verbose_tmle),
+                                    g.lib = g.library, id = train_id, verbose = verbose_tmle),
                       silent = !verbose)
 
             if (inherits(tmle_result, "try-error")) {
@@ -407,7 +418,7 @@ vim_factors =
             if (!is.null(training_estimates[[bin_j]])) {
               preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                                    deltav, training_estimates[[bin_j]],
-                                                   verbose = verbose))
+                                                   row_index = val_rows, verbose = verbose))
               if (inherits(preds, "try-error")) {
                 bin_result$test_msg = paste("CV-TMLE prediction on validation failed")
               } else {
@@ -576,7 +587,7 @@ vim_factors =
             # CV-TMLE: predict g, Q, and clever covariate on validation data.
             min_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                      deltav, training_estimates[[minj]],
-                                     verbose = verbose))
+                                     row_index = val_rows, verbose = verbose))
 
             # Old version:
             #res = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
@@ -606,7 +617,7 @@ vim_factors =
               # CV-TMLE: predict g, Q, and clever covariate on validation data.
               max_preds = try(apply_tmle_to_validation(Yv, IA, Wvsht, family,
                                         deltav, training_estimates[[maxj]],
-                                        verbose = verbose))
+                                        row_index = val_rows, verbose = verbose))
              # Old code:
               #res2 = try(estimate_tmle(Yv, IA, Wvsht, family, deltav,
               #                         Q.lib = Q.library,
@@ -711,7 +722,7 @@ vim_factors =
             # Empty when this fold had no validation rows for this bin.
             fold_ic = pooled_bin$influence_curves[[fold]]
             fold_results[[fold]]$bin_df[row, "test_var_tmle"] =
-              if (length(fold_ic) >= 2L) var(fold_ic) else NA_real_
+              ic_var(fold_ic, pooled_bin$rows[[fold]], cluster_id)
           }
 
         } else {
@@ -820,7 +831,7 @@ vim_factors =
           ic_max = pooled_max$influence_curves[[index]]
           ic_min = pooled_min$influence_curves[[index]]
           if (length(ic_max) >= 2L && length(ic_min) >= 2L) {
-            var(ic_max - ic_min)
+            ic_var(ic_max - ic_min, pooled_max$rows[[index]], cluster_id)
           } else {
             NA
           }
@@ -834,12 +845,23 @@ vim_factors =
           if (length(ic_max) >= 2L && length(ic_min) >= 2L) {
             # Variance for the risk difference (maximal contrast parameter).
             # TODO: double-check this.
-            var(ic_max / pooled_max$thetas[[index]] -
-                  ic_min / pooled_min$thetas[[index]])
+            ic_var(ic_max / pooled_max$thetas[[index]] -
+                     ic_min / pooled_min$thetas[[index]],
+                   pooled_max$rows[[index]], cluster_id)
           } else {
             NA
           }
         })
+
+        # With clusters, the standard errors come from one clustered variance
+        # over every fold's influence curve, which counts a cluster that spans
+        # folds once and copes with a fold that holds a single cluster.
+        if (!is.null(cluster_id)) {
+          clustered = cv_cluster_vars(pooled_min, pooled_max, V, cluster_id)
+          var_results$varIC_cluster = clustered$rd
+          var_results$varIC_log_rr_cluster = clustered$log_rr
+          var_results$contrast_df = contrast_df(fold_results, cluster_id)
+        }
 
         if (verbose) {
           signif_digits = 4

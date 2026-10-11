@@ -7,7 +7,10 @@
 #' @param delta Indicator of missing outcome or treatment assignment. 1 - observed, 0 - missing.
 #' @param Q.lib SuperLearner library for estimating Q (potential outcome)
 #' @param g.lib SuperLearner library for estimating g (propensity score)
-#' @param id Optional subject-level identifier.
+#' @param id Optional cluster identifier, one value per observation. When
+#'   observations share an id, SuperLearner's internal cross-validation keeps
+#'   each id within a single fold for the g, g.Delta, and Q fits. The default
+#'   gives every observation its own id, which leaves the fits unchanged.
 #' @param Qbounds Bounds on Q
 #' @param gbound Bounds on G
 #' @param alpha TBD, from TMLE package
@@ -97,6 +100,7 @@ estimate_tmle2 =
   #g = tmle_estimate_g(d = cbind(A[delta == 1], W[delta == 1, ]),
   g = tmle_estimate_g(d = cbind(A, W),
                       SL.library = g.lib,
+                      id = id,
                       verbose = verbose,
                       V = g_V,
                       outcome = "A",
@@ -140,6 +144,7 @@ estimate_tmle2 =
                       Delta = delta,
                       SL.library = Q.lib,
                       family = family,
+                      id = id,
                       V = V,
                       verbose = verbose,
                       maptoYstar = map_to_ystar,

@@ -22,6 +22,7 @@ estimate_pooled_results = function(fold_results,
   results = list(
     thetas = NULL,
     influence_curves = NULL,
+    rows = NULL,
     epsilon = NULL
   )
 
@@ -73,6 +74,7 @@ estimate_pooled_results = function(fold_results,
   # Set some default values in case of a future error.
   thetas = NULL
   influence_curves = NULL
+  ic_rows = NULL
   epsilon = NULL
 
 
@@ -213,6 +215,16 @@ estimate_pooled_results = function(fold_results,
         result
       })
 
+      # Row numbers (in the full data) behind each fold's influence curve, in
+      # the same order, so that clustered variances can look up cluster ids by
+      # row. by() splits the rows exactly as it split the curves above. Absent
+      # when val_preds were built without a row_index column.
+      if (!is.null(data$row_index)) {
+        ic_rows = base::by(data, data$fold_num, function(fold_data) {
+          fold_data$row_index
+        })
+      }
+
       # Check for NaNs.
       num_nans = sum(sapply(influence_curves, function(curve) sum(is.nan(curve))))
       # nocov start - HAW and Q_star are bounded, so the influence curve has no NaNs
@@ -267,12 +279,17 @@ estimate_pooled_results = function(fold_results,
     # as.list() strips the "by" class while keeping the fold-number names.
     influence_curves = align_by_fold(as.list(influence_curves), list(NULL))
   }
+  if (!is.null(ic_rows)) {
+    ic_rows = align_by_fold(as.list(ic_rows), list(NULL))
+  }
 
   # Compile results
   results = list(
     #theta = theta,
     thetas = thetas,
     influence_curves = influence_curves,
+    # One slot per fold: the row numbers behind influence_curves[[fold]].
+    rows = ic_rows,
     #std_err = std_err,
     epsilon = epsilon
   )

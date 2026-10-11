@@ -13,5 +13,7 @@
 }
 \description{
 Shows the significant and consistent results by default. If there are no
-consistent results it shows all results.
+consistent results it shows all results. With cluster-robust standard
+errors (the \code{id} argument of \code{\link{varimpact}}) it first notes
+the clustering variables and the largest degrees of freedom.
 }

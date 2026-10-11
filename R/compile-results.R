@@ -4,7 +4,8 @@ compile_results =
            vim_numeric,
            vim_factor,
            V,
-           verbose = FALSE) {
+           verbose = FALSE,
+           df = Inf) {
 
   num_numeric = length(colnames_numeric)
   num_factor = length(colnames_factor)
@@ -125,29 +126,76 @@ compile_results =
       tst = lapply(tst, extract_labels, total_folds = V)
       labels = do.call(rbind, tst)
 
+      # Critical values and upper-tail p-values. Without clustering (df = Inf)
+      # these are the original 1.96 and pnorm(), so results do not change.
+      # With clustered standard errors a t reference is used, since normal
+      # critical values over-reject when clusters are few (Cameron, Gelbach &
+      # Miller 2008; Cameron & Miller 2015), and t(G - 1) is the usual
+      # reference (MacKinnon, Nielsen & Webb 2023). Each variable gets its own
+      # df: the global df, fewest clusters - 1 as Cameron, Gelbach & Miller
+      # (2011) use for several clustering variables, lowered when only a few
+      # clusters hold the low or high level the variable compares. That a
+      # contrast carried by few clusters has few effective degrees of freedom
+      # is from Bell & McCaffrey (2002) and Imbens & Kolesar (2016); the count
+      # in contrast_df() is a simple, conservative heuristic for it, not a
+      # published rule. The resulting false-positive rates are checked by the
+      # simulation study in tests/testthat/test-cluster-simulation.R.
+      if (is.finite(df)) {
+        # pmin() keeps the names of its first argument, the variable names.
+        df_var = pmin(vapply(results_no_na,
+                             function(x) c(x$contrast_df, df)[1],
+                             numeric(1)), df)
+        single = !is.na(df_var) & df_var < 1
+        if (any(single)) {
+          message("No confidence interval or p-value for ",
+                  paste(variable_names[single], collapse = ", "),
+                  ": the low or high level it compares was observed in a ",
+                  "single cluster.")
+          df_var[single] = NA
+        }
+        crit = stats::qt(0.975, df_var)
+        upper_p = function(z) stats::pt(z, df_var, lower.tail = FALSE)
+      } else {
+        crit = 1.96
+        upper_p = function(z) 1 - pnorm(z)
+      }
+
       # Parameteter: risk difference
       psi = apply(theta, 1, mean)
       # Each row is a variable and each column in a fold estimate.
       meanvarIC = apply(varIC, 1, mean)
+      # With clustering, vim_numerics() and vim_factors() also return a single
+      # clustered variance over all folds (cv_cluster_var()), which replaces
+      # the average of the per-fold variances.
+      if (is.finite(df)) {
+        meanvarIC = vapply(results_no_na,
+                           function(x) c(x$varIC_cluster, NA_real_)[1],
+                           numeric(1))
+      }
       SE = sqrt(meanvarIC / n)
 
-      ci_lower = psi - 1.96 * SE
-      ci_upper = psi + 1.96 * SE
+      ci_lower = psi - crit * SE
+      ci_upper = psi + crit * SE
       # 1-sided p-value
-      pvalue = 1 - pnorm(psi / SE)
+      pvalue = upper_p(psi / SE)
 
       # Parameter: relative risk
       psi_rr = apply(theta_rr, 1, mean)
       # Each row is a variable and each column in a fold estimate.
       meanvarIC_log_rr = apply(varIC_log_rr, 1, mean)
+      if (is.finite(df)) {
+        meanvarIC_log_rr = vapply(results_no_na,
+                                  function(x) c(x$varIC_log_rr_cluster, NA_real_)[1],
+                                  numeric(1))
+      }
       se_log_rr = sqrt(meanvarIC_log_rr / n)
       # Calculate CI on log-RR scale.
-      ci_lower_rr = exp(log(psi_rr) - 1.96 * se_log_rr)
-      ci_upper_rr = exp(log(psi_rr) + 1.96 * se_log_rr)
+      ci_lower_rr = exp(log(psi_rr) - crit * se_log_rr)
+      ci_upper_rr = exp(log(psi_rr) + crit * se_log_rr)
 
       # TODO: double-check this.
       #pvalue_rr = 1 - pnorm(abs(log(psi_rr)) / se_log_rr)
-      pvalue_rr = 1 - pnorm(log(psi_rr) / se_log_rr)
+      pvalue_rr = upper_p(log(psi_rr) / se_log_rr)
 
 
       # Number of significant digits.
@@ -296,25 +344,37 @@ compile_results =
       rownames(outres) = outres$varname
       outres$varname = NULL
 
+      # With clustering, each variable's degrees of freedom. Appended last so
+      # the positional column selections below are unaffected.
+      if (is.finite(df)) {
+        outres$df = df_var[rownames(outres)]
+      }
+
       # drops = c('VarType','description','Holm,')
       # outres.all=outres[,!(names(outres) %in% drops)]
       # We want to extract the per-fold psi estimates, per-fold levels, and consistency flag.
       # TODO: update for relative risk parameter.
       outres.byV = outres[, c(2:(2 + V - 1), (7 + V):(7 + 3 * V)), drop = FALSE]
 
-      outres.all = outres[, c("VarType",
-                              # Risk difference:
-                              "AvePsi", "CI95", "rawp", "BH",
-                              # Relative risk:
-                              "AvePsi_rr", "CI95_rr", "rr_rawp", "rr_BH",
-                              "Consistent"), drop = FALSE]
-
-      colnames(outres.all) = c("Type",
-                               # Risk difference:
-                               "Estimate", "CI95", "P-value", "Adj. p-value",
-                               # Relative risk:
-                               "Est. RR", "CI95 RR", "P-value RR", "Adj. p-value RR",
-                               "Consistent")
+      all_columns = c("VarType",
+                      # Risk difference:
+                      "AvePsi", "CI95", "rawp", "BH",
+                      # Relative risk:
+                      "AvePsi_rr", "CI95_rr", "rr_rawp", "rr_BH",
+                      "Consistent")
+      all_names = c("Type",
+                    # Risk difference:
+                    "Estimate", "CI95", "P-value", "Adj. p-value",
+                    # Relative risk:
+                    "Est. RR", "CI95 RR", "P-value RR", "Adj. p-value RR",
+                    "Consistent")
+      # With clustering, show each variable's degrees of freedom by its CI.
+      if (is.finite(df)) {
+        all_columns = append(all_columns, "df", after = 3L)
+        all_names = append(all_names, "df", after = 3L)
+      }
+      outres.all = outres[, all_columns, drop = FALSE]
+      colnames(outres.all) = all_names
 
       ################
       # Get Consistency Measure and only significant

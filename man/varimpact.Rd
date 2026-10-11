@@ -27,7 +27,9 @@ varimpact(
   verbose_reduction = FALSE,
   parallel = TRUE,
   digits = 4L,
-  adjustment_exclusions = list()
+  adjustment_exclusions = list(),
+  id = NULL,
+  folds_by = NULL
 )
 }
 \arguments{
@@ -109,6 +111,60 @@ mediator or collider out of a particular adjustment set. Naming a factor
 excludes all of its indicator columns, and a variable's missingness
 indicator is excluded along with the variable. Defaults to an empty list,
 which adjusts for every other variable as usual.}
+
+\item{id}{Optional cluster identifier(s) for cluster-robust standard
+errors, for data in which observations are correlated within groups
+(siblings in a family, patients in a hospital, students in a school).
+The simplest form is the name(s) of columns in \code{data}, e.g.
+\code{id = "family"}, or \code{id = c("school", "neighborhood")} for
+multiway clustering (Cameron, Gelbach & Miller 2011); those columns are
+used as clusters and are not analyzed as predictors. Alternatively pass
+the ids directly: a vector with one value per observation, or a list or
+data frame of such vectors. When given: every cluster is kept within a
+single CV fold; SuperLearner's internal cross-validation keeps clusters
+together; influence-curve variances sum within clusters, across all
+folds at once, which follows from the cross-validated TMLE's influence
+curve (Zheng & van der Laan 2010; Hubbard, Kherad-Pajouh & van der Laan
+2016) with clusters as the independent units, with a small-sample (CR3)
+correction for clusters of unequal size (MacKinnon, Nielsen & Webb
+2023); and confidence intervals
+and p-values use a t distribution, as normal critical values over-reject
+when clusters are few (Cameron, Gelbach & Miller 2008; Cameron & Miller
+2015). Its degrees of freedom, shown in the \code{df} column of the
+results, count the clusters behind the scarcer of the variable's low and
+high levels (fold by fold), minus one, and are at most (fewest clusters -
+1), following Cameron, Gelbach & Miller (2011) for several clustering
+variables. A contrast carried by few clusters has few effective degrees
+of freedom (Bell & McCaffrey 2002; Imbens & Kolesar 2016); this count is
+a simple, conservative heuristic for them rather than a published rule.
+These choices were checked by simulation: the study in
+\code{tests/testthat/test-cluster-simulation.R} of the source repository
+reports false-positive rates and interval coverage across cluster
+designs. A variable
+nested in another (family within site) is covered by clustering on the
+outer one and is dropped with a message. The asymptotics rely on the
+number of clusters, not observations, so results with few clusters
+(fewer than about 40) should be read with caution. Learners that tune
+themselves by internal cross-validation, such as \code{SL.glmnet}, still
+choose their own folds without regard to clusters; that does not affect
+the validity of the results, since the CV-TMLE folds keep clusters
+intact, but it can make their tuning optimistic. NULL (the default)
+assumes independent observations.}
+
+\item{folds_by}{With several crossed cluster variables, the name of the
+column of \code{id} to form CV folds on. By default folds keep every
+cluster variable intact when that is possible, and otherwise fall back to
+the coarsest variable with at least \code{V} clusters, with a warning.
+With crossed variables, training and validation folds share clusters of
+the variables not folded on, so a fold's choice of low and high levels
+carries over to its validation data through those clusters, which biases
+variables that vary with them (a factor measured at that level, say). The
+clustered variance cannot correct this, so name here the variable that
+the variables of interest vary with. In the simulation study in
+\code{tests/testthat/test-cluster-simulation.R} of the source
+repository, with sites crossed with schools, a factor constant within
+sites was flagged 13\% of the time at the 5\% level when folding on
+school and 3\% when folding on site.}
 }
 \value{
 Results object. TODO: add more detail here.
@@ -152,9 +208,24 @@ Alan E. Hubbard and Chris J. Kennedy, University of California, Berkeley
 
 \section{References}{
 
+Bell, R. M., & McCaffrey, D. F. (2002). \emph{Bias reduction in standard
+errors for linear regression with multi-stage samples}. Survey Methodology,
+28(2), 169-181.
+
 Benjamini, Y., & Hochberg, Y. (1995). \emph{Controlling the false discovery
 rate: a practical and powerful approach to multiple testing}. Journal of the
 royal statistical society. Series B (Methodological), 289-300.
+
+Cameron, A. C., Gelbach, J. B., & Miller, D. L. (2008). \emph{Bootstrap-based
+improvements for inference with clustered errors}. The Review of Economics
+and Statistics, 90(3), 414-427.
+
+Cameron, A. C., Gelbach, J. B., & Miller, D. L. (2011). \emph{Robust
+inference with multiway clustering}. Journal of Business & Economic
+Statistics, 29(2), 238-249.
+
+Cameron, A. C., & Miller, D. L. (2015). \emph{A practitioner's guide to
+cluster-robust inference}. Journal of Human Resources, 50(2), 317-372.
 
 Gruber, S., & van der Laan, M. J. (2012). \emph{tmle: An R Package for
 Targeted Maximum Likelihood Estimation}. Journal of Statistical Software,
@@ -174,6 +245,14 @@ data-adaptive target parameters (pp. 439-452)}. In P. Buhlmann et al. (Ed.),
 \emph{Handbook of Big Data}. CRC Press, Taylor & Francis Group, LLC: Boca
 Raton, FL.
 
+Imbens, G. W., & Kolesar, M. (2016). \emph{Robust standard errors in small
+samples: some practical advice}. The Review of Economics and Statistics,
+98(4), 701-712.
+
+MacKinnon, J. G., Nielsen, M. O., & Webb, M. D. (2023). \emph{Cluster-robust
+inference: a guide to empirical practice}. Journal of Econometrics, 232(2),
+272-299.
+
 van der Laan, M. J. (2006). \emph{Statistical inference for variable
 importance}. The International Journal of Biostatistics, 2(1).
 
@@ -187,6 +266,10 @@ learner}. Statistical applications in genetics and molecular biology, 6(1).
 van der Laan, M. J., & Rose, S. (2011). \emph{Targeted learning: causal
 inference for observational and experimental data}. Springer Science &
 Business Media.
+
+Zheng, W., & van der Laan, M. J. (2010). \emph{Asymptotic theory for
+cross-validated targeted maximum likelihood estimation}. U.C. Berkeley
+Division of Biostatistics Working Paper Series, Working Paper 273.
 }
 
 \examples{
@@ -212,6 +295,20 @@ cleanup_latex_files()
 # Impute by median rather than knn.
 \dontrun{
 vim <- varimpact(Y = Y, data = X[, 1:3], impute = "median")
+}
+
+####################################
+# Clustered observations: cluster-robust standard errors.
+\dontrun{
+# Suppose the 100 observations are 25 families of four.
+family <- rep(1:25, each = 4)
+vim <- varimpact(Y = Y, data = X[, 1:3], id = family)
+
+# Or name a column of data, which is then not analyzed as a predictor.
+vim <- varimpact(Y = Y, data = cbind(X[, 1:3], family), id = "family")
+
+# Several clustering variables give multiway clustering, e.g.
+# varimpact(Y = Y, data = data, id = c("school", "neighborhood"))
 }
 
 ####################################

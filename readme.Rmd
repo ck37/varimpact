@@ -99,6 +99,31 @@ set.seed(1, "L'Ecuyer-CMRG")
 (vim = varimpact(Y = Y, data = X, Q.library = Q_lib, g.library = g_lib))
 ```
 
+### Example: clustered observations
+
+When observations are correlated within groups, such as siblings in a family
+or patients in a hospital, pass the groups as `id` to get cluster-robust
+standard errors. Whole clusters are kept within the CV folds, and confidence
+intervals and p-values use a t distribution whose degrees of freedom (the `df`
+column) count the clusters behind each estimate. `id` can name a column of
+`data`, as here, or be the cluster ids themselves; naming several columns,
+e.g. `id = c("school", "neighborhood")`, gives multiway clustering.
+
+```{r example_cluster}
+# Clustered observations: 100 families of 2 to 6 members, where members of a
+# family share an unmeasured influence on the outcome.
+set.seed(1, "L'Ecuyer-CMRG")
+family <- rep(1:100, times = sample(2:6, 100, replace = TRUE))
+n <- length(family)
+X_fam <- data.frame(age = rnorm(100)[family] + rnorm(n, sd = 0.5),
+                    income = rnorm(n),
+                    family = family)
+Y_fam <- rbinom(n, 1, plogis(0.8 * X_fam$age + rnorm(100)[family]))
+
+# Name the cluster column in id: it is used for clustering, not analyzed.
+(vim <- varimpact(Y = Y_fam, data = X_fam, id = "family"))
+```
+
 ### Example: parallel via multicore
 
 ```{r example_3}
