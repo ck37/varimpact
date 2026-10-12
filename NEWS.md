@@ -1,5 +1,15 @@
 # varimpact 1.4.0
 
+## Breaking changes
+
+* The package, its main function and its result class are now `varimpact`,
+  lowercase. They were `varImpact` in 1.3 (renamed in 2018), so code written
+  for 1.3 needs `library(varimpact)` and `varimpact()`.
+
+* Several of the bug fixes below change estimates, notably for numeric
+  variables when the data also contain factors, and for all variables through
+  the corrected TMLE fluctuation.
+
 ## New features
 
 * Cluster-robust standard errors. `varimpact()` gains an `id` argument for
@@ -45,7 +55,35 @@
   `tests/testthat/test-cluster-simulation.R`; it is skipped unless
   `VARIMPACT_RUN_SIMULATIONS=true`. (Pratik Khadse, #71)
 
+* `varimpact()` gains an `adjustment_exclusions` argument: a named list giving,
+  for a variable whose importance is estimated, other variables to leave out of
+  its adjustment set, e.g. `list(V1 = c("V2", "V3"))`. Use it to keep a
+  mediator or a collider out of one variable's adjustment set. Naming a factor
+  excludes all of its indicator columns, and a variable's missingness indicator
+  goes with it. The default, an empty list, adjusts for every other variable as
+  before. (Daniela Rodrigues, #25, #40)
+
+* New `cleanup_latex_files()` removes the `.tex` files written by
+  `exportLatex()`.
+
 ## Bug fixes
+
+* The importance of a numeric variable was never adjusted for the factor
+  variables. `vim_numerics()` read the factor indicators from a list element
+  that `process_factors()` did not return, so the factor columns were silently
+  dropped from every numeric variable's adjustment set. With a factor that
+  confounds a numeric variable and the outcome this gives confident false
+  positives: in a simulation where the adjusted importance is exactly zero, the
+  estimate was 0.53 (p = 2e-16) before the fix and -0.14 (p = 0.94) after.
+  Estimates for numeric variables change on any data that also has factors;
+  estimates for factors are unaffected.
+
+* The pooled TMLE fluctuation fitted the initial predictions as a covariate
+  instead of using them as an offset. Its `glm()` formula called
+  `stats::offset()`, and R only recognizes an unqualified `offset()`, so the
+  fluctuation estimated two coefficients and recycled them across observations.
+  Under a pure null the estimates had a standard deviation of 0.21; with the
+  offset fixed it is 0.08. Estimates change on all data.
 
 * The relative-risk p-values (`P-value RR`, `Adj. p-value RR` in
   `results_all`; `rr_rawp`, `rr_Holm`, `rr_BH` in `results_raw`) were attached
@@ -87,6 +125,40 @@
   For a binary outcome the bounds are `c(0, 1)` and the extra transform was
   `plogis()` of a probability, which shifted theta into (0.5, 0.731) but left
   bin selection intact.
+
+* `varimpact()` returned no results when the outcome had missing values (#32):
+  every fold failed in `apply_tmle_to_validation()`, however few outcomes were
+  missing, because the rule that dropped observations when fewer than 10 were
+  missing only applied to training folds. Observations missing `Y` are now kept
+  and handled by the missingness mechanism (`g.Delta`) in the clever covariate
+  and the influence curve, a binary outcome with missing values is still
+  treated as binary, and CV folds spread the missing outcomes evenly. When too
+  few observations are missing to model `g.Delta` within cross-validation, the
+  marginal rate is used, which is what the SuperLearner ensemble fell back to
+  anyway, without a stream of glmnet errors.
+
+* A factor level rare enough to be absent from some validation folds crashed
+  `varimpact()` with "arguments imply differing number of rows" when `V` was
+  above 2 (#20). Such a fold is now treated as failed for that variable, and
+  pooled results keep one slot per fold, so no fold's estimate is attributed to
+  another.
+
+* Analyzing a single variable (one column in `data`) failed with "invalid
+  'type' (list) of argument" (#6). It now runs, with the propensity score
+  estimated as the marginal probability since there is nothing to adjust for.
+
+* `impute = "knn"` stopped the run on a row missing every numeric covariate
+  (#7). Such rows, which have no neighbors to match on, are now set to the
+  column means; every other row is imputed exactly as before.
+
+* `impute` is validated, with an error that names the valid values, and its
+  documentation gives the actual default, `"median"` (it said `"knn"`).
+
+* The `varimpact()` example and the tests used `future::plan("multiprocess")`,
+  which future has removed; they now use `"multisession"` (#22).
+
+* `results_by_level()` no longer calls the deprecated `dplyr::funs()`, which
+  printed a deprecation warning for every variable in every fold.
 
 ## Dependency changes
 
@@ -138,6 +210,10 @@
   rescaling of thetas and influence curves, an end-to-end gaussian run, and a
   binary run as a regression check.
 
+* Removed `estimate_tmle()`, the original `tmle::tmle()`-based estimator that
+  nothing called any more, and other unreachable code. The remaining
+  `browser()` calls are now errors.
+
 ## Known limitations
 
 * The risk ratio (`EY1 / EY0`) is only interpretable for an outcome that is
@@ -147,5 +223,5 @@
 
 # varimpact 1.3
 
-Version 1.3 dates from January 2017. No NEWS was kept before 2025, so
-the 1.4.0 notes above cover only changes recorded since then.
+Version 1.3 dates from January 2017. No NEWS was kept before 2025, so apart
+from the rename, the 1.4.0 notes above cover only changes made since then.
