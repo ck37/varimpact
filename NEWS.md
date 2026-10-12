@@ -1,4 +1,4 @@
-# varimpact 1.3.0-9007 (development version)
+# varimpact 1.4.0
 
 ## New features
 
@@ -145,6 +145,7 @@
   outcome whose range straddles zero can produce a negative or undefined risk
   ratio; the risk difference columns are unaffected.
 
-# varimpact 1.2.4
+# varimpact 1.3
 
-Previous releases...
+Version 1.3 dates from January 2017. No NEWS was kept before 2025, so
+the 1.4.0 notes above cover only changes recorded since then.
