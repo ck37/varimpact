@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 # RStudio files.
 ^.*\.Rproj$
 ^\.Rproj\.user$
@@ -22,3 +24,11 @@
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
+
+# renv development environment (see "Development" in the README): the
+# lockfile, renv's own files, the local activation profile and the dev-tool
+# script are for working on the package, not part of it.
+^renv$
+^renv\.lock$
+^\.Rprofile$
+^dev$

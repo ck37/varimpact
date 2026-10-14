@@ -64,6 +64,24 @@ remotes::install_github("ck37/varimpact")
 
 varimpact is not on CRAN yet; install from GitHub as above.
 
+## Development
+
+The development environment is pinned with [renv](https://rstudio.github.io/renv/).
+`renv.lock` records the package's dependencies together with the development
+tools named in `dev/dependencies.R`, including roxygen2 at the version
+DESCRIPTION records (`RoxygenNote`). In a clone of the repository:
+
+``` r
+# install.packages("renv")
+renv::restore()  # install the locked versions into the project library
+renv::load()     # use the project library in this session
+```
+
+To activate the environment automatically, put `source("renv/activate.R")` in
+a `.Rprofile` at the repository root. That file is ignored by git, so the setup
+stays opt-in, and continuous integration keeps testing against current CRAN
+versions. None of these files are included in the built package.
+
 ## Examples
 
 ### Example: basic functionality

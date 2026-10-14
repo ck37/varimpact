@@ -11,3 +11,7 @@ README.html
 
 # pkgdown site, rendered by CI.
 docs/
+
+# renv activation stays opt-in (see "Development" in the README): CI installs
+# its own dependencies, and an auto-activating .Rprofile would hide them.
+.Rprofile
