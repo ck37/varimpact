@@ -1,3 +1,22 @@
+# varimpact (development version)
+
+## New features
+
+* Weighted fluctuation for the TMLE update. With
+  `options(varimpact.weighted_fluctuation = TRUE)`, the fluctuation is fit as
+  an intercept-only logistic submodel with the clever covariate as the
+  observation weight, both in the training-fold TMLE (`estimate_tmle2()`,
+  within each treatment level) and in the pooled CV-TMLE
+  (`estimate_pooled_results()`). Every unit's logit then moves by the same
+  epsilon, instead of by epsilon times its own clever covariate. Both forms
+  solve the same efficient influence curve equation and target the same
+  parameter. They differ under near-violations of positivity: when many units
+  sit at the g bound (clever covariate 1 / 0.025 = 40), a moderate epsilon in
+  the covariate form sends their targeted Q* to 1, which on real data produced
+  a level mean of 0.61 against an observed rate of 0.007. The default is
+  unchanged (`FALSE`); both functions gain a `weighted_fluctuation` argument
+  that reads the option. This is the form `lmtp` uses (see #67).
+
 # varimpact 1.4.0
 
 ## New features

@@ -18,7 +18,8 @@ estimate_tmle2(
   alpha = 0.995,
   fluctuation = "logistic",
   V = 10,
-  verbose = F
+  verbose = F,
+  weighted_fluctuation = getOption("varimpact.weighted_fluctuation", FALSE)
 )
 }
 \arguments{
@@ -52,6 +53,16 @@ gives every observation its own id, which leaves the fits unchanged.}
 \item{V}{Number of folds for SuperLearner}
 
 \item{verbose}{If true output extra information during execution.}
+
+\item{weighted_fluctuation}{If TRUE, fit the fluctuation as an
+intercept-only logistic submodel with the clever covariate as the
+observation weight, separately for each treatment level, so that every
+unit's logit is shifted by the same epsilon. If FALSE (the default), the
+clever covariate enters the submodel as a covariate and each unit's update
+is epsilon times its own clever covariate, which can push units at the g
+bound to Q* = 1 under near-violations of positivity. Both solve the same
+efficient influence curve equation. Defaults to the option
+\code{varimpact.weighted_fluctuation}.}
 }
 \description{
 Get TMLE estimate: E[Y | A = 1, W].

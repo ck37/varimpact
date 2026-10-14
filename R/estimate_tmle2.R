@@ -15,6 +15,15 @@
 #' @param gbound Bounds on G
 #' @param alpha TBD, from TMLE package
 #' @param fluctuation Only logistic is currently supported.
+#' @param weighted_fluctuation If TRUE, fit the fluctuation as an
+#'   intercept-only logistic submodel with the clever covariate as the
+#'   observation weight, separately for each treatment level, so that every
+#'   unit's logit is shifted by the same epsilon. If FALSE (the default), the
+#'   clever covariate enters the submodel as a covariate and each unit's update
+#'   is epsilon times its own clever covariate, which can push units at the g
+#'   bound to Q* = 1 under near-violations of positivity. Both solve the same
+#'   efficient influence curve equation. Defaults to the option
+#'   \code{varimpact.weighted_fluctuation}.
 #' @param V Number of folds for SuperLearner
 #' @param verbose If true output extra information during execution.
 #' @importFrom stats as.formula binomial coef glm offset plogis poisson predict qlogis
@@ -33,7 +42,8 @@ estimate_tmle2 =
            alpha = 0.995,
            fluctuation = "logistic",
            V = 10,
-           verbose = F) {
+           verbose = F,
+           weighted_fluctuation = getOption("varimpact.weighted_fluctuation", FALSE)) {
 
   if (!family %in% c("binomial", "gaussian")) {
     stop('Estimate_tmle: family must be either "binomial" or "gaussian".')
@@ -213,11 +223,27 @@ estimate_tmle2 =
 
   if (verbose) cat("Estimating epsilon\n")
 
-  suppressWarnings(
-    epsilon <- coef(glm(stage1$Ystar~-1 + offset(q$Q[,"QAW"]) + H0W + H1W, family=q$family, subset=delta==1))
-  )
-  epsilon[is.na(epsilon)] <- 0  # needed for EY1 calculation
-  Qstar <- q$Q + c((epsilon[1]*H0W + epsilon[2]*H1W), epsilon[1]/g0W.total, epsilon[2]/g1W.total)
+  if (isTRUE(weighted_fluctuation)) {
+    # Clever covariate as the weight and an intercept as the only parameter,
+    # fit within each treatment level: Q*(a, W) = expit(logit Q(a, W) + eps_a)
+    # solves sum_{A = a, delta = 1} H_a (Y - Q*) = 0, the same score as the
+    # covariate form, but a unit at the g bound moves by eps_a, not
+    # eps_a / gbound. Causal 2, Lecture 3, slide 51; lmtp's fluc().
+    fit_eps = function(weights, rows) {
+      if (!any(rows)) return(0)
+      fl = data.frame(y = stage1$Ystar[rows], o = q$Q[rows, "QAW"], w = weights[rows])
+      eps = suppressWarnings(coef(glm(y ~ 1 + offset(o), weights = w, data = fl, family = q$family)))
+      if (is.na(eps)) 0 else unname(eps)
+    }
+    epsilon <- c(H0W = fit_eps(H0W, delta == 1 & A == 0), H1W = fit_eps(H1W, delta == 1 & A == 1))
+    Qstar <- q$Q + cbind(A * epsilon[2] + (1 - A) * epsilon[1], epsilon[1], epsilon[2])
+  } else {
+    suppressWarnings(
+      epsilon <- coef(glm(stage1$Ystar~-1 + offset(q$Q[,"QAW"]) + H0W + H1W, family=q$family, subset=delta==1))
+    )
+    epsilon[is.na(epsilon)] <- 0  # needed for EY1 calculation
+    Qstar <- q$Q + c((epsilon[1]*H0W + epsilon[2]*H1W), epsilon[1]/g0W.total, epsilon[2]/g1W.total)
+  }
   colnames(Qstar) <- c("QAW", "Q0W", "Q1W")
   Ystar <- stage1$Ystar
   if (map_to_ystar) {

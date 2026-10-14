@@ -4,10 +4,14 @@
 # transformation below is the identity. For a continuous outcome it is the
 # (10%-widened) range of Y, and we use it to map the results back onto the
 # scale of the original outcome. See issue #8.
+# weighted_fluctuation: as in estimate_tmle2(); TRUE fits epsilon as the
+# intercept of a logistic submodel weighted by HAW, so every unit's logit moves
+# by the same epsilon instead of epsilon * H1W.
 estimate_pooled_results = function(fold_results,
                                    fluctuation = "logistic",
                                    verbose = FALSE,
-                                   Qbounds = c(0, 1)) {
+                                   Qbounds = c(0, 1),
+                                   weighted_fluctuation = getOption("varimpact.weighted_fluctuation", FALSE)) {
   # Fold results is a list with test results from each fold.
 
   # Each fold result should have at least this element:
@@ -111,9 +115,15 @@ estimate_pooled_results = function(fold_results,
         # recognized as the formula's offset special, so logit_Q_hat would be
         # fit as an ordinary covariate and epsilon would come back with two
         # elements instead of one.
-        reg = try(stats::glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
+        reg = if (isTRUE(weighted_fluctuation)) {
+          try(stats::glm(Y_star ~ 1 + offset(logit_Q_hat), weights = HAW,
+                  data = data, family = "binomial",
+                  subset = data$delta == 1 & data$HAW > 0))
+        } else {
+          try(stats::glm(Y_star ~ -1 + offset(logit_Q_hat) + HAW,
                   data = data, family = "binomial",
                   subset = data$delta == 1))
+        }
         if ("try-error" %in% class(reg)) {
           # nocov start - a fluctuation glm on well-formed input does not fail
           stop("estimate_pooled_results(): the fluctuation regression for epsilon ",
@@ -150,7 +160,7 @@ estimate_pooled_results = function(fold_results,
       if (verbose) cat("Fluctuating Q_star\n")
 
       # Fluctuate Q to get Q_star
-      Q_star = data$logit_Q_hat + epsilon * data$H1W
+      Q_star = if (isTRUE(weighted_fluctuation)) data$logit_Q_hat + epsilon else data$logit_Q_hat + epsilon * data$H1W
       #Q_star = data$logit_Q_hat + epsilon * data$HAW
 
       if (verbose) cat("Transforming Q_star\n")
