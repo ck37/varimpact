@@ -71,6 +71,11 @@ a `.Rprofile` at the repository root. That file is ignored by git, so the setup
 stays opt-in, and continuous integration keeps testing against current CRAN
 versions. None of these files are included in the built package.
 
+The lockfile leaves out varimpact itself, but a few test files load the
+installed package, so install the development version into the project
+library before running the full test suite: `devtools::install()`, then
+`devtools::test()`.
+
 ## Examples
 
 ### Example: basic functionality
