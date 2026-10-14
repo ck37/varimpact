@@ -231,8 +231,9 @@ estimate_tmle2 =
     # eps_a / gbound. Causal 2, Lecture 3, slide 51; lmtp's fluc().
     fit_eps = function(weights, rows) {
       if (!any(rows)) return(0)
-      fl = data.frame(y = stage1$Ystar[rows], o = q$Q[rows, "QAW"], w = weights[rows])
-      eps = suppressWarnings(coef(glm(y ~ 1 + offset(o), weights = w, data = fl, family = q$family)))
+      fl = data.frame(y = stage1$Ystar[rows], o = q$Q[rows, "QAW"])
+      wt = weights[rows]
+      eps = suppressWarnings(coef(glm(y ~ 1 + offset(o), weights = wt, data = fl, family = q$family)))
       if (is.na(eps)) 0 else unname(eps)
     }
     epsilon <- c(H0W = fit_eps(H0W, delta == 1 & A == 0), H1W = fit_eps(H1W, delta == 1 & A == 1))

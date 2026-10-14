@@ -116,7 +116,7 @@ estimate_pooled_results = function(fold_results,
         # fit as an ordinary covariate and epsilon would come back with two
         # elements instead of one.
         reg = if (isTRUE(weighted_fluctuation)) {
-          try(stats::glm(Y_star ~ 1 + offset(logit_Q_hat), weights = HAW,
+          try(stats::glm(Y_star ~ 1 + offset(logit_Q_hat), weights = data$HAW,
                   data = data, family = "binomial",
                   subset = data$delta == 1 & data$HAW > 0))
         } else {
