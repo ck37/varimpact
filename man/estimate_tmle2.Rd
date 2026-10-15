@@ -19,7 +19,7 @@ estimate_tmle2(
   fluctuation = "logistic",
   V = 10,
   verbose = F,
-  weighted_fluctuation = getOption("varimpact.weighted_fluctuation", FALSE)
+  weighted_fluctuation = getOption("varimpact.weighted_fluctuation", TRUE)
 )
 }
 \arguments{
@@ -54,15 +54,15 @@ gives every observation its own id, which leaves the fits unchanged.}
 
 \item{verbose}{If true output extra information during execution.}
 
-\item{weighted_fluctuation}{If TRUE, fit the fluctuation as an
-intercept-only logistic submodel with the clever covariate as the
+\item{weighted_fluctuation}{If TRUE (the default), fit the fluctuation as
+an intercept-only logistic submodel with the clever covariate as the
 observation weight, separately for each treatment level, so that every
-unit's logit is shifted by the same epsilon. If FALSE (the default), the
-clever covariate enters the submodel as a covariate and each unit's update
-is epsilon times its own clever covariate, which can push units at the g
-bound to Q* = 1 under near-violations of positivity. Both solve the same
-efficient influence curve equation. Defaults to the option
-\code{varimpact.weighted_fluctuation}.}
+unit's logit is shifted by the same epsilon. If FALSE, the clever covariate
+enters the submodel as a covariate and each unit's update is epsilon times
+its own clever covariate, which can push units at the g bound to Q* = 1
+under near-violations of positivity. Both solve the same efficient
+influence curve equation. The default reads the option
+\code{varimpact.weighted_fluctuation}; see \code{\link{varimpact}}.}
 }
 \description{
 Get TMLE estimate: E[Y | A = 1, W].

@@ -1,21 +1,31 @@
-# varimpact (development version)
+# varimpact 1.4.0.9000 (development version)
+
+## Changes in behavior
+
+* The targeting step now uses a weighted fluctuation by default. The logistic
+  fluctuation is fit as an intercept-only submodel with the clever covariate as
+  the observation weight, both in the training-fold TMLE (`estimate_tmle2()`,
+  within each treatment level) and in the pooled CV-TMLE
+  (`estimate_pooled_results()`), so every observation's logit moves by the same
+  epsilon. Up to 1.4.0 the clever covariate entered the submodel as a covariate
+  and each observation moved by epsilon times its own clever covariate. Both
+  forms solve the same efficient influence curve equation and target the same
+  parameter, so on well-behaved data the estimates agree closely. They differ
+  under near-violations of positivity: when many observations sit at the
+  propensity score bound (clever covariate 1 / 0.025 = 40), a moderate epsilon
+  in the covariate form sends their targeted predictions to 1, which on real
+  data produced a level mean of 0.61 against an observed rate of 0.007; the
+  weighted form gave 0.012 on the same data. Estimates from earlier versions
+  can be reproduced with `weighted_fluctuation = FALSE`, or for a session with
+  `options(varimpact.weighted_fluctuation = FALSE)`. This is the form `lmtp`
+  uses (see #67).
 
 ## New features
 
-* Weighted fluctuation for the TMLE update. With
-  `options(varimpact.weighted_fluctuation = TRUE)`, the fluctuation is fit as
-  an intercept-only logistic submodel with the clever covariate as the
-  observation weight, both in the training-fold TMLE (`estimate_tmle2()`,
-  within each treatment level) and in the pooled CV-TMLE
-  (`estimate_pooled_results()`). Every unit's logit then moves by the same
-  epsilon, instead of by epsilon times its own clever covariate. Both forms
-  solve the same efficient influence curve equation and target the same
-  parameter. They differ under near-violations of positivity: when many units
-  sit at the g bound (clever covariate 1 / 0.025 = 40), a moderate epsilon in
-  the covariate form sends their targeted Q* to 1, which on real data produced
-  a level mean of 0.61 against an observed rate of 0.007. The default is
-  unchanged (`FALSE`); both functions gain a `weighted_fluctuation` argument
-  that reads the option. This is the form `lmtp` uses (see #67).
+* `varimpact()` gains a `weighted_fluctuation` argument (default `TRUE`, read
+  from the option `varimpact.weighted_fluctuation`), passed down to
+  `estimate_tmle2()` and `estimate_pooled_results()`, which gain the same
+  argument. The value used is returned as `weighted_fluctuation` in the results.
 
 # varimpact 1.4.0
 

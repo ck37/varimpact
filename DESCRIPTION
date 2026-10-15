@@ -1,7 +1,7 @@
 Package: varimpact
 Type: Package
 Title: Variable Importance Estimation Using Targeted Causal Inference (TMLE)
-Version: 1.4.0
+Version: 1.4.0.9000
 Date: 2026-10-12
 Authors@R: c(
   person("Alan", "Hubbard", email = "hubbard@berkeley.edu",

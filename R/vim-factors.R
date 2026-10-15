@@ -18,7 +18,8 @@ vim_factors =
            fold_groups = NULL,
            verbose = FALSE,
            verbose_tmle = FALSE,
-           verbose_reduction = FALSE) {
+           verbose_reduction = FALSE,
+           weighted_fluctuation = getOption("varimpact.weighted_fluctuation", TRUE)) {
 
   # NOTE: we use && so that conditional will short-circuit if num_factors == 0.
   if (factors$num_factors > 0L && ncol(factors$data.fac) > 0L) {
@@ -359,6 +360,7 @@ vim_factors =
             # 2. Estimate Q on training data.
             # 3. Estimate g on training data.
             tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
+                                    weighted_fluctuation = weighted_fluctuation,
                                     Q.lib = Q.library,
                                     Qbounds = Qbounds,
                                     g.lib = g.library, id = train_id, verbose = verbose_tmle),
@@ -706,7 +708,8 @@ vim_factors =
         # e.g. lack of variation.
         if (!is.null(bin_df) && nrow(bin_df) > 0L) {
           pooled_bin = estimate_pooled_results(bin_list, verbose = verbose,
-                                               Qbounds = Qbounds)
+                                               Qbounds = Qbounds,
+                                               weighted_fluctuation = weighted_fluctuation)
           # Now we have $thetas and $influence_curves
 
           # Save the vector of estimates into the appropriate spot.
@@ -778,12 +781,14 @@ vim_factors =
       if (verbose) cat("Estimating pooled min.\n")
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
                                            verbose = verbose,
-                                           Qbounds = Qbounds)
+                                           Qbounds = Qbounds,
+                                           weighted_fluctuation = weighted_fluctuation)
       cat("\n")
       if (verbose) cat("Estimating pooled max.\n")
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
                                            verbose = verbose,
-                                           Qbounds = Qbounds)
+                                           Qbounds = Qbounds,
+                                           weighted_fluctuation = weighted_fluctuation)
       cat("\n")
 
       var_results$EY0V = pooled_min$thetas

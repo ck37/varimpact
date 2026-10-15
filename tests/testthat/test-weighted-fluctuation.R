@@ -60,11 +60,14 @@ test_that("under a near-violation the covariate form saturates and the weighted 
   expect_true(all(is.finite(w$influence_curves[[1]])))
 })
 
-test_that("the option sets the default", {
-  old = options(varimpact.weighted_fluctuation = TRUE); on.exit(options(old))
+test_that("the weighted form is the default, and the option switches it", {
   folds = list(make_fold(99L, 1L), make_fold(101L, 2L))
+  old = options(varimpact.weighted_fluctuation = NULL); on.exit(options(old))
   expect_identical(varimpact:::estimate_pooled_results(folds)$epsilon,
                    varimpact:::estimate_pooled_results(folds, weighted_fluctuation = TRUE)$epsilon)
+  options(varimpact.weighted_fluctuation = FALSE)
+  expect_identical(varimpact:::estimate_pooled_results(folds)$epsilon,
+                   varimpact:::estimate_pooled_results(folds, weighted_fluctuation = FALSE)$epsilon)
 })
 
 # The training-fold TMLE in estimate_tmle2(): with a well-specified glm library
@@ -89,19 +92,31 @@ test_that("estimate_tmle2's weighted fluctuation solves the influence curve equa
   expect_equal(w$theta, c$theta, tolerance = 0.01)
 })
 
-test_that("varimpact() runs end to end with the option on and agrees with the default", {
+test_that("varimpact() takes the argument, records it, and the two forms agree on well-behaved data", {
   s = sim_point(n = 1500L, seed = 12L)
   X = data.frame(A = s$A, s$W)
-  run = function() {
+  run = function(...) {
     set.seed(5)
     suppressMessages(varimpact(Y = s$Y, data = X, A_names = "A", V = 2L, Q.library = c("SL.mean", "SL.glm"),
                                g.library = c("SL.mean", "SL.glm"), family = "binomial", bins_numeric = 2L,
                                quantile_probs_factor = NULL, quantile_probs_numeric = NULL, verbose = FALSE,
-                               parallel = FALSE))
+                               parallel = FALSE, ...))
   }
+  old = options(varimpact.weighted_fluctuation = NULL); on.exit(options(old))
   default = run()
-  old = options(varimpact.weighted_fluctuation = TRUE); on.exit(options(old))
-  weighted = run()
-  expect_true(is.finite(weighted$results_all$Estimate))
-  expect_equal(weighted$results_all$Estimate, default$results_all$Estimate, tolerance = 0.03)
+  covariate = run(weighted_fluctuation = FALSE)
+  expect_true(default$weighted_fluctuation)
+  expect_false(covariate$weighted_fluctuation)
+  expect_true(is.finite(default$results_all$Estimate))
+  expect_equal(default$results_all$Estimate, covariate$results_all$Estimate, tolerance = 0.03)
+  # The argument overrides the option.
+  options(varimpact.weighted_fluctuation = FALSE)
+  expect_true(run(weighted_fluctuation = TRUE)$weighted_fluctuation)
+})
+
+test_that("varimpact() rejects a weighted_fluctuation that is not TRUE or FALSE", {
+  s = sim_point(n = 200L, seed = 13L)
+  X = data.frame(A = s$A, s$W)
+  for (bad in list(NA, "yes", c(TRUE, FALSE)))
+    expect_error(varimpact(Y = s$Y, data = X, weighted_fluctuation = bad), "TRUE or FALSE")
 })

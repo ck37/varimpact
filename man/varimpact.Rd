@@ -29,7 +29,8 @@ varimpact(
   digits = 4L,
   adjustment_exclusions = list(),
   id = NULL,
-  folds_by = NULL
+  folds_by = NULL,
+  weighted_fluctuation = getOption("varimpact.weighted_fluctuation", TRUE)
 )
 }
 \arguments{
@@ -165,6 +166,21 @@ the variables of interest vary with. In the simulation study in
 repository, with sites crossed with schools, a factor constant within
 sites was flagged 13\% of the time at the 5\% level when folding on
 school and 3\% when folding on site.}
+
+\item{weighted_fluctuation}{How the targeting step updates the initial
+outcome regression. If TRUE (the default), the logistic fluctuation is fit
+as an intercept-only submodel with the clever covariate as the observation
+weight, so every observation's logit moves by the same epsilon. If FALSE,
+the clever covariate enters the submodel as a covariate, the form used up
+to version 1.4.0, and each observation moves by epsilon times its own
+clever covariate; under near-violations of positivity, with many
+observations at the propensity score bound, that can push their targeted
+predictions to 1 and the estimate far outside the range of the outcome.
+Both forms solve the same efficient influence curve equation and target
+the same parameter. The default reads the option
+\code{varimpact.weighted_fluctuation}, so
+\code{options(varimpact.weighted_fluctuation = FALSE)} restores the earlier
+behavior for a session, e.g. to reproduce results from earlier versions.}
 }
 \value{
 Results object. TODO: add more detail here.

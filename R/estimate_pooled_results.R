@@ -4,14 +4,14 @@
 # transformation below is the identity. For a continuous outcome it is the
 # (10%-widened) range of Y, and we use it to map the results back onto the
 # scale of the original outcome. See issue #8.
-# weighted_fluctuation: as in estimate_tmle2(); TRUE fits epsilon as the
-# intercept of a logistic submodel weighted by HAW, so every unit's logit moves
-# by the same epsilon instead of epsilon * H1W.
+# weighted_fluctuation: as in estimate_tmle2(); TRUE (the default) fits epsilon
+# as the intercept of a logistic submodel weighted by HAW, so every unit's logit
+# moves by the same epsilon instead of epsilon * H1W.
 estimate_pooled_results = function(fold_results,
                                    fluctuation = "logistic",
                                    verbose = FALSE,
                                    Qbounds = c(0, 1),
-                                   weighted_fluctuation = getOption("varimpact.weighted_fluctuation", FALSE)) {
+                                   weighted_fluctuation = getOption("varimpact.weighted_fluctuation", TRUE)) {
   # Fold results is a list with test results from each fold.
 
   # Each fold result should have at least this element:

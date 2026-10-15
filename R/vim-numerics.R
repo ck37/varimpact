@@ -18,7 +18,8 @@ vim_numerics =
            fold_groups = NULL,
            verbose = FALSE,
            verbose_tmle = FALSE,
-           verbose_reduction = FALSE) {
+           verbose_reduction = FALSE,
+           weighted_fluctuation = getOption("varimpact.weighted_fluctuation", TRUE)) {
   # TODO: move out.
   cor.two = function(x, y) {
     (stats::cor(na.omit(cbind(x, y)))[1, 2])^2
@@ -422,6 +423,7 @@ vim_numerics =
               # 2. Estimate Q on training data.
               # 3. Estimate g on training data.
               tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
+                                               weighted_fluctuation = weighted_fluctuation,
                                                Q.lib = Q.library,
                                                # Pass in Q bounds from the full
                                                # range of Y (training & test).
@@ -775,7 +777,8 @@ vim_numerics =
 
         if (!is.null(bin_df) && nrow(bin_df) > 0L) {
           pooled_bin = estimate_pooled_results(bin_list, verbose = verbose,
-                                               Qbounds = Qbounds)
+                                               Qbounds = Qbounds,
+                                               weighted_fluctuation = weighted_fluctuation)
           # Now we have $thetas and $influence_curves
 
           # Save the vector of estimates into the appropriate spot.
@@ -845,10 +848,12 @@ vim_numerics =
 
       pooled_min = estimate_pooled_results(lapply(fold_results, function(x) x$level_min),
                                            verbose = verbose,
-                                           Qbounds = Qbounds)
+                                           Qbounds = Qbounds,
+                                           weighted_fluctuation = weighted_fluctuation)
       pooled_max = estimate_pooled_results(lapply(fold_results, function(x) x$level_max),
                                            verbose = verbose,
-                                           Qbounds = Qbounds)
+                                           Qbounds = Qbounds,
+                                           weighted_fluctuation = weighted_fluctuation)
 
       var_results$EY0V = pooled_min$thetas
       var_results$EY1V = pooled_max$thetas

@@ -38,9 +38,12 @@ make_fold = function(n, seed) {
 
 # Odd row counts on purpose: an even total hid the recycling behind a silent
 # multiple, so only odd counts produced the "longer object length" warning.
+# These tests are about the covariate form (HAW as a covariate, logit_Q_hat
+# as the offset), which is no longer the default since 1.4.0.9000, so they ask
+# for it explicitly; the weighted form is tested in test-weighted-fluctuation.R.
 pooled_fit = function() {
   folds = list(make_fold(99L, 1L), make_fold(101L, 2L))
-  list(result = varimpact:::estimate_pooled_results(folds), folds = folds)
+  list(result = varimpact:::estimate_pooled_results(folds, weighted_fluctuation = FALSE), folds = folds)
 }
 
 test_that("the fluctuation estimates exactly one coefficient", {

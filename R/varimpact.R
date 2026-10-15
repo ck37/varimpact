@@ -140,6 +140,20 @@
 #'   excludes all of its indicator columns, and a variable's missingness
 #'   indicator is excluded along with the variable. Defaults to an empty list,
 #'   which adjusts for every other variable as usual.
+#' @param weighted_fluctuation How the targeting step updates the initial
+#'   outcome regression. If TRUE (the default), the logistic fluctuation is fit
+#'   as an intercept-only submodel with the clever covariate as the observation
+#'   weight, so every observation's logit moves by the same epsilon. If FALSE,
+#'   the clever covariate enters the submodel as a covariate, the form used up
+#'   to version 1.4.0, and each observation moves by epsilon times its own
+#'   clever covariate; under near-violations of positivity, with many
+#'   observations at the propensity score bound, that can push their targeted
+#'   predictions to 1 and the estimate far outside the range of the outcome.
+#'   Both forms solve the same efficient influence curve equation and target
+#'   the same parameter. The default reads the option
+#'   \code{varimpact.weighted_fluctuation}, so
+#'   \code{options(varimpact.weighted_fluctuation = FALSE)} restores the earlier
+#'   behavior for a session, e.g. to reproduce results from earlier versions.
 #'
 #' @return Results object. TODO: add more detail here.
 #'
@@ -323,7 +337,8 @@ varimpact =
            digits = 4L,
            adjustment_exclusions = list(),
            id = NULL,
-           folds_by = NULL) {
+           folds_by = NULL,
+           weighted_fluctuation = getOption("varimpact.weighted_fluctuation", TRUE)) {
 
   # Time the full function execution.
   time_start = proc.time()
@@ -416,6 +431,11 @@ varimpact =
     stop('Family must be either "binomial" or "gaussian".')
   }
 
+  if (!is.logical(weighted_fluctuation) || length(weighted_fluctuation) != 1L ||
+      is.na(weighted_fluctuation)) {
+    stop("weighted_fluctuation must be TRUE or FALSE.")
+  }
+
   # Without this an unrecognized value falls through every branch in
   # process_numerics() and surfaces much later as
   # "sum(is.na(data.numW)) == 0 is not TRUE", which says nothing about the
@@ -506,7 +526,8 @@ varimpact =
                 fold_groups = fold_groups,
                 verbose = verbose,
                 verbose_tmle = verbose_tmle,
-                verbose_reduction = verbose_reduction)
+                verbose_reduction = verbose_reduction,
+                weighted_fluctuation = weighted_fluctuation)
 
   # Repeat for numerics.
   numeric_vims =
@@ -526,7 +547,8 @@ varimpact =
                  verbose_reduction = verbose_reduction,
                  adjustment_exclusions = adjustment_exclusions,
                  cluster_id = cluster_id,
-                 fold_groups = fold_groups)
+                 fold_groups = fold_groups,
+                 weighted_fluctuation = weighted_fluctuation)
 
   # Combine the separate continuous and factor results.
   results =
@@ -564,7 +586,9 @@ varimpact =
                    # largest degrees of freedom for the t critical values;
                    # each variable's own df is in results_all$df.
                    cluster_id = cluster_id,
-                   cluster_df = df_cluster))
+                   cluster_df = df_cluster,
+                   # Which targeting step produced these results.
+                   weighted_fluctuation = weighted_fluctuation))
 
   # Set a custom class so that we can override print and summary.
   class(results) = "varimpact"
