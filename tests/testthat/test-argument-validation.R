@@ -48,3 +48,11 @@ test_that("only binomial and gaussian families are accepted", {
   expect_error(varimpact(Y = rpois(30, 3), data = X, family = "poisson"),
                "Family must be either")
 })
+
+test_that("gbound must be a single number between 0 and 0.5", {
+  # Checked before any fitting: inside the TMLE fits an invalid bound would
+  # either make every fit fail within its try() or be applied as given.
+  for (bad in list(0, 0.5, -0.1, 1, NA_real_, c(0.01, 0.99), "0.05", NULL)) {
+    expect_error(fit(gbound = bad), "gbound must be a single number")
+  }
+})

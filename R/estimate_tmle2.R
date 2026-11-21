@@ -12,7 +12,11 @@
 #'   each id within a single fold for the g, g.Delta, and Q fits. The default
 #'   gives every observation its own id, which leaves the fits unchanged.
 #' @param Qbounds Bounds on Q
-#' @param gbound Bounds on G
+#' @param gbound Truncation bounds for the estimated probability of treatment
+#'   times the estimated probability that the outcome is observed. A single
+#'   number b gives the bounds (b, 1 - b), or (b, 1) when A takes a single
+#'   value; two numbers give the lower and upper bounds. The bounds are
+#'   returned as \code{gbounds} and reused on the validation fold.
 #' @param alpha TBD, from TMLE package
 #' @param fluctuation Only logistic is currently supported.
 #' @param V Number of folds for SuperLearner

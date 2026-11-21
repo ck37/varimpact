@@ -16,6 +16,7 @@ vim_numerics =
            adjustment_exclusions = list(),
            cluster_id = NULL,
            fold_groups = NULL,
+           gbound = 0.025,
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE) {
@@ -426,6 +427,7 @@ vim_numerics =
                                                # Pass in Q bounds from the full
                                                # range of Y (training & test).
                                                Qbounds = Qbounds,
+                                               gbound = gbound,
                                                g.lib = g.library, id = train_id, verbose = verbose_tmle),
                                 silent = !verbose)
 

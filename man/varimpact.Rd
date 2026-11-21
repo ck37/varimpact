@@ -29,7 +29,8 @@ varimpact(
   digits = 4L,
   adjustment_exclusions = list(),
   id = NULL,
-  folds_by = NULL
+  folds_by = NULL,
+  gbound = 0.025
 )
 }
 \arguments{
@@ -165,6 +166,22 @@ the variables of interest vary with. In the simulation study in
 repository, with sites crossed with schools, a factor constant within
 sites was flagged 13\% of the time at the 5\% level when folding on
 school and 3\% when folding on site.}
+
+\item{gbound}{Truncation bound for the estimated probability of the level
+of interest given the adjustment variables (times the estimated
+probability that the outcome is observed, when some outcomes are
+missing). Estimates below \code{gbound} are raised to it and estimates
+above \code{1 - gbound} are lowered to that, in the training and
+validation folds alike, so the inverse-probability weights in the TMLE
+update are at most \code{1 / gbound}. Truncation trades bias for
+variance: a smaller bound truncates less, which reduces the bias that
+truncation introduces when some observations are unlikely to have the
+level, at the cost of more variable estimates. The default, 0.025,
+matches earlier versions of varimpact. A level held by only a few
+percent of observations may call for a smaller bound, such as
+\code{5 / sqrt(n) / log(n)} for n observations, which
+\code{tmle::tmle()} uses by default. A single number greater than 0 and
+less than 0.5.}
 }
 \value{
 Results object. TODO: add more detail here.
