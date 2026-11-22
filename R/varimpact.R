@@ -140,6 +140,21 @@
 #'   excludes all of its indicator columns, and a variable's missingness
 #'   indicator is excluded along with the variable. Defaults to an empty list,
 #'   which adjusts for every other variable as usual.
+#' @param gbound Truncation bound for the estimated probability of the level
+#'   of interest given the adjustment variables (times the estimated
+#'   probability that the outcome is observed, when some outcomes are
+#'   missing). Estimates below \code{gbound} are raised to it and estimates
+#'   above \code{1 - gbound} are lowered to that, in the training and
+#'   validation folds alike, so the inverse-probability weights in the TMLE
+#'   update are at most \code{1 / gbound}. Truncation trades bias for
+#'   variance: a smaller bound truncates less, which reduces the bias that
+#'   truncation introduces when some observations are unlikely to have the
+#'   level, at the cost of more variable estimates. The default, 0.025,
+#'   matches earlier versions of varimpact. A level held by only a few
+#'   percent of observations may call for a smaller bound, such as
+#'   \code{5 / sqrt(n) / log(n)} for n observations, which
+#'   \code{tmle::tmle()} uses by default. A single number greater than 0 and
+#'   less than 0.5.
 #'
 #' @return Results object. TODO: add more detail here.
 #'
@@ -323,7 +338,8 @@ varimpact =
            digits = 4L,
            adjustment_exclusions = list(),
            id = NULL,
-           folds_by = NULL) {
+           folds_by = NULL,
+           gbound = 0.025) {
 
   # Time the full function execution.
   time_start = proc.time()
@@ -380,6 +396,14 @@ varimpact =
   # Check the exclusion list once here rather than inside the per-fold loops,
   # so that a typo is reported a single time instead of once per fold.
   check_adjustment_exclusions(adjustment_exclusions, colnames(data))
+
+  # Check the propensity bound here as well. Inside the TMLE fits an invalid
+  # one would either make every fit fail within its try(), leaving no results
+  # and no explanation, or be applied as given.
+  if (!is.numeric(gbound) || length(gbound) != 1L || is.na(gbound) ||
+      gbound <= 0 || gbound >= 0.5) {
+    stop("gbound must be a single number greater than 0 and less than 0.5.")
+  }
 
   # Ensure that Y is numeric; e.g. can't be a factor.
   stopifnot(class(Y) %in% c("numeric", "integer"))
@@ -501,6 +525,7 @@ varimpact =
                 Qbounds = Qbounds,
                 corthres = corthres,
                 adjust_cutoff = adjust_cutoff,
+                gbound = gbound,
                 adjustment_exclusions = adjustment_exclusions,
                 cluster_id = cluster_id,
                 fold_groups = fold_groups,
@@ -521,6 +546,7 @@ varimpact =
                  Qbounds = Qbounds,
                  corthres = corthres,
                  adjust_cutoff = adjust_cutoff,
+                 gbound = gbound,
                  verbose = verbose,
                  verbose_tmle = verbose_tmle,
                  verbose_reduction = verbose_reduction,
@@ -551,6 +577,7 @@ varimpact =
                    minCell = minCell,
                    minYs = minYs,
                    family = family,
+                   gbound = gbound,
                    datafac.dumW  = factors$datafac.dumW,
                    miss.fac = factors$miss.fac,
                    data.numW = numerics$data.numW,

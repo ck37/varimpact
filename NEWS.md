@@ -1,3 +1,19 @@
+# varimpact 1.4.0-9000 (development version)
+
+## New features
+
+* `varimpact()` gains a `gbound` argument, the truncation bound for the
+  estimated probability of each level of interest (times the probability that
+  its outcome is observed) in the TMLE fits. The bound was fixed at 0.025,
+  which caps the inverse-probability weights at 40 and so truncates most
+  observations' estimates for a level held by fewer than 2.5% of
+  observations. The default stays 0.025, so results are unchanged unless it
+  is set. A smaller value, such as the `5 / sqrt(n) / log(n)` that
+  `tmle::tmle()` uses by default, suits rare levels. The value is checked up
+  front, because inside the fits an invalid one would either make every fit
+  fail quietly or be applied as given, and it is returned as `gbound` in the
+  results.
+
 # varimpact 1.4.0
 
 ## New features

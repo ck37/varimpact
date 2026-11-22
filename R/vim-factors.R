@@ -16,6 +16,7 @@ vim_factors =
            adjustment_exclusions = list(),
            cluster_id = NULL,
            fold_groups = NULL,
+           gbound = 0.025,
            verbose = FALSE,
            verbose_tmle = FALSE,
            verbose_reduction = FALSE) {
@@ -361,6 +362,7 @@ vim_factors =
             tmle_result = try(estimate_tmle2(Yt, IA, Wtsht, family, deltat,
                                     Q.lib = Q.library,
                                     Qbounds = Qbounds,
+                                    gbound = gbound,
                                     g.lib = g.library, id = train_id, verbose = verbose_tmle),
                       silent = !verbose)
 

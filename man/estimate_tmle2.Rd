@@ -43,7 +43,11 @@ gives every observation its own id, which leaves the fits unchanged.}
 
 \item{Qbounds}{Bounds on Q}
 
-\item{gbound}{Bounds on G}
+\item{gbound}{Truncation bounds for the estimated probability of treatment
+times the estimated probability that the outcome is observed. A single
+number b gives the bounds (b, 1 - b), or (b, 1) when A takes a single
+value; two numbers give the lower and upper bounds. The bounds are
+returned as \code{gbounds} and reused on the validation fold.}
 
 \item{alpha}{TBD, from TMLE package}
 
